@@ -1,14 +1,9 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use color_eyre::{Result, eyre::Context};
+use config::{Config, CorriesConfig};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod config;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub fn run_sim(config: CorriesConfig) -> Result<()> {
+    config.validate().context("Validating config")?;
+    return Ok(());
 }
