@@ -1,21 +1,38 @@
+// Copyright (c) 2022
+// Author: Tommy Breslein (github.com/tbreslein)
+// License: MIT
+
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
 
 use super::Config;
 
-#[derive(Debug)]
+/// Enum for the different kinds of Meshes available
+#[derive(Debug, Copy, Clone)]
 pub enum MeshMode {
     Cartesian,
 }
 
+/// Carries information about how the mesh should shaped
 #[derive(Debug)]
 pub struct MeshConfig {
+    /// The type of Mesh that should constructed
     pub mode: MeshMode,
-    pub n_comp: u32,
-    pub n_gc: u32,
+
+    /// The number of cells in the computational area
+    pub n_comp: usize,
+
+    /// The number of ghost cells per edge
+    pub n_gc: usize,
+
+    /// xi coordinate at the inner/western boundary of the computational area
     pub xi_in: f64,
+
+    /// xi coordinate at the outer/eastern boundary of the computational area
     pub xi_out: f64,
-    pub ratio: f64,
+
+    /// Ratio in terms of radial thickness between the massive disk and the computational area
+    pub ratio_disk: f64,
 }
 
 impl Config for MeshConfig {
@@ -27,9 +44,9 @@ impl Config for MeshConfig {
             self.xi_out
         );
         ensure!(
-            self.ratio > 0.0 && self.ratio <= 1.0,
-            "This must hold: 0.0 < ratio <= 1.0! Got ratio = {}",
-            self.ratio
+            self.ratio_disk > 0.0 && self.ratio_disk <= 1.0,
+            "This must hold: 0.0 < ratio_disk <= 1.0! Got ratio_disk = {}",
+            self.ratio_disk
         );
         return Ok(());
     }

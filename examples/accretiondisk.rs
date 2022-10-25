@@ -11,7 +11,7 @@ fn main() -> Result<()> {
             n_gc: 2,
             xi_in: 0.1,
             xi_out: 100.0,
-            ratio: 1.0,
+            ratio_disk: 1.0,
         },
     })
 }

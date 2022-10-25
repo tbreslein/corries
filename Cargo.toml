@@ -1,3 +1,7 @@
+# Copyright (c) 2022
+# Author: Tommy Breslein (github.com/tbreslein)
+# License: MIT
+
 [package]
 name = "corries"
 version = "0.0.1-alpha"
@@ -11,8 +15,8 @@ categories = ["science", "mathematics"]
 # deactivates auto-discovery in ./tests, so that I can add the integration tests manually
 # autotests = false
 
-# [[example]]
-# name = "accretiondisk"
+[[example]]
+name = "accretiondisk"
 
 # [[test]]
 # name = "noh_isot_cartesian"
@@ -24,5 +28,7 @@ categories = ["science", "mathematics"]
 
 [dependencies]
 color-eyre = { version = "0.6", default-features = false }
-nalgebra = { version = "0.31" }
+ndarray = { version = "0.15", features = ["blas"] }
+blas-src = { version = "0.8", features = ["openblas"] }
+openblas-src = { version = "0.10", features = ["cblas", "system"] }
 proptest = { version = "1" }
