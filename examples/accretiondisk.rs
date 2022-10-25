@@ -1,11 +1,12 @@
 use color_eyre::Result;
+use corries::config;
 use corries::run_sim;
 
 fn main() -> Result<()> {
-    run_sim(corries::config::CorriesConfig {
+    run_sim(config::CorriesConfig {
         name: "accretiondisk".to_string(),
-        meshconf: corries::config::meshconfig::MeshConfig {
-            mode: corries::config::meshconfig::MeshMode::Cartesian,
+        meshconf: config::meshconfig::MeshConfig {
+            mode: config::meshconfig::MeshMode::Cartesian,
             n_comp: 100,
             n_gc: 2,
             xi_in: 0.1,
