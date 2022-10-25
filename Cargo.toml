@@ -1,9 +1,26 @@
 [package]
-name = "master"
-version = "0.1.0"
+name = "corries"
+version = "0.0.1-alpha"
 edition = "2021"
+authors = [ "tbreslein <github.com/tbreslein>" ]
+description = "Library for simulating 1D-hydrodynamics using Riemann solvers"
+repository = "https://github.com/tbreslein/corries/"
+license = "MIT"
+keywords = ["science", "physics", "hydrodynamics", "numerics"]
+categories = ["science", "mathematics"]
+# deactivates auto-discovery in ./tests, so that I can add the integration tests manually
+# autotests = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# [[example]]
+# name = "accretiondisk"
+
+# [[test]]
+# name = "noh_isot_cartesian"
+# path = "tests/noh.rs"
+
+# [[test]]
+# name = "sod"
+# path = "tests/sod.rs"
 
 [dependencies]
 color-eyre = "0.6.2"
