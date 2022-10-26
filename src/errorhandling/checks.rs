@@ -1,3 +1,7 @@
+// Copyright (c) 2022
+// Author: Tommy Breslein (github.com/tbreslein)
+// License: MIT
+
 macro_rules! check_finite_double {
     ($s:ident.$x:ident) => {
         ensure!(

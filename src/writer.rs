@@ -1,3 +1,7 @@
+// Copyright (c) 2022
+// Author: Tommy Breslein (github.com/tbreslein)
+// License: MIT
+
 use self::output::Output;
 
 mod output;

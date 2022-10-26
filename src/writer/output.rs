@@ -1,3 +1,9 @@
+// Copyright (c) 2022
+// Author: Tommy Breslein (github.com/tbreslein)
+// License: MIT
+
+use crate::config::outputconfig::{FormatterMode, StreamMode, ToStringConversionMode};
+
 use super::DataValue;
 
 pub struct Output<'a> {
@@ -23,26 +29,11 @@ pub struct Output<'a> {
     stream_strings: Vec<String>,
 
     /// Writes arbitrary data from `corries` objects to `string_matrix`
-    string_conversion_mode: ToStringConversion,
+    string_conversion_mode: ToStringConversionMode,
 
     /// Formats the `string_matrix` into `stream_strings` which can be written to a `Stream`
-    formatter: Formatter,
+    formatter: FormatterMode,
 
     /// Handles writing into a stream
-    stream: Stream,
-}
-
-enum ToStringConversion {
-    Scalar,
-    Vector,
-}
-
-enum Formatter {
-    CSV,
-    TSV,
-}
-
-enum Stream {
-    Stdout,
-    File,
+    stream: StreamMode,
 }
