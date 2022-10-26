@@ -3,6 +3,7 @@
 // License: MIT
 
 use crate::config::meshconfig::{MeshConfig, MeshMode};
+use color_eyre::eyre::ensure;
 use color_eyre::Result;
 use ndarray::{ArrayD, IxDyn};
 
@@ -313,7 +314,7 @@ impl Mesh {
         let minus_cxpx = -1.0 * &cxpx;
         let minus_cepe = -1.0 * &cepe;
 
-        return Ok(Mesh {
+        let mesh = Mesh {
             mode,
             is_logarithmic,
             is_linear,
@@ -371,6 +372,64 @@ impl Mesh {
             minus_cpep,
             minus_cxpx,
             minus_cepe,
-        });
+        };
+
+        mesh.validate()?;
+        return Ok(mesh);
+    }
+
+    fn validate(&self) -> Result<()> {
+        // checks on doubles
+        check_finite_multiple_doubles![self.dxi, self.deta, self.dphi];
+
+        // checks on arrays
+        check_nonempty_finite_multiple_arrayd![
+            self.xi_cent,
+            self.xi_west,
+            self.xi_east,
+            self.xi_cent_inv,
+            self.xi_west_inv,
+            self.xi_east_inv,
+            self.h_xi_cent,
+            self.h_xi_west,
+            self.h_xi_east,
+            self.h_eta_cent,
+            self.h_eta_west,
+            self.h_eta_east,
+            self.h_phi_cent,
+            self.h_phi_west,
+            self.h_phi_east,
+            self.sqrt_g,
+            self.line_xi,
+            self.line_xi_inv,
+            self.d_area_xi_deta_dphi_west,
+            self.d_area_xi_deta_dphi_east,
+            self.area_cell,
+            self.area_west,
+            self.area_east,
+            self.volume,
+            self.deta_dphi_d_volume,
+            self.cell_width,
+            self.cell_width_inv,
+            self.cexe,
+            self.cpxp,
+            self.cxex,
+            self.cpep,
+            self.cxpx,
+            self.cepe,
+            self.minus_cexe,
+            self.minus_cpxp,
+            self.minus_cxex,
+            self.minus_cpep,
+            self.minus_cxpx,
+            self.minus_cepe
+        ];
+
+        return Ok(());
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+// }

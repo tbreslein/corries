@@ -2,11 +2,13 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use color_eyre::{Result, eyre::Context};
+use color_eyre::{eyre::Context, Result};
 use config::{Config, CorriesConfig};
 use mesh::Mesh;
 
 pub mod config;
+#[macro_use]
+mod errorhandling;
 mod mesh;
 
 /// Runs a Corries simulation.
@@ -16,6 +18,6 @@ mod mesh;
 /// * `config` - The `CorriesConfig` the simulation is based on
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
-    let _mesh = Mesh::new(&config.meshconf);
+    let _mesh = Mesh::new(&config.meshconf)?;
     return Ok(());
 }
