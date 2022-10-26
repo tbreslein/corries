@@ -12,6 +12,7 @@ pub mod config;
 #[macro_use]
 mod errorhandling;
 mod mesh;
+mod writer;
 
 /// Runs a Corries simulation.
 ///
