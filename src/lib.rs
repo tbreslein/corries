@@ -3,8 +3,10 @@
 // License: MIT
 
 use color_eyre::{eyre::Context, Result};
-use config::{Config, CorriesConfig};
+use config::CorriesConfig;
 use mesh::Mesh;
+
+use crate::errorhandling::Validation;
 
 pub mod config;
 #[macro_use]
@@ -18,6 +20,7 @@ mod mesh;
 /// * `config` - The `CorriesConfig` the simulation is based on
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
-    let _mesh = Mesh::new(&config.meshconf)?;
+    let _mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
+    dbg!(_mesh);
     return Ok(());
 }

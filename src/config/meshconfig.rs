@@ -5,7 +5,7 @@
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
 
-use super::Config;
+use crate::errorhandling::Validation;
 
 /// Enum for the different kinds of Meshes available
 #[derive(Debug, Copy, Clone)]
@@ -35,7 +35,7 @@ pub struct MeshConfig {
     pub ratio_disk: f64,
 }
 
-impl Config for MeshConfig {
+impl Validation for MeshConfig {
     fn validate(&self) -> Result<()> {
         ensure!(
             self.xi_in < self.xi_out,

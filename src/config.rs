@@ -6,6 +6,7 @@ use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 
 use self::meshconfig::MeshConfig;
+use crate::errorhandling::Validation;
 
 pub mod meshconfig;
 
@@ -22,13 +23,7 @@ pub struct CorriesConfig {
     pub meshconf: MeshConfig,
 }
 
-/// Trait for all configuration related structs
-pub trait Config {
-    /// Tests the struct itself, checking for incoherent configurations
-    fn validate(&self) -> Result<()>;
-}
-
-impl Config for CorriesConfig {
+impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {
         ensure!(!self.name.is_empty(), "name must not be empty!");
         self.meshconf

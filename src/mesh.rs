@@ -3,7 +3,8 @@
 // License: MIT
 
 use crate::config::meshconfig::{MeshConfig, MeshMode};
-use color_eyre::eyre::ensure;
+use crate::errorhandling::Validation;
+use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 use ndarray::{ArrayD, IxDyn};
 
@@ -17,6 +18,7 @@ use ndarray::{ArrayD, IxDyn};
 /// cartesian coordinates, you would then usually name these xi = x, Phi = y, eta = z, or in
 /// cylindrical coordinates you would name them xi = r (the radius), Phi = phi (the polar angle),
 /// eta = z.
+#[derive(Debug)]
 pub struct Mesh {
     /// The kind of mesh this is, i.e. cartesian, log-cylindrical, etc.
     pub mode: MeshMode,
@@ -204,7 +206,7 @@ impl Mesh {
         let n_gc = meshconf.n_gc;
         let n_all = n_comp + 2 * n_gc;
 
-        let imin: usize = 0;
+        let imin = 0;
         let imax = imin + n_all - 1;
         let ixi_in = imin + n_gc;
         let ixi_out = imax - n_gc;
@@ -225,94 +227,96 @@ impl Mesh {
             MeshMode::Cartesian => 1.0,
         };
 
-        let xi_cent = {
+        let xi_west = {
             let mut v: Vec<f64> = Vec::with_capacity(n_all);
             let mut f = |x: f64| {
                 for i in imin..=imax {
-                    v.push(x + (0.5 * (2.0 * (i as f64 - 1.0) - 1.0) * dxi));
+                    v.push(x + dxi * (i as i64 - ixi_in as i64) as f64);
                 }
             };
             match mode {
                 MeshMode::Cartesian => f(xi_in),
             };
-            ndarray::ArrayD::from_shape_vec(IxDyn(&[v.len()]), v)?
+            ndarray::ArrayD::from_shape_vec(IxDyn(&[v.len()]), v).context("Constructing xi_west")?
         };
-        let xi_west = match mode {
-            MeshMode::Cartesian => &xi_cent - 0.5 * dxi,
+        let xi_cent = match mode {
+            MeshMode::Cartesian => xi_west.mapv(|xi| xi + 0.5 * dxi),
         };
         let xi_east = match mode {
-            MeshMode::Cartesian => &xi_cent + 0.5 * dxi,
+            MeshMode::Cartesian => xi_west.mapv(|xi| xi + dxi),
         };
 
-        let xi_cent_inv = 1.0 / &xi_cent;
-        let xi_west_inv = 1.0 / &xi_west;
-        let xi_east_inv = 1.0 / &xi_east;
+        let xi_cent_inv = xi_cent.mapv(f64::recip);
+        let xi_west_inv = xi_west.mapv(f64::recip);
+        let xi_east_inv = xi_east.mapv(f64::recip);
 
         let h_xi_cent = match mode {
-            MeshMode::Cartesian => &xi_cent / &xi_cent,
+            MeshMode::Cartesian => xi_cent.mapv(|_| 1.0),
         };
         let h_xi_west = match mode {
-            MeshMode::Cartesian => &xi_west / &xi_west,
+            MeshMode::Cartesian => xi_west.mapv(|_| 1.0),
         };
         let h_xi_east = match mode {
-            MeshMode::Cartesian => &xi_east / &xi_east,
+            MeshMode::Cartesian => xi_east.mapv(|_| 1.0),
         };
 
         let h_eta_cent = match mode {
-            MeshMode::Cartesian => &xi_cent / &xi_cent,
+            MeshMode::Cartesian => xi_cent.mapv(|_| 1.0),
         };
         let h_eta_west = match mode {
-            MeshMode::Cartesian => &xi_west / &xi_west,
+            MeshMode::Cartesian => xi_west.mapv(|_| 1.0),
         };
         let h_eta_east = match mode {
-            MeshMode::Cartesian => &xi_east / &xi_east,
+            MeshMode::Cartesian => xi_east.mapv(|_| 1.0),
         };
 
         let h_phi_cent = match mode {
-            MeshMode::Cartesian => &xi_cent / &xi_cent,
+            MeshMode::Cartesian => xi_cent.mapv(|_| 1.0),
         };
         let h_phi_west = match mode {
-            MeshMode::Cartesian => &xi_west / &xi_west,
+            MeshMode::Cartesian => xi_west.mapv(|_| 1.0),
         };
         let h_phi_east = match mode {
-            MeshMode::Cartesian => &xi_east / &xi_east,
+            MeshMode::Cartesian => xi_east.mapv(|_| 1.0),
         };
 
         let sqrt_g = &h_xi_cent * &h_eta_cent * &h_phi_cent;
 
         let line_xi = &h_xi_cent * dxi;
-        let line_xi_inv = 1.0 / &line_xi;
+        let line_xi_inv = line_xi.mapv(f64::recip);
 
         let d_area_xi_deta_dphi_west = &h_eta_west * &h_phi_west;
         let d_area_xi_deta_dphi_east = &h_eta_east * &h_phi_east;
 
         let area_cell = match mode {
-            MeshMode::Cartesian => &xi_east * &xi_east - &xi_west * &xi_west,
-        };
+            MeshMode::Cartesian => (&xi_east - &xi_west) * (&xi_east - &xi_west),
+        }
+        .map(|a| a.abs());
+
         let area_west = &d_area_xi_deta_dphi_west * deta * dphi;
         let area_east = &d_area_xi_deta_dphi_east * deta * dphi;
         let volume = &sqrt_g * dxi * deta * dphi;
         let deta_dphi_d_volume = deta * dphi / (f64::EPSILON + &volume);
 
         let cell_width = &xi_east - &xi_west;
-        let cell_width_inv = 1.0 / &cell_width;
+        let cell_width_inv = cell_width.mapv(f64::recip);
 
         let cexe =
             0.5 * (&h_phi_east + &h_phi_west) * (&h_eta_east - &h_eta_west) * &deta_dphi_d_volume;
         let cpxp =
             0.5 * (&h_eta_east + &h_eta_west) * (&h_phi_east - &h_phi_west) * &deta_dphi_d_volume;
 
-        let cxex = &xi_cent / &xi_cent;
-        let cpep = &xi_cent / &xi_cent;
-        let cxpx = &xi_cent / &xi_cent;
-        let cepe = &xi_cent / &xi_cent;
+        let cxex = xi_cent.mapv(|_| 1.0);
+        let cpep = xi_cent.mapv(|_| 1.0);
+        let cxpx = xi_cent.mapv(|_| 1.0);
+        let cepe = xi_cent.mapv(|_| 1.0);
 
-        let minus_cexe = -1.0 * &cexe;
-        let minus_cpxp = -1.0 * &cpxp;
-        let minus_cxex = -1.0 * &cxex;
-        let minus_cpep = -1.0 * &cpep;
-        let minus_cxpx = -1.0 * &cxpx;
-        let minus_cepe = -1.0 * &cepe;
+        let minus_cexe = cexe.mapv(|c| -1.0 * c);
+        let minus_cpxp = cpxp.mapv(|c| -1.0 * c);
+        let minus_cxex = cxex.mapv(|c| -1.0 * c);
+        let minus_cpep = cpep.mapv(|c| -1.0 * c);
+        let minus_cxpx = cxpx.mapv(|c| -1.0 * c);
+        let minus_cepe = cepe.mapv(|c| -1.0 * c);
 
         let mesh = Mesh {
             mode,
@@ -374,10 +378,17 @@ impl Mesh {
             minus_cepe,
         };
 
-        mesh.validate()?;
+        mesh.validate().context("Validating Mesh")?;
         return Ok(mesh);
     }
+}
 
+impl Validation for Mesh {
+    /// Validates fields of the struct to make sure they are coherent.
+    ///
+    /// The fields of most structs should be adhering to some rules, like most doubles should
+    /// probably be finite, most arrays should be non-empty and have finite entries, etc.. This
+    /// function tests this.
     fn validate(&self) -> Result<()> {
         // checks on doubles
         check_finite_multiple_doubles![self.dxi, self.deta, self.dphi];
@@ -429,7 +440,32 @@ impl Mesh {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+    prop_compose! {
+        fn arb_mesh(mode: MeshMode)
+                    (n_gc in 1usize..=2,
+                    n_comp in 3usize..10_000,
+                    xi_in in 0.1f64..100_000.0,
+                    xi_out in 0.1f64..100_000.0,
+                    ratio_disk in 0.1f64..=1.0) -> Result<Mesh> {
+            return Mesh::new(&MeshConfig { mode, n_comp, n_gc, xi_in, xi_out, ratio_disk });
+        }
+    }
+
+    mod cartesian_meshes {
+        use super::*;
+        use approx::assert_relative_eq;
+        proptest! {
+            #[test]
+            fn cartesian_meshes_constructed_correctly(mesh in arb_mesh(MeshMode::Cartesian)) {
+                prop_assume!(mesh.is_ok());
+                let mesh = mesh.unwrap();
+                prop_assume!(mesh.xi_in < mesh.xi_out);
+                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], epsilon = 10.0f64.powi(-12));
+            }
+        }
+    }
+}
