@@ -34,7 +34,7 @@ pub struct OutputConfig {
     pub should_print_metadata: bool,
 
     /// Identifiers for the data being written by the `Output`
-    pub data: Vec<DataName>,
+    pub data_names: Vec<DataName>,
 }
 
 impl Validation for OutputConfig {
@@ -49,6 +49,15 @@ impl Validation for OutputConfig {
                 "When writing to a file, file_name may not be empty!"
             );
         }
+        if self.string_conversion_mode == ToStringConversionMode::Scalar {
+            for name in self.data_names.iter() {
+                ensure!(
+                    name.datatype() != DataType::VectorFloat,
+                    "You cannot write vectors into an Output in Scalar mode! data_name = {:?}",
+                    name
+                );
+            }
+        }
         return Ok(());
     }
 }
@@ -61,7 +70,7 @@ pub enum StreamMode {
 }
 
 /// Enumerates whether an `Output` writes scalar or vector values
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ToStringConversionMode {
     Scalar,
     Vector,
@@ -106,6 +115,7 @@ pub enum DataName {
 ///
 /// This has overlap with corries::writer::DataValue, but I needed an enum without a payload to
 /// implement DataName::datatype().
+#[derive(Debug, PartialEq)]
 pub enum DataType {
     Int,
     Usize,

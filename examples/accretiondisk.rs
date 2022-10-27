@@ -23,13 +23,13 @@ fn main() -> Result<()> {
             config::outputconfig::OutputConfig {
                 stream_mode: StreamMode::Stdout,
                 formatter_mode: FormatterMode::CSV,
-                string_conversion_mode: ToStringConversionMode::Vector,
+                string_conversion_mode: ToStringConversionMode::Scalar,
                 folder_name: "".to_string(),
                 file_name: "".to_string(),
                 precision: 3,
                 should_print_ghostcells: false,
                 should_print_metadata: true,
-                data: vec![DataName::NComp, DataName::XiCent],
+                data_names: vec![DataName::NComp, DataName::NAll],
             },
             // config::outputconfig::OutputConfig {
             //     stream_mode: StreamMode::File,
