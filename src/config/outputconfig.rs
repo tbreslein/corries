@@ -21,7 +21,7 @@ pub struct OutputConfig {
     /// Which folder to write file output to
     pub folder_name: String,
 
-    /// Which folder to write file output to
+    /// File name for the file(s) to write file output to
     pub file_name: String,
 
     /// Precision for printing floating point numbers

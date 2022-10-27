@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use std::path::Path;
+
 use color_eyre::{eyre::bail, Result};
 use ndarray::{ArrayD, IxDyn};
 
@@ -24,6 +26,9 @@ pub struct Output {
 
     /// Whether this is this `Output`'s first output in this run
     first_output: bool,
+
+    /// Current output counter
+    output_counter: usize,
 
     /// Whether this `Output` should write metadata into its `Stream`
     pub should_print_metadata: bool,
@@ -49,12 +54,18 @@ pub struct Output {
     /// Handles writing into a stream
     stream_mode: StreamMode,
 
+    /// File name for the file(s) to write file output to
+    file_name: String,
+
+    /// How many digits the file counter for file output needs
+    file_counter_width: usize,
+
     /// Identifiers for the data being written to the stream
     data_names: Vec<DataName>,
 }
 
 impl Output {
-    pub fn new(outputconfig: &OutputConfig, mesh: &Mesh) -> Self {
+    pub fn new(outputconfig: &OutputConfig, mesh: &Mesh, output_count_max: usize) -> Self {
         let rows = match outputconfig.string_conversion_mode {
             ToStringConversionMode::Scalar => 1,
             ToStringConversionMode::Vector => {
@@ -84,6 +95,7 @@ impl Output {
                 mesh.ixi_in
             },
             first_output: true,
+            output_counter: 0,
             should_print_metadata: outputconfig.should_print_metadata,
             precision: outputconfig.precision,
             width: match outputconfig.formatter_mode {
@@ -98,6 +110,12 @@ impl Output {
             stream_strings: vec!["".to_string(); rows],
             string_conversion_mode: outputconfig.string_conversion_mode,
             stream_mode: outputconfig.stream_mode,
+            file_name: if outputconfig.folder_name.ends_with("/") {
+                outputconfig.folder_name.clone() + &outputconfig.file_name.clone() + "_"
+            } else {
+                outputconfig.folder_name.clone() + "/" + &outputconfig.file_name.clone() + "_"
+            },
+            file_counter_width: f64::log10(output_count_max as f64) as usize + 1,
             data_names: outputconfig.data_names.clone(),
         };
     }
@@ -214,7 +232,11 @@ impl Output {
                 }
             },
             // TODO: implement this!
-            StreamMode::File => todo!(),
+            StreamMode::File => {
+                todo!();
+                // let path = Path::new(&(self.file_name.clone() + &format!("{:0w$}", self.output_counter, w=self.file_counter_width)));
+                // path.display();
+            }
         }
         return Ok(());
     }

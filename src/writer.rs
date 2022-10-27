@@ -27,10 +27,10 @@ pub enum DataValue {
 }
 
 impl Writer {
-    pub fn new(config: &CorriesConfig, mesh: &Mesh) -> Self {
+    pub fn new(config: &CorriesConfig, mesh: &Mesh, output_count_max: usize) -> Self {
         let mut outputs = vec![];
         for outputconf in config.writerconf.iter() {
-            outputs.push(Output::new(outputconf, mesh));
+            outputs.push(Output::new(outputconf, mesh, output_count_max));
         }
         return Writer { outputs };
     }
