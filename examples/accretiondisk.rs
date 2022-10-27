@@ -22,7 +22,7 @@ fn main() -> Result<()> {
         writerconf: vec![
             config::outputconfig::OutputConfig {
                 stream_mode: StreamMode::Stdout,
-                formatter_mode: FormatterMode::CSV,
+                formatter_mode: FormatterMode::TSV,
                 string_conversion_mode: ToStringConversionMode::Scalar,
                 folder_name: "".to_string(),
                 file_name: "".to_string(),
@@ -35,7 +35,7 @@ fn main() -> Result<()> {
             //     stream_mode: StreamMode::File,
             //     formatter_mode: FormatterMode::CSV,
             //     string_conversion_mode: ToStringConversionMode::Vector,
-            //     folder_name: "results".to_string(),
+            //     folder_name: "results/accretiondisk".to_string(),
             //     file_name: "accretiondisk".to_string(),
             //     precision: 7,
             //     should_print_ghostcells: true,

@@ -199,10 +199,20 @@ impl Output {
     fn stream(&mut self) -> Result<()> {
         match self.stream_mode {
             StreamMode::Stdout => {
+                if self.first_output {
+                    let mut s = "#".to_string();
+                    for name in self.data_names.iter() {
+                        let name_string = format!("{:?}", name);
+                        s += &format!("{:>width$}", name_string, width = self.width);
+                        s.push(self.delimiter);
+                    }
+                    s.pop();
+                    println!("{}", s);
+                }
                 for line in self.stream_strings.iter() {
                     println!("{}", line);
                 }
-            }
+            },
             // TODO: implement this!
             StreamMode::File => todo!(),
         }

@@ -460,11 +460,14 @@ impl Write for Mesh {
                 self.write_vector(&self.xi_east, value, mesh_offset)
             }
             (StructAssociation::Mesh, DataName::NComp) => {
-                Ok(*value = DataValue::Usize(self.n_comp))
+                *value = DataValue::Usize(self.n_comp);
+                Ok(())
             }
-            (StructAssociation::Mesh, DataName::NAll) => Ok(*value = DataValue::Usize(self.n_all)),
-            // Match other associations like this:
-            // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
+            (StructAssociation::Mesh, DataName::NAll) => {
+                *value = DataValue::Usize(self.n_all);
+                Ok(())
+            } // Match other associations like this:
+              // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
         }?;
         return Ok(());
     }

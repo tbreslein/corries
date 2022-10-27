@@ -2,9 +2,6 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use std::fmt;
-use std::fmt::Display;
-
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
 

@@ -66,9 +66,9 @@ impl CorriesConfig {
             s += &format!("#     precision: {}\n", outputconf.precision);
             s += &format!("#     should_print_ghostcells: {}\n", outputconf.should_print_ghostcells);
             s += &format!("#     should_print_metadata: {}\n", outputconf.should_print_metadata);
-            s += &format!("#     data_names: [\n",);
+            s += "#     data_names: [\n";
             s += &format!("#       {:?}\n", outputconf.data_names);
-            s += &format!("#     ]\n",);
+            s += "#     ]\n";
         }
         s += "###\n";
         return s;

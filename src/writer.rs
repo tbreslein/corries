@@ -30,7 +30,7 @@ impl Writer {
     pub fn new(config: &CorriesConfig, mesh: &Mesh) -> Self {
         let mut outputs = vec![];
         for outputconf in config.writerconf.iter() {
-            outputs.push(Output::new(&outputconf, &mesh));
+            outputs.push(Output::new(outputconf, mesh));
         }
         return Writer { outputs };
     }
@@ -38,7 +38,7 @@ impl Writer {
     pub fn update_data_matrices(&mut self, mesh: &Mesh) -> Result<()> {
         // TODO: can I safely thread this loop?
         for output in self.outputs.iter_mut() {
-            output.update_data_matrix(&mesh)?;
+            output.update_data_matrix(mesh)?;
         }
         return Ok(());
     }
@@ -54,7 +54,7 @@ impl Writer {
     pub fn write_metadata(&mut self, config: &CorriesConfig) -> Result<()> {
         for output in self.outputs.iter_mut() {
             if output.should_print_metadata {
-                output.write_metadata(&config)?;
+                output.write_metadata(config)?;
             };
         }
         return Ok(());
@@ -79,9 +79,11 @@ pub trait Write {
         return match value {
             DataValue::VectorFloat(v) => {
                 if mesh_offset == 0 {
-                    Ok(v.assign(field))
+                    v.assign(field);
+                    Ok(())
                 } else {
-                    Ok(v.assign(&field.slice(s![mesh_offset..field.len() - mesh_offset])))
+                    v.assign(&field.slice(s![mesh_offset..field.len() - mesh_offset]));
+                    Ok(())
                 }
             }
             _ => bail!(
