@@ -5,7 +5,7 @@
 use color_eyre::Result;
 use corries::config;
 use corries::config::meshconfig::MeshMode;
-use corries::config::outputconfig::{StreamMode, FormatterMode, ToStringConversionMode, DataName};
+use corries::config::outputconfig::{DataName, FormatterMode, StreamMode, ToStringConversionMode};
 use corries::run_sim;
 
 fn main() -> Result<()> {
@@ -23,15 +23,24 @@ fn main() -> Result<()> {
             config::outputconfig::OutputConfig {
                 stream_mode: StreamMode::Stdout,
                 formatter_mode: FormatterMode::TSV,
-                conversion_mode: ToStringConversionMode::Scalar,
+                string_conversion_mode: ToStringConversionMode::Scalar,
                 folder_name: "".to_string(),
                 file_name: "".to_string(),
                 precision: 3,
                 should_print_ghostcells: false,
                 should_print_metadata: false,
-                data: vec![
-                    DataName::XiCent,
-                ]
+                data: vec![],
+            },
+            config::outputconfig::OutputConfig {
+                stream_mode: StreamMode::File,
+                formatter_mode: FormatterMode::CSV,
+                string_conversion_mode: ToStringConversionMode::Vector,
+                folder_name: "results".to_string(),
+                file_name: "accretiondisk".to_string(),
+                precision: 7,
+                should_print_ghostcells: true,
+                should_print_metadata: true,
+                data: vec![DataName::XiCent],
             },
         ],
     })

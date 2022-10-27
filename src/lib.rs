@@ -5,6 +5,7 @@
 use color_eyre::{eyre::Context, Result};
 use config::CorriesConfig;
 use mesh::Mesh;
+use writer::Writer;
 
 use crate::errorhandling::Validation;
 
@@ -21,7 +22,7 @@ mod writer;
 /// * `config` - The `CorriesConfig` the simulation is based on
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
-    let _mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    dbg!(_mesh);
+    let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
+    let _writer = Writer::new(&config, &mesh);
     return Ok(());
 }

@@ -16,7 +16,7 @@ pub struct OutputConfig {
     pub formatter_mode: FormatterMode,
 
     /// Whether the `Output` converts its incoming data to a single `String` or a `Vec<String>`
-    pub conversion_mode: ToStringConversionMode,
+    pub string_conversion_mode: ToStringConversionMode,
 
     /// Which folder to write file output to
     pub folder_name: String,
@@ -40,29 +40,35 @@ pub struct OutputConfig {
 impl Validation for OutputConfig {
     fn validate(&self) -> color_eyre::Result<()> {
         if self.stream_mode == StreamMode::File {
-            ensure!(!self.folder_name.is_empty(), "When writing to a file, folder_name may not be empty!");
-            ensure!(!self.file_name.is_empty(), "When writing to a file, file_name may not be empty!");
+            ensure!(
+                !self.folder_name.is_empty(),
+                "When writing to a file, folder_name may not be empty!"
+            );
+            ensure!(
+                !self.file_name.is_empty(),
+                "When writing to a file, file_name may not be empty!"
+            );
         }
         return Ok(());
     }
 }
 
 /// Enumerates the different streams an `Output` may write to
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StreamMode {
     Stdout,
     File,
 }
 
 /// Enumerates whether an `Output` writes scalar or vector values
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ToStringConversionMode {
     Scalar,
     Vector,
 }
 
 /// Enumerates how an `Output` formats its output
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum FormatterMode {
     /// Comma seperated output
     CSV,
@@ -71,12 +77,11 @@ pub enum FormatterMode {
     TSV,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DataName {
     // ====
     // Mesh
     // ====
-
     /// xi coordinates at the cell centre (Vector)
     XiCent,
 
@@ -86,4 +91,3 @@ pub enum DataName {
     /// xi coordinates at a cell's east border (Vector)
     XiEast,
 }
-
