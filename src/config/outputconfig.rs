@@ -77,6 +77,7 @@ pub enum FormatterMode {
     TSV,
 }
 
+/// Enumerates the different pieces of data that can be written to output
 #[derive(Debug, Clone)]
 pub enum DataName {
     // ====
@@ -90,4 +91,54 @@ pub enum DataName {
 
     /// xi coordinates at a cell's east border (Vector)
     XiEast,
+
+    // TODO: remove these
+    NComp,
+    NAll,
+    // =======
+    // Physics
+    // =======
+    // Prim(usize), // usize -> matrix index
+    // Cons(usize),
+}
+
+/// Enumerates the different types of data that be written to output.
+///
+/// This has overlap with corries::writer::DataValue, but I needed an enum without a payload to
+/// implement DataName::datatype().
+pub enum DataType {
+    Int,
+    Usize,
+    Float,
+    VectorFloat,
+    String,
+}
+
+/// Enumerates the structs / traits a `DataName` may be associated to.
+pub enum StructAssociation {
+    Mesh,
+}
+
+impl DataName {
+    /// Returns the `DataType` associated with the `DataName`.
+    pub fn datatype(&self) -> DataType {
+        return match &self {
+            Self::XiCent => DataType::VectorFloat,
+            Self::XiWest => DataType::VectorFloat,
+            Self::XiEast => DataType::VectorFloat,
+            Self::NComp => DataType::Int,
+            Self::NAll => DataType::Int,
+        };
+    }
+
+    /// Returns the `StructAssociation` associated with the `DataName`
+    pub fn association(&self) -> StructAssociation {
+        return match &self {
+            Self::XiCent => StructAssociation::Mesh,
+            Self::XiWest => StructAssociation::Mesh,
+            Self::XiEast => StructAssociation::Mesh,
+            Self::NComp => StructAssociation::Mesh,
+            Self::NAll => StructAssociation::Mesh,
+        };
+    }
 }

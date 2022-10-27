@@ -35,8 +35,27 @@ impl Validation for CorriesConfig {
             .validate()
             .context("Validating config.meshconf")?;
         for outputconf in self.writerconf.iter() {
-            outputconf.validate().context("Validating config.writerconf")?;
+            outputconf
+                .validate()
+                .context("Validating config.writerconf")?;
         }
         return Ok(());
+    }
+}
+
+macro_rules! add_to_metadata_string {
+    ($s:ident, $config:ident.$field:ident) => {
+        $s += &format!("# {}: {}\n", stringify!($field), $config.$field)
+    };
+}
+
+impl CorriesConfig {
+    pub fn metadata_dump(&self) -> String {
+        let mut s = "".to_string();
+        s += "### Corries Configuration\n";
+        add_to_metadata_string!(s, self.name);
+        s += "###\n";
+        // TODO: descend into nested configs
+        return s;
     }
 }

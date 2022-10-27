@@ -23,6 +23,12 @@ mod writer;
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    let _writer = Writer::new(&config, &mesh);
+    let mut writer = Writer::new(&config, &mesh);
+    // dbg!(&mesh.xi_cent);
+
+    // first output
+    writer.update_data_matrices(&mesh)?;
+    writer.write_metadata(&config)?;
+    writer.write_output()?;
     return Ok(());
 }

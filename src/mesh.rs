@@ -3,7 +3,9 @@
 // License: MIT
 
 use crate::config::meshconfig::{MeshConfig, MeshMode};
+use crate::config::outputconfig::{DataName, StructAssociation};
 use crate::errorhandling::Validation;
+use crate::writer::{DataValue, Write};
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 use ndarray::{ArrayD, IxDyn};
@@ -436,6 +438,34 @@ impl Validation for Mesh {
             self.minus_cepe
         ];
 
+        return Ok(());
+    }
+}
+
+impl Write for Mesh {
+    fn collect_data(
+        &self,
+        name: &DataName,
+        value: &mut DataValue,
+        mesh_offset: usize,
+    ) -> Result<()> {
+        match (name.association(), name) {
+            (StructAssociation::Mesh, DataName::XiCent) => {
+                self.write_vector(&self.xi_cent, value, mesh_offset)
+            }
+            (StructAssociation::Mesh, DataName::XiWest) => {
+                self.write_vector(&self.xi_west, value, mesh_offset)
+            }
+            (StructAssociation::Mesh, DataName::XiEast) => {
+                self.write_vector(&self.xi_east, value, mesh_offset)
+            }
+            (StructAssociation::Mesh, DataName::NComp) => {
+                Ok(*value = DataValue::Usize(self.n_comp))
+            }
+            (StructAssociation::Mesh, DataName::NAll) => Ok(*value = DataValue::Usize(self.n_all)),
+            // Match other associations like this:
+            // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
+        }?;
         return Ok(());
     }
 }
