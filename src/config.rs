@@ -43,19 +43,34 @@ impl Validation for CorriesConfig {
     }
 }
 
-macro_rules! add_to_metadata_string {
-    ($s:ident, $config:ident.$field:ident) => {
-        $s += &format!("# {}: {}\n", stringify!($field), $config.$field)
-    };
-}
-
 impl CorriesConfig {
     pub fn metadata_dump(&self) -> String {
         let mut s = "".to_string();
         s += "### Corries Configuration\n";
-        add_to_metadata_string!(s, self.name);
+        s += &format!("# name: {}\n", self.name);
+        s += "# meshconf:\n";
+        s += &format!("#     mode: {:?}\n", self.meshconf.mode);
+        s += &format!("#     n_comp: {}\n", self.meshconf.n_comp);
+        s += &format!("#     n_gc: {}\n", self.meshconf.n_gc);
+        s += &format!("#     xi_in: {}\n", self.meshconf.xi_in);
+        s += &format!("#     xi_out: {}\n", self.meshconf.xi_out);
+        s += &format!("#     ratio_disk: {}\n", self.meshconf.ratio_disk);
+        s += "# writerconf:\n";
+        for (i, outputconf) in self.writerconf.iter().enumerate() {
+            s += &format!("#   outputconf[{}]\n", i);
+            s += &format!("#     stream_mode: {:?}\n", outputconf.stream_mode);
+            s += &format!("#     formatter_mode: {:?}\n", outputconf.formatter_mode);
+            s += &format!("#     string_conversion_mode: {:?}\n", outputconf.string_conversion_mode);
+            s += &format!("#     folder_name: {}\n", outputconf.folder_name);
+            s += &format!("#     file_name: {}\n", outputconf.file_name);
+            s += &format!("#     precision: {}\n", outputconf.precision);
+            s += &format!("#     should_print_ghostcells: {}\n", outputconf.should_print_ghostcells);
+            s += &format!("#     should_print_metadata: {}\n", outputconf.should_print_metadata);
+            s += &format!("#     data_names: [\n",);
+            s += &format!("#       {:?}\n", outputconf.data_names);
+            s += &format!("#     ]\n",);
+        }
         s += "###\n";
-        // TODO: descend into nested configs
         return s;
     }
 }
