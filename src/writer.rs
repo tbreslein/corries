@@ -27,12 +27,13 @@ pub enum DataValue {
 }
 
 impl Writer {
-    pub fn new(config: &CorriesConfig, mesh: &Mesh, output_count_max: usize) -> Self {
+    pub fn new(config: &CorriesConfig, mesh: &Mesh, output_count_max: usize) -> Result<Self> {
         let mut outputs = vec![];
         for outputconf in config.writerconf.iter() {
-            outputs.push(Output::new(outputconf, mesh, output_count_max));
+            let output = Output::new(outputconf, mesh, output_count_max)?;
+            outputs.push(output);
         }
-        return Writer { outputs };
+        return Ok(Writer { outputs });
     }
 
     pub fn update_data_matrices(&mut self, mesh: &Mesh) -> Result<()> {
@@ -62,7 +63,7 @@ impl Writer {
 }
 
 /// Describes objects can write to an `Output`
-pub trait Write {
+pub trait CorriesWrite {
     fn collect_data(
         &self,
         name: &DataName,

@@ -5,7 +5,7 @@
 use crate::config::meshconfig::{MeshConfig, MeshMode};
 use crate::config::outputconfig::{DataName, StructAssociation};
 use crate::errorhandling::Validation;
-use crate::writer::{DataValue, Write};
+use crate::writer::{CorriesWrite, DataValue};
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 use ndarray::{ArrayD, IxDyn};
@@ -442,7 +442,7 @@ impl Validation for Mesh {
     }
 }
 
-impl Write for Mesh {
+impl CorriesWrite for Mesh {
     fn collect_data(
         &self,
         name: &DataName,

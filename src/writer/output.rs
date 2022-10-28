@@ -2,9 +2,11 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use std::io::Write;
 use std::path::Path;
+use std::fs::{create_dir_all, remove_dir_all, File};
 
-use color_eyre::{eyre::bail, Result};
+use color_eyre::{eyre::{bail, WrapErr}, Result};
 use ndarray::{ArrayD, IxDyn};
 
 use crate::{
@@ -18,7 +20,7 @@ use crate::{
     mesh::Mesh,
 };
 
-use super::{DataValue, Write};
+use super::{DataValue, CorriesWrite};
 
 pub struct Output {
     /// Index offset for printing spatially resolved data, useful for skipping ghost cells
@@ -45,6 +47,8 @@ pub struct Output {
     /// Intermediate string representation of the elements of the `data_matrix`
     delimiter: char,
 
+    leading_comment_symbol: String,
+
     /// Vector of strings ready to be written to a stream
     stream_strings: Vec<String>,
 
@@ -53,6 +57,9 @@ pub struct Output {
 
     /// Handles writing into a stream
     stream_mode: StreamMode,
+
+    // /// Folder for the files to be written to
+    // folder_name: String,
 
     /// File name for the file(s) to write file output to
     file_name: String,
@@ -68,7 +75,7 @@ pub struct Output {
 }
 
 impl Output {
-    pub fn new(outputconfig: &OutputConfig, mesh: &Mesh, output_count_max: usize) -> Self {
+    pub fn new(outputconfig: &OutputConfig, mesh: &Mesh, output_count_max: usize) -> Result<Self> {
         let rows = match outputconfig.string_conversion_mode {
             ToStringConversionMode::Scalar => 1,
             ToStringConversionMode::Vector => {
@@ -110,7 +117,17 @@ impl Output {
                 ""
             }
         };
-        return Output {
+
+        if let StreamMode::File = outputconfig.stream_mode {
+            if outputconfig.should_clear_out_folder && Path::new(&outputconfig.folder_name).is_dir() {
+                remove_dir_all(&outputconfig.folder_name).wrap_err_with(|| format!("Failed to remove directory {}", outputconfig.folder_name))?;
+            }
+            if !Path::new(&outputconfig.folder_name).is_dir() {
+                create_dir_all(&outputconfig.folder_name).wrap_err_with(|| format!("Failed to create directory {}", outputconfig.folder_name))?;
+            }
+        }
+
+        return Ok(Output {
             mesh_offset: if outputconfig.should_print_ghostcells {
                 mesh.imin
             } else {
@@ -129,9 +146,14 @@ impl Output {
                 FormatterMode::TSV => ' ',
                 FormatterMode::CSV => ',',
             },
+            leading_comment_symbol: match outputconfig.formatter_mode {
+                FormatterMode::TSV => "#".to_string(),
+                FormatterMode::CSV => "".to_string(),
+            },
             stream_strings: vec!["".to_string(); rows],
             string_conversion_mode: outputconfig.string_conversion_mode,
             stream_mode: outputconfig.stream_mode,
+            // folder_name: outputconfig.folder_name.clone(),
             file_name,
             file_name_ending: match outputconfig.formatter_mode {
                 FormatterMode::TSV => ".tsv".to_string(),
@@ -139,7 +161,7 @@ impl Output {
             },
             file_counter_width: f64::log10(output_count_max as f64) as usize + 1,
             data_names: outputconfig.data_names.clone(),
-        };
+            });
     }
 
     pub fn update_data_matrix(&mut self, mesh: &Mesh) -> Result<()> {
@@ -232,6 +254,7 @@ impl Output {
         }
         self.stream_strings.iter_mut().for_each(|line| {
             line.pop();
+            line.push('\n');
         });
         return Ok(());
     }
@@ -240,34 +263,40 @@ impl Output {
         match self.stream_mode {
             StreamMode::Stdout => {
                 if self.first_output {
-                    let mut s = "#".to_string();
-                    for name in self.data_names.iter() {
-                        let name_string = format!("{:?}", name);
-                        s += &format!("{:>width$}", name_string, width = self.width);
-                        s.push(self.delimiter);
-                    }
-                    s.pop();
-                    println!("{}", s);
+                    print!("{}", self.get_header());
                 }
                 for line in self.stream_strings.iter() {
-                    println!("{}", line);
+                    print!("{}", line);
                 }
             }
-            // TODO: implement this!
             StreamMode::File => {
                 match self.string_conversion_mode {
                     ToStringConversionMode::Scalar => {
                         let full_path_string = self.file_name.clone() + &self.file_name_ending;
                         let path = Path::new(&full_path_string);
-                        path.display();
+                        let mut file = File::options().write(true).append(!self.first_output).open(path).wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
+                        if self.first_output {
+                            file.write_all(self.get_header().as_bytes()).wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
+                        }
+                        file.write_all(self.stream_strings[0].as_bytes()).wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
                     }
                     ToStringConversionMode::Vector => {}
                 }
                 todo!();
-                // let path = Path::new(&(self.file_name.clone() + &format!("{:0w$}", self.output_counter, w=self.file_counter_width)));
-                // path.display();
             }
         }
         return Ok(());
+    }
+
+    fn get_header(&self) -> String {
+        let mut s = self.leading_comment_symbol.clone();
+        for name in self.data_names.iter() {
+            let name_string = format!("{:?}", name);
+            s += &format!("{:>width$}", name_string, width = self.width);
+            s.push(self.delimiter);
+        }
+        s.pop();
+        s.push('\n');
+        return s;
     }
 }

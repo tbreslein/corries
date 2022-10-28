@@ -21,6 +21,9 @@ pub struct OutputConfig {
     /// Which folder to write file output to
     pub folder_name: String,
 
+    /// Whether the folder contents should be cleared out at the beginning of the run
+    pub should_clear_out_folder: bool,
+
     /// File name for the file(s) to write file output to
     pub file_name: String,
 
