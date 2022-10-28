@@ -25,6 +25,7 @@ use crate::{
 
 use super::{CorriesWrite, DataValue};
 
+/// Struct that handles writing to output into a file or stdout
 pub struct Output {
     /// Index offset for printing spatially resolved data, useful for skipping ghost cells
     mesh_offset: usize,
@@ -53,6 +54,7 @@ pub struct Output {
     /// Intermediate string representation of the elements of the `data_matrix`
     delimiter: char,
 
+    /// Leading character for comments
     leading_comment_symbol: String,
 
     /// Vector of strings ready to be written to a stream
@@ -64,8 +66,6 @@ pub struct Output {
     /// Handles writing into a stream
     stream_mode: StreamMode,
 
-    // /// Folder for the files to be written to
-    // folder_name: String,
     /// File name for the file(s) to write file output to
     file_name: String,
 
@@ -77,6 +77,13 @@ pub struct Output {
 }
 
 impl Output {
+    /// Builds a new `color_eyre::Result<Output>` object.
+    ///
+    /// # Arguments
+    ///
+    /// * `outputconf` - `OutputConfig` containing configuration to build `Output` objects
+    /// * `mesh` - provides information about the mesh in this simulation
+    /// * `output_count_max` - How many distinct outputs should be written during this run
     pub fn new(outputconfig: &OutputConfig, mesh: &Mesh, output_count_max: usize) -> Result<Self> {
         let rows = match outputconfig.string_conversion_mode {
             ToStringConversionMode::Scalar => 1,
@@ -171,6 +178,12 @@ impl Output {
         });
     }
 
+    /// Goes through `self.datanames` and pulls data from the other arguments writing that data
+    /// into `self.data_matrix`.
+    ///
+    /// # Arguments
+    ///
+    /// * `mesh` - `Mesh` object to pull data from
     pub fn update_data_matrix(&mut self, mesh: &Mesh) -> Result<()> {
         for (i, name) in self.data_names.iter().enumerate() {
             match name.association() {
@@ -182,6 +195,7 @@ impl Output {
         return Ok(());
     }
 
+    /// Makes this `Output` object write data in `self.data_matrix` into a stream.
     pub fn write_output(&mut self) -> Result<()> {
         self.data_matrix_to_stream_strings()?;
         self.stream()?;
@@ -189,16 +203,18 @@ impl Output {
         return Ok(());
     }
 
+    /// Makes this `Output` object write meta data in `self.data_matrix` into a stream.
     pub fn write_metadata(&self, config: &CorriesConfig) -> Result<()> {
         match self.stream_mode {
             StreamMode::Stdout => {
                 println!("{}", config.metadata_dump());
             }
-            StreamMode::File => {}
+            StreamMode::File => todo!()
         }
         return Ok(());
     }
 
+    /// Transforms `self.data_matrix` into `self.stream_strings`.
     fn data_matrix_to_stream_strings(&mut self) -> Result<()> {
         self.stream_strings.iter_mut().for_each(|line| line.clear());
         match self.string_conversion_mode {
@@ -266,6 +282,7 @@ impl Output {
         return Ok(());
     }
 
+    /// Writes `self.stream_strings` into a stream depending on `self.stream_mode`.
     fn stream(&mut self) -> Result<()> {
         match self.stream_mode {
             StreamMode::Stdout => {
@@ -325,6 +342,7 @@ impl Output {
         return Ok(());
     }
 
+    /// Returns the header for writing output.
     fn get_header(&self) -> String {
         let mut s = self.leading_comment_symbol.clone();
         for name in self.data_names.iter() {
@@ -337,6 +355,7 @@ impl Output {
         return s;
     }
 
+    /// Returns the `String` containing the output counter padded with leading zeros.
     fn get_output_count_string(&self) -> String {
         return format!("{:0w$}", self.output_counter, w = self.output_counter_width);
     }

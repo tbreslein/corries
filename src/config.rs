@@ -44,6 +44,8 @@ impl Validation for CorriesConfig {
 }
 
 impl CorriesConfig {
+    /// Writes metadata, mostly just the contents of this struct and its nested structs, into a
+    /// `String`.
     pub fn metadata_dump(&self) -> String {
         let mut s = "".to_string();
         s += "### Corries Configuration\n";

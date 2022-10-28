@@ -197,6 +197,11 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    /// Builds a new `color_eyre::Result<Mesh>` object.
+    ///
+    /// # Arguments
+    ///
+    /// * `meshconf` - `MeshConfig` containing configuration to build `Mesh` objects
     pub fn new(meshconf: &MeshConfig) -> Result<Mesh> {
         let mode = meshconf.mode;
         let is_logarithmic = match mode {
@@ -386,11 +391,6 @@ impl Mesh {
 }
 
 impl Validation for Mesh {
-    /// Validates fields of the struct to make sure they are coherent.
-    ///
-    /// The fields of most structs should be adhering to some rules, like most doubles should
-    /// probably be finite, most arrays should be non-empty and have finite entries, etc.. This
-    /// function tests this.
     fn validate(&self) -> Result<()> {
         // checks on doubles
         check_finite_multiple_doubles![self.dxi, self.deta, self.dphi];
