@@ -5,9 +5,9 @@
 pub trait Numflux {}
 
 pub fn init_numflux() -> Box<dyn Numflux> {
-    return Box::new(HLL {});
+    return Box::new(Hll {});
 }
 
-pub struct HLL {}
+pub struct Hll {}
 
-impl Numflux for HLL {}
+impl Numflux for Hll {}

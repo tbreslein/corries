@@ -8,13 +8,14 @@ use self::numflux::init_numflux;
 
 mod numflux;
 
-pub struct RHS {
+pub struct Rhs {
     _numflux: Box<dyn numflux::Numflux>,
 }
 
-impl RHS {
-    pub fn new() -> Result<RHS> {
-        return Ok(RHS { _numflux: init_numflux() })
+impl Rhs {
+    pub fn new() -> Result<Rhs> {
+        return Ok(Rhs {
+            _numflux: init_numflux(),
+        });
     }
 }
-

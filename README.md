@@ -27,7 +27,6 @@ Things to read:
 
 ### Small things
 
-- [ ] convenience makefile
 - [ ] terminal banner
 - [ ] more linting?
 - [ ] can I macro metadata_dump?
