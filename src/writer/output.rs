@@ -203,7 +203,18 @@ impl Output {
             StreamMode::Stdout => {
                 println!("{}", config.metadata_dump());
             },
-            StreamMode::File => todo!(),
+            StreamMode::File => {
+                let full_path_string = self.file_name.clone() + "_metadata.dat";
+                let path = Path::new(&full_path_string);
+                let mut file = File::options()
+                    .write(true)
+                    .append(false)
+                    .create(true)
+                    .open(path)
+                    .wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
+                file.write_all(config.metadata_dump().as_bytes())
+                    .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
+            },
         }
         return Ok(());
     }
