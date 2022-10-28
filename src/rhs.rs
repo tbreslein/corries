@@ -9,12 +9,12 @@ use self::numflux::init_numflux;
 mod numflux;
 
 pub struct RHS {
-    numflux: Box<dyn numflux::Numflux>,
+    _numflux: Box<dyn numflux::Numflux>,
 }
 
 impl RHS {
     pub fn new() -> Result<RHS> {
-        return Ok(RHS { numflux: init_numflux() })
+        return Ok(RHS { _numflux: init_numflux() })
     }
 }
 
