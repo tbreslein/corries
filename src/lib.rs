@@ -7,12 +7,13 @@ use config::CorriesConfig;
 use mesh::Mesh;
 use writer::Writer;
 
-use crate::errorhandling::Validation;
+use crate::{errorhandling::Validation, rhs::RHS};
 
 pub mod config;
 #[macro_use]
 mod errorhandling;
 mod mesh;
+mod rhs;
 mod writer;
 
 /// Runs a Corries simulation.
@@ -23,6 +24,8 @@ mod writer;
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
+    let _rhs = RHS::new();
+
     // TEMP:
     let output_count_max = 2;
     let mut writer = Writer::new(&config, &mesh, output_count_max)?;
