@@ -31,17 +31,17 @@ fn main() -> Result<()> {
                 should_print_metadata: true,
                 data_names: vec![DataName::NComp, DataName::NAll],
             },
-            // config::outputconfig::OutputConfig {
-            //     stream_mode: StreamMode::File,
-            //     formatter_mode: FormatterMode::CSV,
-            //     string_conversion_mode: ToStringConversionMode::Vector,
-            //     folder_name: "results/accretiondisk".to_string(),
-            //     file_name: "accretiondisk".to_string(),
-            //     precision: 7,
-            //     should_print_ghostcells: true,
-            //     should_print_metadata: false,
-            //     data: vec![DataName::XiCent],
-            // },
+            config::outputconfig::OutputConfig {
+                stream_mode: StreamMode::File,
+                formatter_mode: FormatterMode::TSV,
+                string_conversion_mode: ToStringConversionMode::Vector,
+                folder_name: "results/accretiondisk".to_string(),
+                file_name: "accretiondisk".to_string(),
+                precision: 7,
+                should_print_ghostcells: true,
+                should_print_metadata: false,
+                data_names: vec![DataName::NComp, DataName::XiCent],
+            },
         ],
     })
 }

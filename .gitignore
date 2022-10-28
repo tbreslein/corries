@@ -12,3 +12,4 @@ Cargo.lock
 # nix/direnv specific
 .direnv/
 result
+results/

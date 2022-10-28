@@ -57,6 +57,9 @@ pub struct Output {
     /// File name for the file(s) to write file output to
     file_name: String,
 
+    /// Ending of the file name (like .csv)
+    file_name_ending: String,
+
     /// How many digits the file counter for file output needs
     file_counter_width: usize,
 
@@ -88,6 +91,25 @@ impl Output {
                 )),
             };
         }
+
+        let file_name = if outputconfig.folder_name.ends_with("/") {
+            outputconfig.folder_name.clone() + &outputconfig.file_name.clone()
+        } else {
+            // make sure there is a / between folder and file names
+            outputconfig.folder_name.clone() + "/" + &outputconfig.file_name.clone()
+        } + {
+            if let ToStringConversionMode::Vector = outputconfig.string_conversion_mode {
+                // vector output files are seperated into multiple files, and have to enumerated.
+                // for example, the format of one of those file names could be:
+                // /path/to/my/output_0420.csv
+                // where the _ seperates the filename root and the output counter, and output
+                // counter is an integer with leading zeros as padding to make sure you can
+                // correctly sort the files.
+                "_"
+            } else {
+                ""
+            }
+        };
         return Output {
             mesh_offset: if outputconfig.should_print_ghostcells {
                 mesh.imin
@@ -110,10 +132,10 @@ impl Output {
             stream_strings: vec!["".to_string(); rows],
             string_conversion_mode: outputconfig.string_conversion_mode,
             stream_mode: outputconfig.stream_mode,
-            file_name: if outputconfig.folder_name.ends_with("/") {
-                outputconfig.folder_name.clone() + &outputconfig.file_name.clone() + "_"
-            } else {
-                outputconfig.folder_name.clone() + "/" + &outputconfig.file_name.clone() + "_"
+            file_name,
+            file_name_ending: match outputconfig.formatter_mode {
+                FormatterMode::TSV => ".tsv".to_string(),
+                FormatterMode::CSV => ".csv".to_string(),
             },
             file_counter_width: f64::log10(output_count_max as f64) as usize + 1,
             data_names: outputconfig.data_names.clone(),
@@ -230,9 +252,17 @@ impl Output {
                 for line in self.stream_strings.iter() {
                     println!("{}", line);
                 }
-            },
+            }
             // TODO: implement this!
             StreamMode::File => {
+                match self.string_conversion_mode {
+                    ToStringConversionMode::Scalar => {
+                        let full_path_string = self.file_name.clone() + &self.file_name_ending;
+                        let path = Path::new(&full_path_string);
+                        path.display();
+                    }
+                    ToStringConversionMode::Vector => {}
+                }
                 todo!();
                 // let path = Path::new(&(self.file_name.clone() + &format!("{:0w$}", self.output_counter, w=self.file_counter_width)));
                 // path.display();
