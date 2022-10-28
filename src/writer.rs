@@ -90,12 +90,7 @@ pub trait CorriesWrite {
     /// * `value` - Where to write the data to
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
-    fn collect_data(
-        &self,
-        name: &DataName,
-        value: &mut DataValue,
-        mesh_offset: usize,
-    ) -> Result<()>;
+    fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()>;
 
     /// Writes a vector-like `field` to a `value`.
     ///
@@ -105,12 +100,7 @@ pub trait CorriesWrite {
     /// * `value` - Where to write the data to
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
-    fn write_vector(
-        &self,
-        field: &ArrayD<f64>,
-        value: &mut DataValue,
-        mesh_offset: usize,
-    ) -> Result<()> {
+    fn write_vector(&self, field: &ArrayD<f64>, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         return match value {
             DataValue::VectorFloat(v) => {
                 if mesh_offset == 0 {
@@ -120,7 +110,7 @@ pub trait CorriesWrite {
                     v.assign(&field.slice(s![mesh_offset..field.len() - mesh_offset]));
                     Ok(())
                 }
-            }
+            },
             _ => bail!(
                 "Tried assigning vector field to non-vector DataValue!\nfield: {}\nvalue: {:?}",
                 field,

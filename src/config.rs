@@ -31,13 +31,9 @@ pub struct CorriesConfig {
 impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {
         ensure!(!self.name.is_empty(), "name must not be empty!");
-        self.meshconf
-            .validate()
-            .context("Validating config.meshconf")?;
+        self.meshconf.validate().context("Validating config.meshconf")?;
         for outputconf in self.writerconf.iter() {
-            outputconf
-                .validate()
-                .context("Validating config.writerconf")?;
+            outputconf.validate().context("Validating config.writerconf")?;
         }
         return Ok(());
     }
@@ -77,10 +73,7 @@ impl CorriesConfig {
                 "#     should_print_ghostcells: {}\n",
                 outputconf.should_print_ghostcells
             );
-            s += &format!(
-                "#     should_print_metadata: {}\n",
-                outputconf.should_print_metadata
-            );
+            s += &format!("#     should_print_metadata: {}\n", outputconf.should_print_metadata);
             s += "#     data_names: [\n";
             s += &format!("#       {:?}\n", outputconf.data_names);
             s += "#     ]\n";

@@ -308,10 +308,8 @@ impl Mesh {
         let cell_width = &xi_east - &xi_west;
         let cell_width_inv = cell_width.mapv(f64::recip);
 
-        let cexe =
-            0.5 * (&h_phi_east + &h_phi_west) * (&h_eta_east - &h_eta_west) * &deta_dphi_d_volume;
-        let cpxp =
-            0.5 * (&h_eta_east + &h_eta_west) * (&h_phi_east - &h_phi_west) * &deta_dphi_d_volume;
+        let cexe = 0.5 * (&h_phi_east + &h_phi_west) * (&h_eta_east - &h_eta_west) * &deta_dphi_d_volume;
+        let cpxp = 0.5 * (&h_eta_east + &h_eta_west) * (&h_phi_east - &h_phi_west) * &deta_dphi_d_volume;
 
         let cxex = xi_cent.mapv(|_| 1.0);
         let cpep = xi_cent.mapv(|_| 1.0);
@@ -443,31 +441,20 @@ impl Validation for Mesh {
 }
 
 impl CorriesWrite for Mesh {
-    fn collect_data(
-        &self,
-        name: &DataName,
-        value: &mut DataValue,
-        mesh_offset: usize,
-    ) -> Result<()> {
+    fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
-            (StructAssociation::Mesh, DataName::XiCent) => {
-                self.write_vector(&self.xi_cent, value, mesh_offset)
-            }
-            (StructAssociation::Mesh, DataName::XiWest) => {
-                self.write_vector(&self.xi_west, value, mesh_offset)
-            }
-            (StructAssociation::Mesh, DataName::XiEast) => {
-                self.write_vector(&self.xi_east, value, mesh_offset)
-            }
+            (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent, value, mesh_offset),
+            (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west, value, mesh_offset),
+            (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east, value, mesh_offset),
             (StructAssociation::Mesh, DataName::NComp) => {
                 *value = DataValue::Usize(self.n_comp);
                 Ok(())
-            }
+            },
             (StructAssociation::Mesh, DataName::NAll) => {
                 *value = DataValue::Usize(self.n_all);
                 Ok(())
-            } // Match other associations like this:
-              // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
+            }, // Match other associations like this:
+               // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
         }?;
         return Ok(());
     }

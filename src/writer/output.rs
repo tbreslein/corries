@@ -15,8 +15,7 @@ use ndarray::{ArrayD, IxDyn};
 use crate::{
     config::{
         outputconfig::{
-            DataName, DataType, FormatterMode, OutputConfig, StreamMode, StructAssociation,
-            ToStringConversionMode,
+            DataName, DataType, FormatterMode, OutputConfig, StreamMode, StructAssociation, ToStringConversionMode,
         },
         CorriesConfig,
     },
@@ -93,7 +92,7 @@ impl Output {
                 } else {
                     mesh.n_comp
                 }
-            }
+            },
         };
         let mut data_matrix = vec![];
         for name in outputconfig.data_names.iter() {
@@ -102,9 +101,9 @@ impl Output {
                 DataType::Usize => data_matrix.push(DataValue::Usize(0)),
                 DataType::Float => data_matrix.push(DataValue::Float(0.0)),
                 DataType::String => data_matrix.push(DataValue::String("".to_string())),
-                DataType::VectorFloat => data_matrix.push(DataValue::VectorFloat(
-                    ArrayD::from_elem(IxDyn(&[rows]), 0.0),
-                )),
+                DataType::VectorFloat => {
+                    data_matrix.push(DataValue::VectorFloat(ArrayD::from_elem(IxDyn(&[rows]), 0.0)))
+                },
             };
         }
 
@@ -128,16 +127,13 @@ impl Output {
         };
 
         if let StreamMode::File = outputconfig.stream_mode {
-            if outputconfig.should_clear_out_folder && Path::new(&outputconfig.folder_name).is_dir()
-            {
-                remove_dir_all(&outputconfig.folder_name).wrap_err_with(|| {
-                    format!("Failed to remove directory {}", outputconfig.folder_name)
-                })?;
+            if outputconfig.should_clear_out_folder && Path::new(&outputconfig.folder_name).is_dir() {
+                remove_dir_all(&outputconfig.folder_name)
+                    .wrap_err_with(|| format!("Failed to remove directory {}", outputconfig.folder_name))?;
             }
             if !Path::new(&outputconfig.folder_name).is_dir() {
-                create_dir_all(&outputconfig.folder_name).wrap_err_with(|| {
-                    format!("Failed to create directory {}", outputconfig.folder_name)
-                })?;
+                create_dir_all(&outputconfig.folder_name)
+                    .wrap_err_with(|| format!("Failed to create directory {}", outputconfig.folder_name))?;
             }
         }
 
@@ -187,9 +183,7 @@ impl Output {
     pub fn update_data_matrix(&mut self, mesh: &Mesh) -> Result<()> {
         for (i, name) in self.data_names.iter().enumerate() {
             match name.association() {
-                StructAssociation::Mesh => {
-                    mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset)
-                }
+                StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
             }?;
         }
         return Ok(());
@@ -208,8 +202,8 @@ impl Output {
         match self.stream_mode {
             StreamMode::Stdout => {
                 println!("{}", config.metadata_dump());
-            }
-            StreamMode::File => todo!()
+            },
+            StreamMode::File => todo!(),
         }
         return Ok(());
     }
@@ -221,59 +215,45 @@ impl Output {
             ToStringConversionMode::Scalar => {
                 for value in self.data_matrix.iter() {
                     match value {
-                        DataValue::Int(x) => {
-                            self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
-                        }
-                        DataValue::Usize(x) => {
-                            self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
-                        }
+                        DataValue::Int(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
+                        DataValue::Usize(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::Float(x) => {
-                            self.stream_strings[0] +=
-                                &format!("{:>width$.*}", self.precision, x, width = self.width)
-                        }
-                        DataValue::String(x) => {
-                            self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
-                        }
+                            self.stream_strings[0] += &format!("{:>width$.*}", self.precision, x, width = self.width)
+                        },
+                        DataValue::String(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::VectorFloat(_) => {
                             bail!("Tried writing a vector into a scalar output!")
-                        }
+                        },
                     };
                     self.stream_strings[0].push(self.delimiter);
                 }
-            }
+            },
             ToStringConversionMode::Vector => {
                 for value in self.data_matrix.iter() {
                     for i in 0..self.stream_strings.len() {
                         match value {
                             DataValue::Int(x) => {
-                                self.stream_strings[i] +=
-                                    &format!("{:>width$}", x, width = self.width)
-                            }
+                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                            },
                             DataValue::Usize(x) => {
-                                self.stream_strings[i] +=
-                                    &format!("{:>width$}", x, width = self.width)
-                            }
+                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                            },
                             DataValue::Float(x) => {
                                 self.stream_strings[i] +=
                                     &format!("{:>width$.*}", self.precision, x, width = self.width)
-                            }
+                            },
                             DataValue::String(x) => {
-                                self.stream_strings[i] +=
-                                    &format!("{:>width$}", x, width = self.width)
-                            }
+                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                            },
                             DataValue::VectorFloat(v) => {
-                                self.stream_strings[i] += &format!(
-                                    "{:>width$.*}",
-                                    self.precision,
-                                    v[i],
-                                    width = self.width
-                                )
-                            }
+                                self.stream_strings[i] +=
+                                    &format!("{:>width$.*}", self.precision, v[i], width = self.width)
+                            },
                         };
                         self.stream_strings[i].push(self.delimiter);
                     }
                 }
-            }
+            },
         }
         self.stream_strings.iter_mut().for_each(|line| {
             line.pop();
@@ -292,7 +272,7 @@ impl Output {
                 for line in self.stream_strings.iter() {
                     print!("{}", line);
                 }
-            }
+            },
             StreamMode::File => match self.string_conversion_mode {
                 ToStringConversionMode::Scalar => {
                     let full_path_string = self.file_name.clone() + &self.file_name_ending;
@@ -306,19 +286,14 @@ impl Output {
 
                     if self.first_output {
                         file.write_all(self.get_header().as_bytes())
-                            .wrap_err_with(|| {
-                                format!("Failed to write to file: {}!", path.display())
-                            })?;
+                            .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
                     }
                     file.write_all(self.stream_strings[0].as_bytes())
-                        .wrap_err_with(|| {
-                            format!("Failed to write to file: {}!", path.display())
-                        })?;
-                }
+                        .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
+                },
                 ToStringConversionMode::Vector => {
-                    let full_path_string = self.file_name.clone()
-                        + &self.get_output_count_string()
-                        + &self.file_name_ending;
+                    let full_path_string =
+                        self.file_name.clone() + &self.get_output_count_string() + &self.file_name_ending;
                     let path = Path::new(&full_path_string);
                     let mut file = File::options()
                         .write(true)
@@ -328,15 +303,12 @@ impl Output {
                         .wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
 
                     file.write_all(self.get_header().as_bytes())
-                        .wrap_err_with(|| {
-                            format!("Failed to write to file: {}!", path.display())
-                        })?;
+                        .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
                     for line in self.stream_strings.iter() {
-                        file.write_all(line.as_bytes()).wrap_err_with(|| {
-                            format!("Failed to write to file: {}!", path.display())
-                        })?;
+                        file.write_all(line.as_bytes())
+                            .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
                     }
-                }
+                },
             },
         }
         return Ok(());
