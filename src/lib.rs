@@ -24,12 +24,13 @@ pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
     // TEMP:
-    let output_count_max = 10;
+    let output_count_max = 2;
     let mut writer = Writer::new(&config, &mesh, output_count_max)?;
 
     // first output
     writer.update_data_matrices(&mesh)?;
     writer.write_metadata(&config)?;
+    println!("{}", mesh.xi_cent);
     writer.write_output()?;
     return Ok(());
 }

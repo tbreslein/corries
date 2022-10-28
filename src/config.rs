@@ -60,12 +60,21 @@ impl CorriesConfig {
             s += &format!("#   outputconf[{}]\n", i);
             s += &format!("#     stream_mode: {:?}\n", outputconf.stream_mode);
             s += &format!("#     formatter_mode: {:?}\n", outputconf.formatter_mode);
-            s += &format!("#     string_conversion_mode: {:?}\n", outputconf.string_conversion_mode);
+            s += &format!(
+                "#     string_conversion_mode: {:?}\n",
+                outputconf.string_conversion_mode
+            );
             s += &format!("#     folder_name: {}\n", outputconf.folder_name);
             s += &format!("#     file_name: {}\n", outputconf.file_name);
             s += &format!("#     precision: {}\n", outputconf.precision);
-            s += &format!("#     should_print_ghostcells: {}\n", outputconf.should_print_ghostcells);
-            s += &format!("#     should_print_metadata: {}\n", outputconf.should_print_metadata);
+            s += &format!(
+                "#     should_print_ghostcells: {}\n",
+                outputconf.should_print_ghostcells
+            );
+            s += &format!(
+                "#     should_print_metadata: {}\n",
+                outputconf.should_print_metadata
+            );
             s += "#     data_names: [\n";
             s += &format!("#       {:?}\n", outputconf.data_names);
             s += "#     ]\n";

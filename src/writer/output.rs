@@ -2,11 +2,14 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::Write;
 use std::path::Path;
-use std::fs::{create_dir_all, remove_dir_all, File};
 
-use color_eyre::{eyre::{bail, WrapErr}, Result};
+use color_eyre::{
+    eyre::{bail, WrapErr},
+    Result,
+};
 use ndarray::{ArrayD, IxDyn};
 
 use crate::{
@@ -20,7 +23,7 @@ use crate::{
     mesh::Mesh,
 };
 
-use super::{DataValue, CorriesWrite};
+use super::{CorriesWrite, DataValue};
 
 pub struct Output {
     /// Index offset for printing spatially resolved data, useful for skipping ghost cells
@@ -31,6 +34,9 @@ pub struct Output {
 
     /// Current output counter
     output_counter: usize,
+
+    /// How many digits the file counter for file output needs
+    output_counter_width: usize,
 
     /// Whether this `Output` should write metadata into its `Stream`
     pub should_print_metadata: bool,
@@ -60,15 +66,11 @@ pub struct Output {
 
     // /// Folder for the files to be written to
     // folder_name: String,
-
     /// File name for the file(s) to write file output to
     file_name: String,
 
     /// Ending of the file name (like .csv)
     file_name_ending: String,
-
-    /// How many digits the file counter for file output needs
-    file_counter_width: usize,
 
     /// Identifiers for the data being written to the stream
     data_names: Vec<DataName>,
@@ -119,11 +121,16 @@ impl Output {
         };
 
         if let StreamMode::File = outputconfig.stream_mode {
-            if outputconfig.should_clear_out_folder && Path::new(&outputconfig.folder_name).is_dir() {
-                remove_dir_all(&outputconfig.folder_name).wrap_err_with(|| format!("Failed to remove directory {}", outputconfig.folder_name))?;
+            if outputconfig.should_clear_out_folder && Path::new(&outputconfig.folder_name).is_dir()
+            {
+                remove_dir_all(&outputconfig.folder_name).wrap_err_with(|| {
+                    format!("Failed to remove directory {}", outputconfig.folder_name)
+                })?;
             }
             if !Path::new(&outputconfig.folder_name).is_dir() {
-                create_dir_all(&outputconfig.folder_name).wrap_err_with(|| format!("Failed to create directory {}", outputconfig.folder_name))?;
+                create_dir_all(&outputconfig.folder_name).wrap_err_with(|| {
+                    format!("Failed to create directory {}", outputconfig.folder_name)
+                })?;
             }
         }
 
@@ -135,6 +142,7 @@ impl Output {
             },
             first_output: true,
             output_counter: 0,
+            output_counter_width: f64::log10(output_count_max as f64) as usize + 1,
             should_print_metadata: outputconfig.should_print_metadata,
             precision: outputconfig.precision,
             width: match outputconfig.formatter_mode {
@@ -159,9 +167,8 @@ impl Output {
                 FormatterMode::TSV => ".tsv".to_string(),
                 FormatterMode::CSV => ".csv".to_string(),
             },
-            file_counter_width: f64::log10(output_count_max as f64) as usize + 1,
             data_names: outputconfig.data_names.clone(),
-            });
+        });
     }
 
     pub fn update_data_matrix(&mut self, mesh: &Mesh) -> Result<()> {
@@ -274,15 +281,50 @@ impl Output {
                     ToStringConversionMode::Scalar => {
                         let full_path_string = self.file_name.clone() + &self.file_name_ending;
                         let path = Path::new(&full_path_string);
-                        let mut file = File::options().write(true).append(!self.first_output).open(path).wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
+                        let mut file = File::options()
+                            .write(true)
+                            .append(!self.first_output)
+                            .create(true)
+                            .open(path)
+                            .wrap_err_with(|| {
+                                format!("Failed to open file: {}!", path.display())
+                            })?;
+
                         if self.first_output {
-                            file.write_all(self.get_header().as_bytes()).wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
+                            file.write_all(self.get_header().as_bytes())
+                                .wrap_err_with(|| {
+                                    format!("Failed to write to file: {}!", path.display())
+                                })?;
                         }
-                        file.write_all(self.stream_strings[0].as_bytes()).wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
+                        file.write_all(self.stream_strings[0].as_bytes())
+                            .wrap_err_with(|| {
+                                format!("Failed to write to file: {}!", path.display())
+                            })?;
                     }
-                    ToStringConversionMode::Vector => {}
+                    ToStringConversionMode::Vector => {
+                        let full_path_string = self.file_name.clone() + &self.get_output_count_string() +  &self.file_name_ending;
+                        let path = Path::new(&full_path_string);
+                        let mut file = File::options()
+                            .write(true)
+                            .append(false)
+                            .create(true)
+                            .open(path)
+                            .wrap_err_with(|| {
+                                format!("Failed to open file: {}!", path.display())
+                            })?;
+
+                        file.write_all(self.get_header().as_bytes())
+                            .wrap_err_with(|| {
+                                format!("Failed to write to file: {}!", path.display())
+                            })?;
+                        for line in self.stream_strings.iter() {
+                            file.write_all(line.as_bytes())
+                                .wrap_err_with(|| {
+                                    format!("Failed to write to file: {}!", path.display())
+                                })?;
+                        }
+                    }
                 }
-                todo!();
             }
         }
         return Ok(());
@@ -298,5 +340,9 @@ impl Output {
         s.pop();
         s.push('\n');
         return s;
+    }
+
+    fn get_output_count_string(&self) -> String {
+        return format!("{:0w$}", self.output_counter, w = self.output_counter_width);
     }
 }
