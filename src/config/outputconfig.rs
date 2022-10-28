@@ -66,14 +66,14 @@ impl Validation for OutputConfig {
 }
 
 /// Enumerates the different streams an `Output` may write to
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StreamMode {
     Stdout,
     File,
 }
 
 /// Enumerates whether an `Output` writes scalar or vector values
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToStringConversionMode {
     Scalar,
     Vector,
@@ -118,7 +118,7 @@ pub enum DataName {
 ///
 /// This has overlap with corries::writer::DataValue, but I needed an enum without a payload to
 /// implement DataName::datatype().
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DataType {
     Int,
     Usize,

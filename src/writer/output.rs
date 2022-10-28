@@ -107,7 +107,7 @@ impl Output {
             };
         }
 
-        let file_name = if outputconfig.folder_name.ends_with("/") {
+        let file_name = if outputconfig.folder_name.ends_with('/') {
             outputconfig.folder_name.clone() + &outputconfig.file_name.clone()
         } else {
             // make sure there is a / between folder and file names
