@@ -7,7 +7,7 @@ use config::CorriesConfig;
 use mesh::Mesh;
 use writer::Writer;
 
-use crate::{errorhandling::Validation, rhs::Rhs};
+use crate::{errorhandling::Validation, rhs::Rhs, config::outputconfig::StreamMode};
 
 pub mod config;
 #[macro_use]
@@ -31,9 +31,23 @@ pub fn run_sim(config: CorriesConfig) -> Result<()> {
     let mut writer = Writer::new(&config, &mesh, output_count_max)?;
 
     // first output
+    if writer.outputs.iter().any(|o| o.stream_mode == StreamMode::Stdout) {
+        print_banner();
+    }
     writer.update_data_matrices(&mesh)?;
     writer.write_metadata(&config)?;
-    println!("{}", mesh.xi_cent);
     writer.write_output()?;
     return Ok(());
+}
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+fn print_banner() {
+    println!("# ********************************************");
+    println!("# *** Corries - corrosive Riemann solver ");
+    println!("# *** ");
+    println!("# *** Version: {}", VERSION);
+    println!("# *** Copyright (c) 2022");
+    println!("# *** Author: tbreslein <github.com/tbreslein>");
+    println!("# *** License: MIT");
+    println!("# ********************************************");
 }

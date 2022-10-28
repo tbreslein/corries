@@ -63,7 +63,7 @@ pub struct Output {
     string_conversion_mode: ToStringConversionMode,
 
     /// Handles writing into a stream
-    stream_mode: StreamMode,
+    pub stream_mode: StreamMode,
 
     /// File name for the file(s) to write file output to
     file_name: String,

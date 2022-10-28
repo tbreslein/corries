@@ -27,7 +27,6 @@ Things to read:
 
 ### Small things
 
-- [ ] terminal banner
 - [ ] more linting?
 - [ ] can I macro metadata_dump?
 
