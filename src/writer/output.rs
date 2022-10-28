@@ -276,56 +276,51 @@ impl Output {
                     print!("{}", line);
                 }
             }
-            StreamMode::File => {
-                match self.string_conversion_mode {
-                    ToStringConversionMode::Scalar => {
-                        let full_path_string = self.file_name.clone() + &self.file_name_ending;
-                        let path = Path::new(&full_path_string);
-                        let mut file = File::options()
-                            .write(true)
-                            .append(!self.first_output)
-                            .create(true)
-                            .open(path)
-                            .wrap_err_with(|| {
-                                format!("Failed to open file: {}!", path.display())
-                            })?;
+            StreamMode::File => match self.string_conversion_mode {
+                ToStringConversionMode::Scalar => {
+                    let full_path_string = self.file_name.clone() + &self.file_name_ending;
+                    let path = Path::new(&full_path_string);
+                    let mut file = File::options()
+                        .write(true)
+                        .append(!self.first_output)
+                        .create(true)
+                        .open(path)
+                        .wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
 
-                        if self.first_output {
-                            file.write_all(self.get_header().as_bytes())
-                                .wrap_err_with(|| {
-                                    format!("Failed to write to file: {}!", path.display())
-                                })?;
-                        }
-                        file.write_all(self.stream_strings[0].as_bytes())
-                            .wrap_err_with(|| {
-                                format!("Failed to write to file: {}!", path.display())
-                            })?;
-                    }
-                    ToStringConversionMode::Vector => {
-                        let full_path_string = self.file_name.clone() + &self.get_output_count_string() +  &self.file_name_ending;
-                        let path = Path::new(&full_path_string);
-                        let mut file = File::options()
-                            .write(true)
-                            .append(false)
-                            .create(true)
-                            .open(path)
-                            .wrap_err_with(|| {
-                                format!("Failed to open file: {}!", path.display())
-                            })?;
-
+                    if self.first_output {
                         file.write_all(self.get_header().as_bytes())
                             .wrap_err_with(|| {
                                 format!("Failed to write to file: {}!", path.display())
                             })?;
-                        for line in self.stream_strings.iter() {
-                            file.write_all(line.as_bytes())
-                                .wrap_err_with(|| {
-                                    format!("Failed to write to file: {}!", path.display())
-                                })?;
-                        }
+                    }
+                    file.write_all(self.stream_strings[0].as_bytes())
+                        .wrap_err_with(|| {
+                            format!("Failed to write to file: {}!", path.display())
+                        })?;
+                }
+                ToStringConversionMode::Vector => {
+                    let full_path_string = self.file_name.clone()
+                        + &self.get_output_count_string()
+                        + &self.file_name_ending;
+                    let path = Path::new(&full_path_string);
+                    let mut file = File::options()
+                        .write(true)
+                        .append(false)
+                        .create(true)
+                        .open(path)
+                        .wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
+
+                    file.write_all(self.get_header().as_bytes())
+                        .wrap_err_with(|| {
+                            format!("Failed to write to file: {}!", path.display())
+                        })?;
+                    for line in self.stream_strings.iter() {
+                        file.write_all(line.as_bytes()).wrap_err_with(|| {
+                            format!("Failed to write to file: {}!", path.display())
+                        })?;
                     }
                 }
-            }
+            },
         }
         return Ok(());
     }
