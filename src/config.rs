@@ -65,6 +65,10 @@ impl CorriesConfig {
                 outputconf.string_conversion_mode
             );
             s += &format!("#     folder_name: {}\n", outputconf.folder_name);
+            s += &format!(
+                "#     should_clear_out_folder: {}\n",
+                outputconf.should_clear_out_folder
+            );
             s += &format!("#     file_name: {}\n", outputconf.file_name);
             s += &format!("#     precision: {}\n", outputconf.precision);
             s += &format!(
