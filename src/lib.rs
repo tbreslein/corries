@@ -5,14 +5,16 @@
 use color_eyre::{eyre::Context, Result};
 use config::CorriesConfig;
 use mesh::Mesh;
+use physics::init_physics;
 use writer::Writer;
 
-use crate::{errorhandling::Validation, rhs::Rhs, config::outputconfig::StreamMode};
+use crate::{config::outputconfig::StreamMode, errorhandling::Validation, rhs::Rhs};
 
 pub mod config;
 #[macro_use]
 mod errorhandling;
 mod mesh;
+mod physics;
 mod rhs;
 mod writer;
 
@@ -24,6 +26,7 @@ mod writer;
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
+    let _u = init_physics().context("Constructing Physics")?;
     let _rhs = Rhs::new();
 
     // TEMP:

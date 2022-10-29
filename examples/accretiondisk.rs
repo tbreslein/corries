@@ -4,14 +4,15 @@
 
 use color_eyre::Result;
 use corries::config;
-use corries::config::meshconfig::MeshMode;
-use corries::config::outputconfig::{DataName, FormatterMode, StreamMode, ToStringConversionMode};
+use corries::config::meshconfig::{MeshConfig, MeshMode};
+use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
+use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode, UnitsMode};
 use corries::run_sim;
 
 fn main() -> Result<()> {
     run_sim(config::CorriesConfig {
         name: "accretiondisk".to_string(),
-        meshconf: config::meshconfig::MeshConfig {
+        meshconf: MeshConfig {
             mode: MeshMode::Cartesian,
             n_comp: 10,
             n_gc: 2,
@@ -19,8 +20,22 @@ fn main() -> Result<()> {
             xi_out: 10.0,
             ratio_disk: 1.0,
         },
+        physicsconf: PhysicsConfig {
+            mode: PhysicsMode::Euler1DIsot,
+            units_mode: UnitsMode::SI,
+            mu_si: 1.0,
+            critical_reynolds: 2000.0,
+            adiabatic_index: 2.0 / 3.0,
+            c_sound_0: 1.0,
+            temperature_0: 300.0,
+            init_with_c_sound: true,
+            m_central_0: 10.0e+6,
+            m_disk_0: 10.0e+9,
+            accretion_efficiency: 0.1,
+            use_eddington_limit: true,
+        },
         writerconf: vec![
-            config::outputconfig::OutputConfig {
+            OutputConfig {
                 stream_mode: StreamMode::Stdout,
                 formatter_mode: FormatterMode::TSV,
                 string_conversion_mode: ToStringConversionMode::Scalar,
@@ -32,7 +47,7 @@ fn main() -> Result<()> {
                 should_print_metadata: true,
                 data_names: vec![DataName::NComp, DataName::NAll],
             },
-            config::outputconfig::OutputConfig {
+            OutputConfig {
                 stream_mode: StreamMode::File,
                 formatter_mode: FormatterMode::TSV,
                 string_conversion_mode: ToStringConversionMode::Vector,

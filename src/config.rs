@@ -7,10 +7,12 @@ use color_eyre::Result;
 
 use self::meshconfig::MeshConfig;
 use self::outputconfig::OutputConfig;
+use self::physicsconfig::PhysicsConfig;
 use crate::errorhandling::Validation;
 
 pub mod meshconfig;
 pub mod outputconfig;
+pub mod physicsconfig;
 
 /// Struct that carries the full configuration info for a simulation.
 ///
@@ -23,6 +25,9 @@ pub struct CorriesConfig {
 
     /// Config for Mesh objects
     pub meshconf: MeshConfig,
+
+    /// Config for Physics objects
+    pub physicsconf: PhysicsConfig,
 
     /// Config for Writer objects
     pub writerconf: Vec<OutputConfig>,
