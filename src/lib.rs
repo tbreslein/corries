@@ -26,7 +26,7 @@ mod writer;
 pub fn run_sim(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    let _u = init_physics().context("Constructing Physics")?;
+    let _u = init_physics(&config.physicsconf).context("Constructing Physics")?;
     let _rhs = Rhs::new();
 
     // TEMP:
