@@ -4,7 +4,10 @@
 
 use ndarray::{ArrayD, IxDyn};
 
-use crate::{config::physicsconfig::{PhysicsConfig, PhysicsMode}, mesh::Mesh};
+use crate::{
+    config::physicsconfig::{PhysicsConfig, PhysicsMode},
+    mesh::Mesh,
+};
 
 pub struct Variables {
     /// The type of physics equations we are solving
@@ -74,6 +77,53 @@ impl Variables {
         };
         let is_isothermal = !is_adiabatic;
 
-        return Variables { mode, n_equations, p, c, c_sound, jdensity, jxivelocity, jximomentum, adiabatic_index, is_adiabatic, is_isothermal };
+        return Variables {
+            mode,
+            n_equations,
+            p,
+            c,
+            c_sound,
+            jdensity,
+            jxivelocity,
+            jximomentum,
+            adiabatic_index,
+            is_adiabatic,
+            is_isothermal,
+        };
     }
+
+    // NOTE: When I start implementing Physics modes that do not support a value explicitly, I will
+    // need match statements over the physics mode here.
+    // pub fn get_density(&self, i: usize) -> Option<f64> {
+    //     return match self.jdensity {
+    //         Some(j) => Some(self.p[[i, j]]),
+    //         None => None,
+    //     };
+    // }
+    //
+    // pub fn get_xi_velocity(&self, i: usize) -> Option<f64> {
+    //     return match self.jxivelocity {
+    //         Some(j) => Some(self.p[[i, j]]),
+    //         None => None,
+    //     };
+    // }
+    //
+    // pub fn get_xi_momentum(&self, i: usize) -> Option<f64> {
+    //     return match self.jximomentum {
+    //         Some(j) => Some(self.p[[i, j]]),
+    //         None => None,
+    //     };
+    // }
+    //
+    // pub fn get_density_unsafe(&self, i: usize) -> f64 {
+    //     return self.p[[i, self.jdensity.unwrap()]];
+    // }
+    //
+    // pub fn get_xi_velocity_unsafe(&self, i: usize) -> f64 {
+    //     return self.p[[i, self.jxivelocity.unwrap()]];
+    // }
+    //
+    // pub fn get_xi_momentum_unsafe(&self, i: usize) -> f64 {
+    //     return self.c[[i, self.jximomentum.unwrap()]];
+    // }
 }

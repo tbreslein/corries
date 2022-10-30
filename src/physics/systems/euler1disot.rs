@@ -3,6 +3,7 @@
 // License: MIT
 
 use color_eyre::Result;
+use ndarray::Axis;
 
 use crate::{config::physicsconfig::PhysicsConfig, mesh::Mesh, units::Units, physics::{variables::Variables, Physics}};
 
@@ -19,4 +20,14 @@ impl Euler1DIsot {
     }
 }
 
-impl Physics for Euler1DIsot {}
+impl Physics for Euler1DIsot {
+    fn update_cons(&self, vars: &mut Variables) {
+        vars.c.index_axis_mut(Axis(0), 0).assign(&vars.p.index_axis(Axis(0), 0));
+        vars.c.index_axis_mut(Axis(0), 1).assign(&(&vars.p.index_axis(Axis(0), 1) * &vars.p.index_axis(Axis(0), 0)));
+    }
+
+    fn update_prim(&self, vars: &mut Variables) {
+        vars.p.index_axis_mut(Axis(0), 0).assign(&vars.c.index_axis(Axis(0), 0));
+        vars.p.index_axis_mut(Axis(0), 1).assign(&(&vars.c.index_axis(Axis(0), 1) / &vars.c.index_axis(Axis(0), 0)));
+    }
+}
