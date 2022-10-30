@@ -19,12 +19,6 @@ pub struct MeshConfig {
     /// The type of Mesh that should constructed
     pub mode: MeshMode,
 
-    /// The number of cells in the computational area
-    pub n_comp: usize,
-
-    /// The number of ghost cells per edge
-    pub n_gc: usize,
-
     /// xi coordinate at the inner/western boundary of the computational area
     pub xi_in: f64,
 

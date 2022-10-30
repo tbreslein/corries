@@ -47,14 +47,14 @@ impl Validation for CorriesConfig {
 impl CorriesConfig {
     /// Writes metadata, mostly just the contents of this struct and its nested structs, into a
     /// `String`.
-    pub fn metadata_dump(&self) -> String {
+    pub fn metadata_dump<const MESH_COMP_SIZE: usize>(&self) -> String {
         let mut s = "".to_string();
         s += "### Corries Configuration\n";
         s += &format!("# name: {}\n", self.name);
         s += "# meshconf:\n";
         s += &format!("#     mode: {:?}\n", self.meshconf.mode);
-        s += &format!("#     n_comp: {}\n", self.meshconf.n_comp);
-        s += &format!("#     n_gc: {}\n", self.meshconf.n_gc);
+        s += &format!("#     n_comp: {}\n", MESH_COMP_SIZE);
+        // s += &format!("#     n_gc: {}\n", NGC);
         s += &format!("#     xi_in: {}\n", self.meshconf.xi_in);
         s += &format!("#     xi_out: {}\n", self.meshconf.xi_out);
         s += &format!("#     ratio_disk: {}\n", self.meshconf.ratio_disk);

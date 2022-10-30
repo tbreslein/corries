@@ -10,7 +10,7 @@ use color_eyre::{
     eyre::{bail, WrapErr},
     Result,
 };
-use ndarray::{ArrayD, IxDyn};
+use ndarray::Array1;
 
 use crate::{
     config::{
@@ -83,7 +83,7 @@ impl Output {
     /// * `outputconf` - `OutputConfig` containing configuration to build `Output` objects
     /// * `mesh` - provides information about the mesh in this simulation
     /// * `output_count_max` - How many distinct outputs should be written during this run
-    pub fn new(outputconfig: &OutputConfig, mesh: &Mesh, output_count_max: usize) -> Result<Self> {
+    pub fn new<const S: usize>(outputconfig: &OutputConfig, mesh: &Mesh<S>, output_count_max: usize) -> Result<Self> {
         let rows = match outputconfig.string_conversion_mode {
             ToStringConversionMode::Scalar => 1,
             ToStringConversionMode::Vector => {
@@ -101,9 +101,7 @@ impl Output {
                 DataType::Usize => data_matrix.push(DataValue::Usize(0)),
                 DataType::Float => data_matrix.push(DataValue::Float(0.0)),
                 DataType::String => data_matrix.push(DataValue::String("".to_string())),
-                DataType::VectorFloat => {
-                    data_matrix.push(DataValue::VectorFloat(ArrayD::from_elem(IxDyn(&[rows]), 0.0)))
-                },
+                DataType::VectorFloat => data_matrix.push(DataValue::VectorFloat(Array1::zeros(S))),
             };
         }
 
@@ -180,7 +178,7 @@ impl Output {
     /// # Arguments
     ///
     /// * `mesh` - `Mesh` object to pull data from
-    pub fn update_data_matrix(&mut self, mesh: &Mesh) -> Result<()> {
+    pub fn update_data_matrix<const S: usize>(&mut self, mesh: &Mesh<S>) -> Result<()> {
         for (i, name) in self.data_names.iter().enumerate() {
             match name.association() {
                 StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
@@ -198,10 +196,10 @@ impl Output {
     }
 
     /// Makes this `Output` object write meta data in `self.data_matrix` into a stream.
-    pub fn write_metadata(&self, config: &CorriesConfig) -> Result<()> {
+    pub fn write_metadata<const S: usize>(&self, config: &CorriesConfig) -> Result<()> {
         match self.stream_mode {
             StreamMode::Stdout => {
-                println!("{}", config.metadata_dump());
+                println!("{}", config.metadata_dump::<S>());
             },
             StreamMode::File => {
                 let full_path_string = self.file_name.clone() + "_metadata.dat";
@@ -212,7 +210,7 @@ impl Output {
                     .create(true)
                     .open(path)
                     .wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
-                file.write_all(config.metadata_dump().as_bytes())
+                file.write_all(config.metadata_dump::<S>().as_bytes())
                     .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
             },
         }

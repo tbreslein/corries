@@ -3,7 +3,7 @@
 // License: MIT
 
 use color_eyre::{eyre::bail, Result};
-use ndarray::{s, ArrayD};
+use ndarray::{s, Array1};
 
 use self::output::Output;
 use crate::{
@@ -25,7 +25,7 @@ pub enum DataValue {
     Int(i32),
     Usize(usize),
     Float(f64),
-    VectorFloat(ArrayD<f64>),
+    VectorFloat(Array1<f64>),
     String(String),
 }
 
@@ -37,7 +37,7 @@ impl Writer {
     /// * `config` - Configuration for a corries simulation
     /// * `mesh` - The mesh for this simulation
     /// * `output_count_max` - How many output steps this simulation should be going through
-    pub fn new(config: &CorriesConfig, mesh: &Mesh, output_count_max: usize) -> Result<Self> {
+    pub fn new<const SIZE: usize>(config: &CorriesConfig, mesh: &Mesh<SIZE>, output_count_max: usize) -> Result<Self> {
         let mut outputs = vec![];
         for outputconf in config.writerconf.iter() {
             let output = Output::new(outputconf, mesh, output_count_max)?;
@@ -51,7 +51,7 @@ impl Writer {
     /// # Arguments
     ///
     /// * `mesh` - Provides mesh data
-    pub fn update_data_matrices(&mut self, mesh: &Mesh) -> Result<()> {
+    pub fn update_data_matrices<const SIZE: usize>(&mut self, mesh: &Mesh<SIZE>) -> Result<()> {
         // TODO: can I safely thread this loop?
         for output in self.outputs.iter_mut() {
             output.update_data_matrix(mesh)?;
@@ -70,10 +70,10 @@ impl Writer {
 
     /// Loops through `self.outputs` and calls their `write_metadata` methods if they are
     /// configured to do so.
-    pub fn write_metadata(&mut self, config: &CorriesConfig) -> Result<()> {
+    pub fn write_metadata<const S: usize>(&mut self, config: &CorriesConfig) -> Result<()> {
         for output in self.outputs.iter_mut() {
             if output.should_print_metadata {
-                output.write_metadata(config)?;
+                output.write_metadata::<S>(config)?;
             };
         }
         return Ok(());
@@ -100,7 +100,7 @@ pub trait CorriesWrite {
     /// * `value` - Where to write the data to
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
-    fn write_vector(&self, field: &ArrayD<f64>, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
+    fn write_vector(&self, field: &Array1<f64>, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         return match value {
             DataValue::VectorFloat(v) => {
                 if mesh_offset == 0 {
