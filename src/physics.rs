@@ -4,7 +4,10 @@
 
 use color_eyre::Result;
 
-use crate::{config::physicsconfig::{PhysicsConfig, PhysicsMode}, mesh::Mesh};
+use crate::{
+    config::physicsconfig::{PhysicsConfig, PhysicsMode},
+    mesh::Mesh,
+};
 
 use self::{systems::euler1disot::Euler1DIsot, variables::Variables};
 
