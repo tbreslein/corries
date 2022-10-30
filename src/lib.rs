@@ -3,7 +3,7 @@
 // License: MIT
 
 use color_eyre::{eyre::Context, Result};
-use config::CorriesConfig;
+use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
 use physics::init_physics;
 use writer::Writer;
@@ -42,6 +42,12 @@ pub fn run_sim(config: CorriesConfig) -> Result<()> {
     writer.write_metadata(&config)?;
     writer.write_output()?;
     return Ok(());
+}
+
+pub const fn get_n_equations(physics_mode: PhysicsMode) -> usize {
+    return match physics_mode {
+        PhysicsMode::Euler1DIsot => 2,
+    };
 }
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

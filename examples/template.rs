@@ -3,7 +3,7 @@
 // License: MIT
 
 use color_eyre::Result;
-use corries::config;
+use corries::{config, get_n_equations};
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
@@ -11,6 +11,11 @@ use corries::run_sim;
 use corries::units::UnitsMode;
 
 fn main() -> Result<()> {
+    const MESH_COMP_AREA_SIZE: usize = 10;
+    const MESH_N_GHOST_CELLS: usize = 2;
+
+    const N_EQUATIONS: usize = get_n_equations(PhysicsMode::Euler1DIsot);
+
     run_sim(config::CorriesConfig {
         name: "accretiondisk".to_string(),
         meshconf: MeshConfig {
