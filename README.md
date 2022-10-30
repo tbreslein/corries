@@ -27,6 +27,7 @@ Things to read:
 
 ### Small things
 
+- [ ] Add unit tests for Units and Variables
 - [ ] more linting?
 - [ ] can I macro metadata_dump?
 

@@ -6,17 +6,12 @@ use color_eyre::eyre::ensure;
 use color_eyre::Result;
 
 use crate::errorhandling::Validation;
+use crate::units::UnitsMode;
 
 /// Enum for the different kinds of Physics available
 #[derive(Debug, Copy, Clone)]
 pub enum PhysicsMode {
     Euler1DIsot,
-}
-
-/// Enum for the different kinds of unit systems available
-#[derive(Debug, Copy, Clone)]
-pub enum UnitsMode {
-    SI,
 }
 
 /// Carries information about how the mesh should shaped
