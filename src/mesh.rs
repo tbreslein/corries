@@ -8,7 +8,7 @@ use crate::errorhandling::Validation;
 use crate::writer::{CorriesWrite, DataValue};
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
-use ndarray::{ArrayD, IxDyn};
+use ndarray::Array1;
 
 /// The Mesh the simulation runs on.
 ///
@@ -21,7 +21,7 @@ use ndarray::{ArrayD, IxDyn};
 /// cylindrical coordinates you would name them xi = r (the radius), Phi = phi (the polar angle),
 /// eta = z.
 #[derive(Debug)]
-pub struct Mesh {
+pub struct Mesh<const SIZE: usize> {
     /// The kind of mesh this is, i.e. cartesian, log-cylindrical, etc.
     pub mode: MeshMode,
 
@@ -79,139 +79,139 @@ pub struct Mesh {
     pub dphi: f64,
 
     /// xi coordinates at the center of each cell
-    pub xi_cent: ArrayD<f64>,
+    pub xi_cent: Array1<f64>,
 
     /// xi coordinates at the west border of each cell
-    pub xi_west: ArrayD<f64>,
+    pub xi_west: Array1<f64>,
 
     /// xi coordinates at the east border of each cell
-    pub xi_east: ArrayD<f64>,
+    pub xi_east: Array1<f64>,
 
     /// Inverse of xi_cent
-    pub xi_cent_inv: ArrayD<f64>,
+    pub xi_cent_inv: Array1<f64>,
 
     /// Inverse of xi_west
-    pub xi_west_inv: ArrayD<f64>,
+    pub xi_west_inv: Array1<f64>,
 
     /// Inverse of xi_east
-    pub xi_east_inv: ArrayD<f64>,
+    pub xi_east_inv: Array1<f64>,
 
     /// Geometric scale along xi at the centre of each cell
-    pub h_xi_cent: ArrayD<f64>,
+    pub h_xi_cent: Array1<f64>,
 
     /// Geometric scale along xi at the west border of each cell
-    pub h_xi_west: ArrayD<f64>,
+    pub h_xi_west: Array1<f64>,
 
     /// Geometric scale along xi at the east border of each cell
-    pub h_xi_east: ArrayD<f64>,
+    pub h_xi_east: Array1<f64>,
 
     /// Geometric scale along eta at the centre of each cell
-    pub h_eta_cent: ArrayD<f64>,
+    pub h_eta_cent: Array1<f64>,
 
     /// Geometric scale along eta at the west border of each cell
-    pub h_eta_west: ArrayD<f64>,
+    pub h_eta_west: Array1<f64>,
 
     /// Geometric scale along eta at the east border of each cell
-    pub h_eta_east: ArrayD<f64>,
+    pub h_eta_east: Array1<f64>,
 
     /// Geometric scale along Phi at the centre of each cell
-    pub h_phi_cent: ArrayD<f64>,
+    pub h_phi_cent: Array1<f64>,
 
     /// Geometric scale along Phi at the west border of each cell
-    pub h_phi_west: ArrayD<f64>,
+    pub h_phi_west: Array1<f64>,
 
     /// Geometric scale along Phi at the east border of each cell
-    pub h_phi_east: ArrayD<f64>,
+    pub h_phi_east: Array1<f64>,
 
     /// Square root of the scalar metric
-    pub sqrt_g: ArrayD<f64>,
+    pub sqrt_g: Array1<f64>,
 
     /// Line element along xi
-    pub line_xi: ArrayD<f64>,
+    pub line_xi: Array1<f64>,
 
     /// Inverse of line_xi
-    pub line_xi_inv: ArrayD<f64>,
+    pub line_xi_inv: Array1<f64>,
 
     /// Shorthand: area_west / (deta / dphi)
-    pub d_area_xi_deta_dphi_west: ArrayD<f64>,
+    pub d_area_xi_deta_dphi_west: Array1<f64>,
 
     /// Shorthand: area_east / (deta / dphi)
-    pub d_area_xi_deta_dphi_east: ArrayD<f64>,
+    pub d_area_xi_deta_dphi_east: Array1<f64>,
 
     /// Surface area of each cell normal to xi x Phi
-    pub area_cell: ArrayD<f64>,
+    pub area_cell: Array1<f64>,
 
     /// Surface area of each cell's west border normal to Phi x eta
-    pub area_west: ArrayD<f64>,
+    pub area_west: Array1<f64>,
 
     /// Surface area of each cell's east border normal to Phi x eta
-    pub area_east: ArrayD<f64>,
+    pub area_east: Array1<f64>,
 
     /// Volume of each cell
-    pub volume: ArrayD<f64>,
+    pub volume: Array1<f64>,
 
     /// Shorthand: deta * dPhi / dVolume
-    pub deta_dphi_d_volume: ArrayD<f64>,
+    pub deta_dphi_d_volume: Array1<f64>,
 
     /// Distance between west and east border of each cell
-    pub cell_width: ArrayD<f64>,
+    pub cell_width: Array1<f64>,
 
     /// Inverse of cell_width
-    pub cell_width_inv: ArrayD<f64>,
+    pub cell_width_inv: Array1<f64>,
 
     /// Commutator coefficient for eta and xi
-    pub cexe: ArrayD<f64>,
+    pub cexe: Array1<f64>,
 
     /// Commutator coefficient for Phi and xi
-    pub cpxp: ArrayD<f64>,
+    pub cpxp: Array1<f64>,
 
     /// Commutator coefficient for xi and eta
-    pub cxex: ArrayD<f64>,
+    pub cxex: Array1<f64>,
 
     /// Commutator coefficient for Phi and eta
-    pub cpep: ArrayD<f64>,
+    pub cpep: Array1<f64>,
 
     /// Commutator coefficient for xi and Phi
-    pub cxpx: ArrayD<f64>,
+    pub cxpx: Array1<f64>,
 
     /// Commutator coefficient for eta and Phi
-    pub cepe: ArrayD<f64>,
+    pub cepe: Array1<f64>,
 
     /// Shorthand: -1.0 * cexe
-    pub minus_cexe: ArrayD<f64>,
+    pub minus_cexe: Array1<f64>,
 
     /// Shorthand: -1.0 * cpxp
-    pub minus_cpxp: ArrayD<f64>,
+    pub minus_cpxp: Array1<f64>,
 
     /// Shorthand: -1.0 * cxex
-    pub minus_cxex: ArrayD<f64>,
+    pub minus_cxex: Array1<f64>,
 
     /// Shorthand: -1.0 * cpep
-    pub minus_cpep: ArrayD<f64>,
+    pub minus_cpep: Array1<f64>,
 
     /// Shorthand: -1.0 * cxpx
-    pub minus_cxpx: ArrayD<f64>,
+    pub minus_cxpx: Array1<f64>,
 
     /// Shorthand: -1.0 * cepe
-    pub minus_cepe: ArrayD<f64>,
+    pub minus_cepe: Array1<f64>,
 }
 
-impl Mesh {
+impl<const SIZE: usize> Mesh<SIZE> {
     /// Builds a new `color_eyre::Result<Mesh>` object.
     ///
     /// # Arguments
     ///
     /// * `meshconf` - `MeshConfig` containing configuration to build `Mesh` objects
-    pub fn new(meshconf: &MeshConfig) -> Result<Mesh> {
+    pub fn new(meshconf: &MeshConfig) -> Result<Mesh<SIZE>> {
         let mode = meshconf.mode;
         let is_logarithmic = match mode {
             MeshMode::Cartesian => false,
         };
         let is_linear = !is_logarithmic;
 
-        let n_comp = meshconf.n_comp;
-        let n_gc = meshconf.n_gc;
-        let n_all = n_comp + 2 * n_gc;
+        let n_all = SIZE;
+        let n_gc = 2;
+        let n_comp = SIZE - 2 * n_gc;
 
         let imin = 0;
         let imax = imin + n_all - 1;
@@ -235,16 +235,16 @@ impl Mesh {
         };
 
         let xi_west = {
-            let mut v: Vec<f64> = Vec::with_capacity(n_all);
+            let mut v = Array1::zeros(SIZE);
             let mut f = |x: f64| {
                 for i in imin..=imax {
-                    v.push(x + dxi * (i as i64 - ixi_in as i64) as f64);
+                    v[i] = x + dxi * (i as i64 - ixi_in as i64) as f64;
                 }
             };
             match mode {
                 MeshMode::Cartesian => f(xi_in),
             };
-            ndarray::ArrayD::from_shape_vec(IxDyn(&[v.len()]), v).context("Constructing xi_west")?
+            v
         };
         let xi_cent = match mode {
             MeshMode::Cartesian => xi_west.mapv(|xi| xi + 0.5 * dxi),
@@ -388,7 +388,7 @@ impl Mesh {
     }
 }
 
-impl Validation for Mesh {
+impl<const SIZE: usize> Validation for Mesh<SIZE> {
     fn validate(&self) -> Result<()> {
         // checks on doubles
         check_finite_multiple_doubles![self.dxi, self.deta, self.dphi];
@@ -440,7 +440,7 @@ impl Validation for Mesh {
     }
 }
 
-impl CorriesWrite for Mesh {
+impl<const SIZE: usize> CorriesWrite for Mesh<SIZE> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
             (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent, value, mesh_offset),
@@ -464,14 +464,14 @@ impl CorriesWrite for Mesh {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+    const MESH_COMP_SIZE: usize = 1004;
+    // TODO: more test submodules with different sized meshes?
     prop_compose! {
         fn arb_mesh(mode: MeshMode)
-                    (n_gc in 1usize..=2,
-                    n_comp in 3usize..10_000,
-                    xi_in in 0.1f64..100_000.0,
+                    (xi_in in 0.1f64..100_000.0,
                     xi_out in 0.1f64..100_000.0,
-                    ratio_disk in 0.1f64..=1.0) -> Result<Mesh> {
-            return Mesh::new(&MeshConfig { mode, n_comp, n_gc, xi_in, xi_out, ratio_disk });
+                    ratio_disk in 0.1f64..=1.0) -> Result<Mesh<MESH_COMP_SIZE>> {
+            return Mesh::new(&MeshConfig { mode, xi_in, xi_out, ratio_disk });
         }
     }
 

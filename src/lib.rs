@@ -5,17 +5,17 @@
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
-use physics::init_physics;
+// use physics::init_physics;
 use writer::Writer;
 
-use crate::{config::outputconfig::StreamMode, errorhandling::Validation, rhs::Rhs};
+use crate::{config::outputconfig::StreamMode, errorhandling::Validation, /*rhs::Rhs*/};
 
 pub mod config;
 #[macro_use]
 mod errorhandling;
 mod mesh;
-mod physics;
-mod rhs;
+// mod physics;
+// mod rhs;
 pub mod units;
 mod writer;
 
@@ -24,22 +24,23 @@ mod writer;
 /// # Arguments
 ///
 /// * `config` - The `CorriesConfig` the simulation is based on
-pub fn run_sim(config: CorriesConfig) -> Result<()> {
+pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
-    let mesh = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    let _u = init_physics(&config.physicsconf, &mesh).context("Constructing Physics")?;
-    let _rhs = Rhs::new();
-
-    // TEMP:
+    let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
+    println!("{}", mesh.xi_cent);
+    // let _u = init_physics(&config.physicsconf, &mesh).context("Constructing Physics")?;
+    // let _rhs = Rhs::new();
+    //
+    // // TEMP:
     let output_count_max = 2;
     let mut writer = Writer::new(&config, &mesh, output_count_max)?;
-
-    // first output
+    //
+    // // first output
     if writer.outputs.iter().any(|o| o.stream_mode == StreamMode::Stdout) {
         print_banner();
     }
     writer.update_data_matrices(&mesh)?;
-    writer.write_metadata(&config)?;
+    writer.write_metadata::<S>(&config)?;
     writer.write_output()?;
     return Ok(());
 }

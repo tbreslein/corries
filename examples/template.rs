@@ -11,17 +11,13 @@ use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
 
 fn main() -> Result<()> {
-    const MESH_COMP_AREA_SIZE: usize = 10;
-    const MESH_N_GHOST_CELLS: usize = 2;
-
+    const SIZE: usize = 14;
     const N_EQUATIONS: usize = get_n_equations(PhysicsMode::Euler1DIsot);
 
-    run_sim(config::CorriesConfig {
+    run_sim::<SIZE, N_EQUATIONS>(config::CorriesConfig {
         name: "accretiondisk".to_string(),
         meshconf: MeshConfig {
             mode: MeshMode::Cartesian,
-            n_comp: 10,
-            n_gc: 2,
             xi_in: 0.1,
             xi_out: 10.0,
             ratio_disk: 1.0,

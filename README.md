@@ -8,7 +8,7 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
 Deps:
 
-- Add rayon for parallel iterators
+- Add rayon for parallel iterators ++ rayon feature for ndarray
 - Add crossbeam for scoped threads
 
 Things I can probably parallelise:
@@ -27,6 +27,8 @@ Things to read:
 
 ### Small things
 
+- [ ] Fix Mesh unit tests
+- [ ] add approx features for ndarray?
 - [ ] Add unit tests for Units and Variables
 - [ ] more linting?
 - [ ] can I macro metadata_dump?
