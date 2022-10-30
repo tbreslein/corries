@@ -15,9 +15,9 @@ categories = ["science", "mathematics"]
 # deactivates auto-discovery in ./tests, so that I can add the integration tests manually
 # autotests = false
 
-[[example]]
-name = "accretiondisk"
-
+# [[example]]
+# name = "accretiondisk"
+#
 # [[test]]
 # name = "noh_isot_cartesian"
 # path = "tests/noh.rs"
