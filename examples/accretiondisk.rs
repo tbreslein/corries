@@ -6,8 +6,9 @@ use color_eyre::Result;
 use corries::config;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
-use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode, UnitsMode};
+use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::run_sim;
+use corries::units::UnitsMode;
 
 fn main() -> Result<()> {
     run_sim(config::CorriesConfig {
@@ -22,6 +23,7 @@ fn main() -> Result<()> {
         },
         physicsconf: PhysicsConfig {
             mode: PhysicsMode::Euler1DIsot,
+            units_mode: UnitsMode::SI,
             adiabatic_index: 2.0 / 3.0,
             c_sound_0: 1.0,
         },
