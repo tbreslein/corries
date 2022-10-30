@@ -3,12 +3,12 @@
 // License: MIT
 
 use color_eyre::Result;
-use corries::{config, get_n_equations};
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::run_sim;
 use corries::units::UnitsMode;
+use corries::{config, get_n_equations};
 
 fn main() -> Result<()> {
     const MESH_COMP_AREA_SIZE: usize = 10;
