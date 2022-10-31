@@ -21,7 +21,7 @@ use ndarray::Array1;
 /// cylindrical coordinates you would name them xi = r (the radius), Phi = phi (the polar angle),
 /// eta = z.
 #[derive(Debug)]
-pub struct Mesh<const SIZE: usize> {
+pub struct Mesh<const S: usize> {
     /// The kind of mesh this is, i.e. cartesian, log-cylindrical, etc.
     pub mode: MeshMode,
 
@@ -196,22 +196,22 @@ pub struct Mesh<const SIZE: usize> {
     pub minus_cepe: Array1<f64>,
 }
 
-impl<const SIZE: usize> Mesh<SIZE> {
+impl<const S: usize> Mesh<S> {
     /// Builds a new `color_eyre::Result<Mesh>` object.
     ///
     /// # Arguments
     ///
     /// * `meshconf` - `MeshConfig` containing configuration to build `Mesh` objects
-    pub fn new(meshconf: &MeshConfig) -> Result<Mesh<SIZE>> {
+    pub fn new(meshconf: &MeshConfig) -> Result<Mesh<S>> {
         let mode = meshconf.mode;
         let is_logarithmic = match mode {
             MeshMode::Cartesian => false,
         };
         let is_linear = !is_logarithmic;
 
-        let n_all = SIZE;
+        let n_all = S;
         let n_gc = 2;
-        let n_comp = SIZE - 2 * n_gc;
+        let n_comp = S - 2 * n_gc;
 
         let imin = 0;
         let imax = imin + n_all - 1;
@@ -235,7 +235,7 @@ impl<const SIZE: usize> Mesh<SIZE> {
         };
 
         let xi_west = {
-            let mut v = Array1::zeros(SIZE);
+            let mut v = Array1::zeros(S);
             let mut f = |x: f64| {
                 for i in imin..=imax {
                     v[i] = x + dxi * (i as i64 - ixi_in as i64) as f64;
@@ -388,7 +388,7 @@ impl<const SIZE: usize> Mesh<SIZE> {
     }
 }
 
-impl<const SIZE: usize> Validation for Mesh<SIZE> {
+impl<const S: usize> Validation for Mesh<S> {
     fn validate(&self) -> Result<()> {
         // checks on doubles
         check_finite_multiple_doubles![self.dxi, self.deta, self.dphi];
@@ -440,7 +440,7 @@ impl<const SIZE: usize> Validation for Mesh<SIZE> {
     }
 }
 
-impl<const SIZE: usize> CorriesWrite for Mesh<SIZE> {
+impl<const S: usize> CorriesWrite for Mesh<S> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
             (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent, value, mesh_offset),
@@ -464,13 +464,13 @@ impl<const SIZE: usize> CorriesWrite for Mesh<SIZE> {
 mod tests {
     use super::*;
     use proptest::prelude::*;
-    const MESH_COMP_SIZE: usize = 1004;
+    const S: usize = 1004;
     // TODO: more test submodules with different sized meshes?
     prop_compose! {
         fn arb_mesh(mode: MeshMode)
                     (xi_in in 0.1f64..100_000.0,
                     xi_out in 0.1f64..100_000.0,
-                    ratio_disk in 0.1f64..=1.0) -> Result<Mesh<MESH_COMP_SIZE>> {
+                    ratio_disk in 0.1f64..=1.0) -> Result<Mesh<S>> {
             return Mesh::new(&MeshConfig { mode, xi_in, xi_out, ratio_disk });
         }
     }
