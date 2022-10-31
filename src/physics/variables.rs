@@ -2,14 +2,11 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use ndarray::{ArrayD, IxDyn};
+use ndarray::{Array1, Array2};
 
-use crate::{
-    config::physicsconfig::{PhysicsConfig, PhysicsMode},
-    mesh::Mesh,
-};
+use crate::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 
-pub struct Variables {
+pub struct Variables<const S: usize, const EQ: usize> {
     /// The type of physics equations we are solving
     pub mode: PhysicsMode,
 
@@ -17,13 +14,13 @@ pub struct Variables {
     pub n_equations: usize,
 
     /// Primitive variables
-    pub p: ArrayD<f64>,
+    pub p: Array2<f64>,
 
     /// Conservative variables
-    pub c: ArrayD<f64>,
+    pub c: Array2<f64>,
 
     /// Speed of sound
-    pub c_sound: ArrayD<f64>,
+    pub c_sound: Array1<f64>,
 
     /// Possible equation index for density
     pub jdensity: Option<usize>,
@@ -44,22 +41,22 @@ pub struct Variables {
     pub is_isothermal: bool,
 }
 
-impl Variables {
+impl<const S: usize, const EQ: usize> Variables<S, EQ> {
     /// Builds a new `Variables` object.
     ///
     /// # Arguments
     ///
     /// * `physicsconf` - `PhysicsConfig` containing configuration to build `Physics` and `Variables` objects
-    /// * `mesh` - provides information about the mesh in this simulation
-    pub fn new(physicsconf: &PhysicsConfig, mesh: &Mesh) -> Variables {
+    pub fn new(physicsconf: &PhysicsConfig) -> Variables<S, EQ> {
         let mode = physicsconf.mode;
         let n_equations = match mode {
             PhysicsMode::Euler1DIsot => 2,
         };
 
-        let p = ArrayD::from_elem(IxDyn(&[mesh.n_all, n_equations]), 0.0);
-        let c = ArrayD::from_elem(IxDyn(&[mesh.n_all, n_equations]), 0.0);
-        let c_sound = ArrayD::from_elem(IxDyn(&[mesh.n_all]), 0.0);
+        // let mut v = Array1::zeros(S);
+        let p = Array2::zeros((S, EQ));
+        let c = Array2::zeros((S, EQ));
+        let c_sound = Array1::zeros(S);
 
         let jdensity = match mode {
             PhysicsMode::Euler1DIsot => Some(0),

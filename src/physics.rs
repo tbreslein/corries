@@ -2,25 +2,20 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use color_eyre::Result;
-
-use crate::{
-    config::physicsconfig::{PhysicsConfig, PhysicsMode},
-    mesh::Mesh,
-};
+use crate::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 
 use self::{systems::euler1disot::Euler1DIsot, variables::Variables};
 
 mod systems;
 pub mod variables;
 
-pub trait Physics {
-    fn update_cons(&self, vars: &mut Variables);
-    fn update_prim(&self, vars: &mut Variables);
+pub trait Physics<const S: usize, const EQ: usize> {
+    fn update_cons(&self, vars: &mut Variables<S, EQ>);
+    fn update_prim(&self, vars: &mut Variables<S, EQ>);
 }
 
-pub fn init_physics(physicsconf: &PhysicsConfig, mesh: &Mesh) -> Result<Box<dyn Physics>> {
+pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig) -> Box<dyn Physics<S, EQ>> {
     return match physicsconf.mode {
-        PhysicsMode::Euler1DIsot => Euler1DIsot::new(physicsconf, mesh),
+        PhysicsMode::Euler1DIsot => Box::new(Euler1DIsot::new(physicsconf)),
     };
 }
