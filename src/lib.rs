@@ -8,14 +8,14 @@ use mesh::Mesh;
 use physics::init_physics;
 use writer::Writer;
 
-use crate::{config::outputconfig::StreamMode, errorhandling::Validation /*rhs::Rhs*/};
+use crate::{config::outputconfig::StreamMode, errorhandling::Validation, rhs::Rhs};
 
 pub mod config;
 #[macro_use]
 mod errorhandling;
 mod mesh;
 mod physics;
-// mod rhs;
+mod rhs;
 pub mod units;
 mod writer;
 
@@ -28,8 +28,8 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
     let _u = init_physics::<S, EQ>(&config.physicsconf);
-    // let _rhs = Rhs::new();
-    //
+    let _rhs = Rhs::new();
+
     // // TEMP:
     let output_count_max = 2;
     let mut writer = Writer::new(&config, &mesh, output_count_max)?;
