@@ -8,12 +8,12 @@ use crate::{
     units::Units,
 };
 
-pub struct Euler1DIsot<const S: usize, const EQ: usize> {
-    pub cent: Variables<S, EQ>,
+pub struct Euler1DIsot<const S: usize> {
+    pub cent: Variables<S, 2>,
     pub units: Units,
 }
 
-impl<const S: usize, const EQ: usize> Euler1DIsot<S, EQ> {
+impl<const S: usize> Euler1DIsot<S> {
     pub fn new(physicsconf: &PhysicsConfig) -> Self {
         let cent = Variables::new(physicsconf);
         let units = Units::new(physicsconf.units_mode);
@@ -21,7 +21,7 @@ impl<const S: usize, const EQ: usize> Euler1DIsot<S, EQ> {
     }
 }
 
-impl<const S: usize, const EQ: usize> Physics<S, EQ> for Euler1DIsot<S, EQ> {
+impl<const S: usize, const EQ: usize> Physics<S, EQ> for Euler1DIsot<S> {
     fn update_cons(&self, vars: &mut Variables<S, EQ>) {
         vars.c.row_mut(0).assign(&vars.p.row(0));
         vars.c.row_mut(1).assign(&(&vars.p.row(1) * &vars.p.row(0)));
