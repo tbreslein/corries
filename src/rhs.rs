@@ -2,8 +2,6 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use color_eyre::Result;
-
 use self::numflux::init_numflux;
 
 mod numflux;
@@ -13,9 +11,9 @@ pub struct Rhs {
 }
 
 impl Rhs {
-    pub fn new() -> Result<Rhs> {
-        return Ok(Rhs {
+    pub fn new() -> Self {
+        return Rhs {
             _numflux: init_numflux(),
-        });
+        };
     }
 }
