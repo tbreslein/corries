@@ -37,7 +37,7 @@ impl Writer {
     /// * `config` - Configuration for a corries simulation
     /// * `mesh` - The mesh for this simulation
     /// * `output_count_max` - How many output steps this simulation should be going through
-    pub fn new<const SIZE: usize>(config: &CorriesConfig, mesh: &Mesh<SIZE>, output_count_max: usize) -> Result<Self> {
+    pub fn new<const S: usize>(config: &CorriesConfig, mesh: &Mesh<S>, output_count_max: usize) -> Result<Self> {
         let mut outputs = vec![];
         for outputconf in config.writerconf.iter() {
             let output = Output::new(outputconf, mesh, output_count_max)?;
@@ -51,7 +51,7 @@ impl Writer {
     /// # Arguments
     ///
     /// * `mesh` - Provides mesh data
-    pub fn update_data_matrices<const SIZE: usize>(&mut self, mesh: &Mesh<SIZE>) -> Result<()> {
+    pub fn update_data_matrices<const S: usize>(&mut self, mesh: &Mesh<S>) -> Result<()> {
         // TODO: can I safely thread this loop?
         for output in self.outputs.iter_mut() {
             output.update_data_matrix(mesh)?;
