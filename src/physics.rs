@@ -2,16 +2,27 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use ndarray::Array1;
+
 use crate::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 
-use self::{systems::euler1disot::Euler1DIsot, variables::Variables};
+use self::systems::euler1disot::Euler1DIsot;
 
 mod systems;
 pub mod variables;
 
 pub trait Physics<const S: usize, const EQ: usize> {
-    fn update_cons(&self, vars: &mut Variables<S, EQ>);
-    fn update_prim(&self, vars: &mut Variables<S, EQ>);
+    fn update_cons(&mut self);
+    fn update_prim(&mut self);
+
+    fn assign_prim(&mut self, i: usize, j: usize, x: f64);
+    fn assign_cons(&mut self, i: usize, j: usize, x: f64);
+
+    fn assign_prim_vec(&mut self, j: usize, x: &Array1<f64>);
+    fn assign_cons_vec(&mut self, j: usize, x: &Array1<f64>);
+
+    fn get_prim(&self, i: usize, j: usize) -> f64;
+    fn get_cons(&self, i: usize, j: usize) -> f64;
 }
 
 pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig) -> Box<dyn Physics<S, EQ>> {
