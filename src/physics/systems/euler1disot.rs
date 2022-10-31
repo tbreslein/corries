@@ -2,8 +2,6 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use ndarray::Axis;
-
 use crate::{
     config::physicsconfig::PhysicsConfig,
     physics::{variables::Variables, Physics},
@@ -25,16 +23,12 @@ impl<const S: usize, const EQ: usize> Euler1DIsot<S, EQ> {
 
 impl<const S: usize, const EQ: usize> Physics<S, EQ> for Euler1DIsot<S, EQ> {
     fn update_cons(&self, vars: &mut Variables<S, EQ>) {
-        vars.c.index_axis_mut(Axis(0), 0).assign(&vars.p.index_axis(Axis(0), 0));
-        vars.c
-            .index_axis_mut(Axis(0), 1)
-            .assign(&(&vars.p.index_axis(Axis(0), 1) * &vars.p.index_axis(Axis(0), 0)));
+        vars.c.row_mut(0).assign(&vars.p.row(0));
+        vars.c.row_mut(1).assign(&(&vars.p.row(1) * &vars.p.row(0)));
     }
 
     fn update_prim(&self, vars: &mut Variables<S, EQ>) {
-        vars.p.index_axis_mut(Axis(0), 0).assign(&vars.c.index_axis(Axis(0), 0));
-        vars.p
-            .index_axis_mut(Axis(0), 1)
-            .assign(&(&vars.c.index_axis(Axis(0), 1) / &vars.c.index_axis(Axis(0), 0)));
+        vars.p.row_mut(0).assign(&vars.c.row(0));
+        vars.p.row_mut(1).assign(&(&vars.c.row(1) / &vars.c.row(0)));
     }
 }
