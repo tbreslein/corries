@@ -54,8 +54,8 @@ impl<const S: usize, const EQ: usize> Variables<S, EQ> {
         };
 
         // let mut v = Array1::zeros(S);
-        let p = Array2::zeros((S, EQ));
-        let c = Array2::zeros((S, EQ));
+        let p = Array2::zeros((EQ, S));
+        let c = Array2::zeros((EQ, S));
         let c_sound = Array1::zeros(S);
 
         let jdensity = match mode {
