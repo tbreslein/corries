@@ -4,12 +4,16 @@
 
 //! Exports the [Physics] struct that handles the variables and physical state of the simulation.
 
-use color_eyre::{Result, eyre::bail};
+use color_eyre::{eyre::bail, Result};
 use ndarray::{Array1, Array2};
 
 use crate::{
-    config::{physicsconfig::{PhysicsConfig, PhysicsMode}, outputconfig::{DataName, StructAssociation}},
-    units::Units, writer::{CorriesWrite, DataValue},
+    config::{
+        outputconfig::{DataName, StructAssociation},
+        physicsconfig::{PhysicsConfig, PhysicsMode},
+    },
+    units::Units,
+    writer::{CorriesWrite, DataValue},
 };
 
 mod systems;
@@ -172,12 +176,124 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
 impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
-            (StructAssociation::Physics, DataName::Prim(j)) => self.write_vector(&self.prim.row(*j), value, mesh_offset),
-            (StructAssociation::Physics, DataName::Cons(j)) => self.write_vector(&self.cons.row(*j), value, mesh_offset),
-            (StructAssociation::Physics, DataName::CSound) => self.write_vector(&self.c_sound.view(), value, mesh_offset),
+            (StructAssociation::Physics, DataName::Prim(j)) => {
+                self.write_vector(&self.prim.row(*j), value, mesh_offset)
+            },
+            (StructAssociation::Physics, DataName::Cons(j)) => {
+                self.write_vector(&self.cons.row(*j), value, mesh_offset)
+            },
+            (StructAssociation::Physics, DataName::CSound) => {
+                self.write_vector(&self.c_sound.view(), value, mesh_offset)
+            },
             (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Mesh!", name),
-            (StructAssociation::Mesh, _) => bail!("name.association() for {:?} returned {:?}", name, name.association())
+            (StructAssociation::Mesh, _) => {
+                bail!("name.association() for {:?} returned {:?}", name, name.association())
+            },
         }?;
         return Ok(());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+    const S: usize = 1004;
+
+    mod euler1dadiabatic {
+        use crate::get_n_equations;
+
+        use super::*;
+        use approx::assert_relative_eq;
+        const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
+        const EQ: usize = get_n_equations(PHYSICS_MODE);
+        proptest! {
+            #[test]
+            fn conversion(p0 in 0.1f64..100.0, p1 in -100.0f64..100.0, p2 in 0.1f64..100.0, gamma in 0.1f64..0.9) {
+                let physicsconf = PhysicsConfig {
+                    adiabatic_index: gamma,
+                    c_sound_0: 1.0,
+                    mode: PHYSICS_MODE,
+                    units_mode: crate::units::UnitsMode::SI,
+                };
+                let mut u0: Physics<S, EQ> = init_physics(&physicsconf);
+                u0.prim.row_mut(0).fill(p0);
+                u0.prim.row_mut(1).fill(p1);
+                u0.prim.row_mut(2).fill(p2);
+                let mut u: Physics<S, EQ> = init_physics(&physicsconf);
+                u.prim.row_mut(0).fill(p0);
+                u.prim.row_mut(1).fill(p1);
+                u.prim.row_mut(2).fill(p2);
+
+                // converting to cons and back to prim should be idempotent
+                u.update_cons();
+                u.update_prim();
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-10));
+            }
+        }
+    }
+
+    mod euler1disot {
+        use crate::get_n_equations;
+
+        use super::*;
+        use approx::assert_relative_eq;
+        const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DIsot;
+        const EQ: usize = get_n_equations(PHYSICS_MODE);
+        proptest! {
+            #[test]
+            fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
+                let physicsconf = PhysicsConfig {
+                    adiabatic_index: 0.5,
+                    c_sound_0: 1.0,
+                    mode: PHYSICS_MODE,
+                    units_mode: crate::units::UnitsMode::SI,
+                };
+                let mut u0: Physics<S, EQ> = init_physics(&physicsconf);
+                u0.prim.row_mut(0).fill(p0);
+                u0.prim.row_mut(1).fill(p1);
+                let mut u: Physics<S, EQ> = init_physics(&physicsconf);
+                u.prim.row_mut(0).fill(p0);
+                u.prim.row_mut(1).fill(p1);
+
+                // converting to cons and back to prim should be idempotent
+                u.update_cons();
+                u.update_prim();
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-12));
+            }
+        }
+    }
+
+    mod euler2disot {
+        use crate::get_n_equations;
+
+        use super::*;
+        use approx::assert_relative_eq;
+        const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler2DIsot;
+        const EQ: usize = get_n_equations(PHYSICS_MODE);
+        proptest! {
+            #[test]
+            fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0, p2 in -100_000.0f64..100_000.0) {
+                let physicsconf = PhysicsConfig {
+                    adiabatic_index: 0.5,
+                    c_sound_0: 1.0,
+                    mode: PHYSICS_MODE,
+                    units_mode: crate::units::UnitsMode::SI,
+                };
+                let mut u0: Physics<S, EQ> = init_physics(&physicsconf);
+                u0.prim.row_mut(0).fill(p0);
+                u0.prim.row_mut(1).fill(p1);
+                u0.prim.row_mut(2).fill(p2);
+                let mut u: Physics<S, EQ> = init_physics(&physicsconf);
+                u.prim.row_mut(0).fill(p0);
+                u.prim.row_mut(1).fill(p1);
+                u.prim.row_mut(2).fill(p2);
+
+                // converting to cons and back to prim should be idempotent
+                u.update_cons();
+                u.update_prim();
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-12));
+            }
+        }
     }
 }
