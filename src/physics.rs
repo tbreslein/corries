@@ -11,6 +11,8 @@ use crate::{
     units::Units,
 };
 
+mod systems;
+
 pub struct Physics<const S: usize, const EQ: usize> {
     /// The type of physics equations we are solving
     pub mode: PhysicsMode,
@@ -92,77 +94,77 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         }
     }
 
-    /// Updates conservative density and xi momentum according to the isothermal Euler equations
-    #[inline(always)]
-    fn update_cons_euler1d_isot(&mut self) {
-        self.cons.row_mut(0).assign(&self.prim.row(0));
-        self.calc_cons_linear_momentum_euler(1);
-    }
-
-    /// Updates conservative density, xi momentum, and energy according to the adiabatic Euler equations
-    #[inline(always)]
-    fn update_cons_euler1d_adiabatic(&mut self) {
-        self.update_cons_euler1d_isot();
-        self.calc_energy_euler1d();
-    }
-
-    /// Updates conservative density, xi momentum, and eta momentum according to the adiabatic Euler equations
-    #[inline(always)]
-    fn update_cons_euler2d_isot(&mut self) {
-        self.update_cons_euler1d_isot();
-        self.calc_cons_linear_momentum_euler(2);
-    }
-
-    /// Updates primitive density and xi velocity according to the isothermal Euler equations
-    #[inline(always)]
-    fn update_prim_euler1d_isot(&mut self) {
-        self.prim.row_mut(0).assign(&self.cons.row(0));
-        self.calc_prim_linear_velocity_euler(1);
-    }
-
-    /// Updates primitive density, xi velocity, and pressure according to the adiabatic Euler equations
-    #[inline(always)]
-    fn update_prim_euler1d_adiabatic(&mut self) {
-        self.update_prim_euler1d_isot();
-        self.calc_pressure_euler1d();
-    }
-
-    /// Updates primitive density, xi velocity, and eta velocity according to the adiabatic Euler equations
-    #[inline(always)]
-    fn update_prim_euler2d_isot(&mut self) {
-        self.update_prim_euler1d_isot();
-        self.calc_prim_linear_velocity_euler(2);
-    }
-
-    /// Calculates and updates the linear momentum in [self.cons] at row `j`.
-    #[inline(always)]
-    fn calc_cons_linear_momentum_euler(&mut self, j: usize) {
-        self.cons.row_mut(j).assign(&(&self.prim.row(j) * &self.prim.row(0)));
-    }
-
-    /// Calculates and updates the linear velocity in [self.prim] at row `j`.
-    #[inline(always)]
-    fn calc_prim_linear_velocity_euler(&mut self, j: usize) {
-        self.prim.row_mut(j).assign(&(&self.cons.row(j) / &self.cons.row(0)));
-    }
-
-    /// Calculates and updates the energy in [self.cons].
-    #[inline(always)]
-    fn calc_energy_euler1d(&mut self) {
-        self.cons.row_mut(2).assign(
-            &(&self.prim.row(2) * self.adiabatic_index.recip()
-                + 0.5 * &self.prim.row(0) * &self.prim.row(1) * &self.prim.row(1)),
-        );
-    }
-
-    /// Calculates and updates the pressure in [self.prim].
-    #[inline(always)]
-    fn calc_pressure_euler1d(&mut self) {
-        self.prim.row_mut(2).assign(
-            &(self.adiabatic_index
-                * (&self.cons.row(2) - 0.5 / &self.cons.row(0) * &self.cons.row(1) * &self.cons.row(1))),
-        );
-    }
+    // /// Updates conservative density and xi momentum according to the isothermal Euler equations
+    // #[inline(always)]
+    // fn update_cons_euler1d_isot(&mut self) {
+    //     self.cons.row_mut(0).assign(&self.prim.row(0));
+    //     self.calc_cons_linear_momentum_euler(1);
+    // }
+    //
+    // /// Updates conservative density, xi momentum, and energy according to the adiabatic Euler equations
+    // #[inline(always)]
+    // fn update_cons_euler1d_adiabatic(&mut self) {
+    //     self.update_cons_euler1d_isot();
+    //     self.calc_energy_euler1d();
+    // }
+    //
+    // /// Updates conservative density, xi momentum, and eta momentum according to the adiabatic Euler equations
+    // #[inline(always)]
+    // fn update_cons_euler2d_isot(&mut self) {
+    //     self.update_cons_euler1d_isot();
+    //     self.calc_cons_linear_momentum_euler(2);
+    // }
+    //
+    // /// Updates primitive density and xi velocity according to the isothermal Euler equations
+    // #[inline(always)]
+    // fn update_prim_euler1d_isot(&mut self) {
+    //     self.prim.row_mut(0).assign(&self.cons.row(0));
+    //     self.calc_prim_linear_velocity_euler(1);
+    // }
+    //
+    // /// Updates primitive density, xi velocity, and pressure according to the adiabatic Euler equations
+    // #[inline(always)]
+    // fn update_prim_euler1d_adiabatic(&mut self) {
+    //     self.update_prim_euler1d_isot();
+    //     self.calc_pressure_euler1d();
+    // }
+    //
+    // /// Updates primitive density, xi velocity, and eta velocity according to the adiabatic Euler equations
+    // #[inline(always)]
+    // fn update_prim_euler2d_isot(&mut self) {
+    //     self.update_prim_euler1d_isot();
+    //     self.calc_prim_linear_velocity_euler(2);
+    // }
+    //
+    // /// Calculates and updates the linear momentum in [self.cons] at row `j`.
+    // #[inline(always)]
+    // fn calc_cons_linear_momentum_euler(&mut self, j: usize) {
+    //     self.cons.row_mut(j).assign(&(&self.prim.row(j) * &self.prim.row(0)));
+    // }
+    //
+    // /// Calculates and updates the linear velocity in [self.prim] at row `j`.
+    // #[inline(always)]
+    // fn calc_prim_linear_velocity_euler(&mut self, j: usize) {
+    //     self.prim.row_mut(j).assign(&(&self.cons.row(j) / &self.cons.row(0)));
+    // }
+    //
+    // /// Calculates and updates the energy in [self.cons].
+    // #[inline(always)]
+    // fn calc_energy_euler1d(&mut self) {
+    //     self.cons.row_mut(2).assign(
+    //         &(&self.prim.row(2) * self.adiabatic_index.recip()
+    //             + 0.5 * &self.prim.row(0) * &self.prim.row(1) * &self.prim.row(1)),
+    //     );
+    // }
+    //
+    // /// Calculates and updates the pressure in [self.prim].
+    // #[inline(always)]
+    // fn calc_pressure_euler1d(&mut self) {
+    //     self.prim.row_mut(2).assign(
+    //         &(self.adiabatic_index
+    //             * (&self.cons.row(2) - 0.5 / &self.cons.row(0) * &self.cons.row(1) * &self.cons.row(1))),
+    //     );
+    // }
 }
 
 /// Initialises a [Physics] object with mesh size `S` and `EQ` equations.
