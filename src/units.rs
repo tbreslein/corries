@@ -22,6 +22,7 @@ pub enum UnitsMode {
 
 /// Struct that serves to know the type units the simulation uses, and exposes methods to convert
 /// between different units.
+#[derive(Debug)]
 pub struct Units {
     /// the type of units during the simulation
     mode: UnitsMode,

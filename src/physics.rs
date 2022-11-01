@@ -14,6 +14,7 @@ use crate::{
 mod systems;
 
 /// Struct that governs the variables and state for a system of differential equations
+#[derive(Debug)]
 pub struct Physics<const S: usize, const EQ: usize> {
     /// The type of physics equations we are solving
     pub mode: PhysicsMode,
@@ -28,28 +29,25 @@ pub struct Physics<const S: usize, const EQ: usize> {
     pub c_sound: Array1<f64>,
 
     /// Possible equation index for density
-    pub jdensity: usize,
+    jdensity: usize,
 
     /// Possible equation index for velocity in the xi direction
-    pub jxivelocity: usize,
+    jxivelocity: usize,
 
     /// Possible equation index for momentum in the xi direction
-    pub jximomentum: usize,
+    jximomentum: usize,
 
     /// Possible equation index for velocity in the xi direction
-    pub jetavelocity: usize,
+    jetavelocity: usize,
 
     /// Possible equation index for momentum in the xi direction
-    pub jetamomentum: usize,
+    jetamomentum: usize,
 
     /// Possible equation index for momentum in the xi direction
-    pub jangmomentum: usize,
+    jenergy: usize,
 
     /// Possible equation index for momentum in the xi direction
-    pub jenergy: usize,
-
-    /// Possible equation index for momentum in the xi direction
-    pub jpressure: usize,
+    jpressure: usize,
 
     /// Adiabatic index
     pub adiabatic_index: f64,
@@ -133,11 +131,6 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
         PhysicsMode::Euler1DIsot => usize::MAX,
         PhysicsMode::Euler2DIsot => 2,
     };
-    let jangmomentum = match mode {
-        PhysicsMode::Euler1DAdiabatic => usize::MAX,
-        PhysicsMode::Euler1DIsot => usize::MAX,
-        PhysicsMode::Euler2DIsot => usize::MAX,
-    };
     let jenergy = match mode {
         PhysicsMode::Euler1DAdiabatic => 2,
         PhysicsMode::Euler1DIsot => usize::MAX,
@@ -166,7 +159,6 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
         jximomentum,
         jetavelocity,
         jetamomentum,
-        jangmomentum,
         jenergy,
         jpressure,
         adiabatic_index,
