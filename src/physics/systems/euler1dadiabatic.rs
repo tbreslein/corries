@@ -18,18 +18,24 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Calculates and updates the energy in [self.cons].
     #[inline(always)]
     pub fn calc_energy_euler1d(&mut self) {
-        self.cons.row_mut(2).assign(
-            &(&self.prim.row(2) * self.adiabatic_index.recip()
-                + 0.5 * &self.prim.row(0) * &self.prim.row(1) * &self.prim.row(1)),
+        self.cons.row_mut(self.jenergy).assign(
+            &(&self.prim.row(self.jpressure) * self.adiabatic_index.recip()
+                + 0.5
+                    * &self.prim.row(self.jdensity)
+                    * &self.prim.row(self.jxivelocity)
+                    * &self.prim.row(self.jxivelocity)),
         );
     }
 
     /// Calculates and updates the pressure in [self.prim].
     #[inline(always)]
     pub fn calc_pressure_euler1d(&mut self) {
-        self.prim.row_mut(2).assign(
+        self.prim.row_mut(self.jpressure).assign(
             &(self.adiabatic_index
-                * (&self.cons.row(2) - 0.5 / &self.cons.row(0) * &self.cons.row(1) * &self.cons.row(1))),
+                * (&self.cons.row(self.jenergy)
+                    - 0.5 / &self.cons.row(self.jdensity)
+                        * &self.cons.row(self.jximomentum)
+                        * &self.cons.row(self.jximomentum))),
         );
     }
 }
