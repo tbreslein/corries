@@ -23,7 +23,7 @@ pub mod config;
 #[macro_use]
 mod errorhandling;
 mod mesh;
-mod physics;
+pub mod physics;
 mod rhs;
 pub mod units;
 mod writer;

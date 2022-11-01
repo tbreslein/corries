@@ -446,15 +446,8 @@ impl<const S: usize> CorriesWrite for Mesh<S> {
             (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent, value, mesh_offset),
             (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west, value, mesh_offset),
             (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east, value, mesh_offset),
-            (StructAssociation::Mesh, DataName::NComp) => {
-                *value = DataValue::Usize(self.n_comp);
-                Ok(())
-            },
-            (StructAssociation::Mesh, DataName::NAll) => {
-                *value = DataValue::Usize(self.n_all);
-                Ok(())
-            }, // Match other associations like this:
-               // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
+            // Match other associations like this:
+            // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
         }?;
         return Ok(());
     }
