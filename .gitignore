@@ -13,3 +13,5 @@ Cargo.lock
 .direnv/
 result
 results/
+
+proptest-regressions/

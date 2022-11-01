@@ -2,66 +2,130 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use ndarray::AssignElem;
+use ndarray::{Array1, Array2};
 
 use crate::{
-    config::physicsconfig::PhysicsConfig,
-    physics::{variables::Variables, Physics},
+    config::physicsconfig::{PhysicsConfig, PhysicsMode},
+    physics::Physics,
     units::Units,
 };
 
 pub struct Euler1DIsot<const S: usize> {
-    pub vars: Variables<S, 2>,
+    /// The type of physics equations we are solving
+    pub mode: PhysicsMode,
+
+    /// Primitive variables
+    pub prim: Array2<f64>,
+
+    /// Conservative variables
+    pub cons: Array2<f64>,
+
+    /// Speed of sound
+    pub c_sound: Array1<f64>,
+
+    /// Possible equation index for density
+    pub jdensity: usize,
+
+    /// Possible equation index for velocity in the xi direction
+    pub jxivelocity: usize,
+
+    /// Possible equation index for momentum in the xi direction
+    pub jximomentum: usize,
+
+    /// Adiabatic index
+    pub adiabatic_index: f64,
+
+    /// Whether this type of Physics / these variables are adiabatic
+    pub is_adiabatic: bool,
+
+    /// Whether this type of Physics / these variables are isothermal
+    pub is_isothermal: bool,
+
+    /// Helper struct for handling unit systems
     pub units: Units,
 }
 
 impl<const S: usize> Euler1DIsot<S> {
     pub fn new(physicsconf: &PhysicsConfig) -> Self {
-        let vars = Variables::new(physicsconf);
+        let mode = physicsconf.mode;
+
+        let prim = Array2::zeros((2, S));
+        let cons = Array2::zeros((2, S));
+        let c_sound = Array1::zeros(S);
+
+        let jdensity = 0;
+        let jxivelocity = 1;
+        let jximomentum = 1;
+
+        let adiabatic_index = physicsconf.adiabatic_index;
+        let is_adiabatic = false;
+        let is_isothermal = !is_adiabatic;
         let units = Units::new(physicsconf.units_mode);
-        return Euler1DIsot { vars, units };
+        return Euler1DIsot {
+            mode,
+            prim,
+            cons,
+            c_sound,
+            jdensity,
+            jxivelocity,
+            jximomentum,
+            adiabatic_index,
+            is_adiabatic,
+            is_isothermal,
+            units,
+        };
     }
 }
 
 impl<const S: usize, const EQ: usize> Physics<S, EQ> for Euler1DIsot<S> {
-    fn update_cons(&mut self) {
-        self.vars.c.row_mut(0).assign(&self.vars.p.row(0));
-        self.vars
-            .c
-            .row_mut(1)
-            .assign(&(&self.vars.p.row(1) * &self.vars.p.row(0)));
-    }
-
-    fn update_prim(&mut self) {
-        self.vars.p.row_mut(0).assign(&self.vars.c.row(0));
-        self.vars
-            .p
-            .row_mut(1)
-            .assign(&(&self.vars.c.row(1) / &self.vars.c.row(0)));
-    }
-
     fn assign_prim(&mut self, i: usize, j: usize, x: f64) {
-        self.vars.p[[i, j]] = x;
+        self.prim[[j, i]] = x;
     }
 
     fn assign_cons(&mut self, i: usize, j: usize, x: f64) {
-        self.vars.c[[i, j]] = x;
+        self.cons[[j, i]] = x;
+    }
+
+    fn assign_c_sound(&mut self, i: usize, x: f64) {
+        self.c_sound[i] = x;
     }
 
     fn assign_prim_vec(&mut self, j: usize, x: &ndarray::Array1<f64>) {
-        self.vars.p.row_mut(j).assign(x);
+        self.prim.row_mut(j).assign(x);
     }
 
     fn assign_cons_vec(&mut self, j: usize, x: &ndarray::Array1<f64>) {
-        self.vars.c.row_mut(j).assign(x);
+        self.cons.row_mut(j).assign(x);
+    }
+
+    fn assign_c_sound_vec(&mut self, x: &Array1<f64>) {
+        self.c_sound.assign(x);
     }
 
     fn get_prim(&self, i: usize, j: usize) -> f64 {
-        return self.vars.p[[i, j]];
+        return self.prim[[j, i]];
     }
 
     fn get_cons(&self, i: usize, j: usize) -> f64 {
-        return self.vars.c[[i, j]];
+        return self.cons[[j, i]];
+    }
+
+    fn get_c_sound(&self, i: usize) -> f64 {
+        return self.c_sound[i];
+    }
+
+    fn update_cons(&mut self) {
+        self.cons.row_mut(self.jdensity).assign(&self.prim.row(self.jdensity));
+        self.cons
+            .row_mut(self.jximomentum)
+            .assign(&(&self.prim.row(self.jxivelocity) * &self.prim.row(self.jdensity)));
+    }
+
+    fn update_prim(&mut self) {
+        self.prim.row_mut(self.jdensity).assign(&self.cons.row(self.jdensity));
+        self.prim
+            .row_mut(self.jxivelocity)
+            .assign(&(&self.cons.row(self.jximomentum) / &self.cons.row(self.jdensity)));
     }
 }
 
@@ -71,7 +135,7 @@ mod tests {
     use approx::assert_relative_eq;
     use ndarray::Array1;
     use proptest::prelude::*;
-    const S: usize = 104;
+    const S: usize = 10;
     // TODO: These are unnecessary. I should just generate these in the proptest
     prop_compose! {
         fn arb_density()
@@ -97,11 +161,9 @@ mod tests {
             u.update_cons();
             u.update_prim();
             for i in 0..S {
-                // assert_relative_eq!(p0[i], p0[i]);
                 assert_relative_eq!(p0[i], u.get_prim(i, 0), epsilon = 10.0f64.powi(-12));
                 assert_relative_eq!(p1[i], u.get_prim(i, 1), epsilon = 10.0f64.powi(-12));
             }
-            // assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], epsilon = 10.0f64.powi(-12));
         }
     }
 }
