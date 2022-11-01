@@ -12,6 +12,7 @@ use crate::units::UnitsMode;
 #[derive(Debug, Copy, Clone)]
 pub enum PhysicsMode {
     Euler1DIsot,
+    Euler2DIsot,
 }
 
 /// Carries information about how the mesh should shaped

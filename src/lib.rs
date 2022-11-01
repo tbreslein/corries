@@ -47,6 +47,7 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
 pub const fn get_n_equations(physics_mode: PhysicsMode) -> usize {
     return match physics_mode {
         PhysicsMode::Euler1DIsot => 2,
+        PhysicsMode::Euler2DIsot => 3,
     };
 }
 
