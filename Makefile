@@ -33,7 +33,7 @@ test:
 
 .PHONY: bench
 bench:
-	cargo test --bench -r
+	cargo bench
 
 .PHONY: clean
 clean:
