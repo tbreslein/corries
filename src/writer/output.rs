@@ -10,8 +10,9 @@ use color_eyre::{
     eyre::{bail, WrapErr},
     Result,
 };
-use ndarray::Array1;
+use ndarray::{ArrayD, IxDyn};
 
+use crate::physics::Physics;
 use crate::{
     config::{
         outputconfig::{
@@ -94,6 +95,11 @@ impl Output {
                 }
             },
         };
+        let mesh_offset = if outputconfig.should_print_ghostcells {
+            mesh.imin
+        } else {
+            mesh.ixi_in
+        };
         let mut data_matrix = vec![];
         for name in outputconfig.data_names.iter() {
             match name.datatype() {
@@ -101,7 +107,7 @@ impl Output {
                 DataType::Usize => data_matrix.push(DataValue::Usize(0)),
                 DataType::Float => data_matrix.push(DataValue::Float(0.0)),
                 DataType::String => data_matrix.push(DataValue::String("".to_string())),
-                DataType::VectorFloat => data_matrix.push(DataValue::VectorFloat(Array1::zeros(S))),
+                DataType::VectorFloat => data_matrix.push(DataValue::VectorFloat(ArrayD::zeros(IxDyn(&[S - 2 * mesh_offset])))),
             };
         }
 
@@ -136,11 +142,7 @@ impl Output {
         }
 
         return Ok(Output {
-            mesh_offset: if outputconfig.should_print_ghostcells {
-                mesh.imin
-            } else {
-                mesh.ixi_in
-            },
+            mesh_offset,
             first_output: true,
             output_counter: 0,
             output_counter_width: f64::log10(output_count_max as f64) as usize + 1,
@@ -178,10 +180,15 @@ impl Output {
     /// # Arguments
     ///
     /// * `mesh` - `Mesh` object to pull data from
-    pub fn update_data_matrix<const S: usize>(&mut self, mesh: &Mesh<S>) -> Result<()> {
+    pub fn update_data_matrix<const S: usize, const EQ: usize>(
+        &mut self,
+        mesh: &Mesh<S>,
+        u: &Physics<S, EQ>,
+    ) -> Result<()> {
         for (i, name) in self.data_names.iter().enumerate() {
             match name.association() {
                 StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
+                StructAssociation::Physics => u.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
             }?;
         }
         return Ok(());
@@ -327,7 +334,7 @@ impl Output {
     fn get_header(&self) -> String {
         let mut s = self.leading_comment_symbol.clone();
         for name in self.data_names.iter() {
-            let name_string = format!("{:?}", name);
+            let name_string = format!("{}", name);
             s += &format!("{:>width$}", name_string, width = self.width);
             s.push(self.delimiter);
         }

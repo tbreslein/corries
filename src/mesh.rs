@@ -6,7 +6,7 @@ use crate::config::meshconfig::{MeshConfig, MeshMode};
 use crate::config::outputconfig::{DataName, StructAssociation};
 use crate::errorhandling::Validation;
 use crate::writer::{CorriesWrite, DataValue};
-use color_eyre::eyre::{ensure, Context};
+use color_eyre::eyre::{ensure, Context, bail};
 use color_eyre::Result;
 use ndarray::Array1;
 
@@ -443,11 +443,11 @@ impl<const S: usize> Validation for Mesh<S> {
 impl<const S: usize> CorriesWrite for Mesh<S> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
-            (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent, value, mesh_offset),
-            (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west, value, mesh_offset),
-            (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east, value, mesh_offset),
-            // Match other associations like this:
-            // (StructAssociation::Physics, _) => bail!("Wrong association blabla")
+            (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent.view(), value, mesh_offset),
+            (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west.view(), value, mesh_offset),
+            (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east.view(), value, mesh_offset),
+            (StructAssociation::Mesh, _) => bail!("Tried associating {:?} with Mesh!", name),
+            (StructAssociation::Physics, _) => bail!("name.association() for {:?} returned {:?}", name, name.association())
         }?;
         return Ok(());
     }

@@ -36,7 +36,7 @@ mod writer;
 pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    let _u = init_physics::<S, EQ>(&config.physicsconf);
+    let u = init_physics::<S, EQ>(&config.physicsconf);
     let _rhs = Rhs::new();
 
     // // TEMP:
@@ -47,7 +47,7 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     if writer.outputs.iter().any(|o| o.stream_mode == StreamMode::Stdout) {
         print_banner();
     }
-    writer.update_data_matrices(&mesh)?;
+    writer.update_data_matrices(&mesh, &u)?;
     writer.write_metadata::<S>(&config)?;
     writer.write_output()?;
     return Ok(());

@@ -3,12 +3,13 @@
 // License: MIT
 
 use color_eyre::{eyre::bail, Result};
-use ndarray::{s, Array1};
+use ndarray::{s, ArrayD, ArrayView1};
 
 use self::output::Output;
 use crate::{
     config::{outputconfig::DataName, CorriesConfig},
     mesh::Mesh,
+    physics::Physics,
 };
 
 mod output;
@@ -25,7 +26,7 @@ pub enum DataValue {
     Int(i32),
     Usize(usize),
     Float(f64),
-    VectorFloat(Array1<f64>),
+    VectorFloat(ArrayD<f64>),
     String(String),
 }
 
@@ -51,10 +52,14 @@ impl Writer {
     /// # Arguments
     ///
     /// * `mesh` - Provides mesh data
-    pub fn update_data_matrices<const S: usize>(&mut self, mesh: &Mesh<S>) -> Result<()> {
+    pub fn update_data_matrices<const S: usize, const EQ: usize>(
+        &mut self,
+        mesh: &Mesh<S>,
+        u: &Physics<S, EQ>,
+    ) -> Result<()> {
         // TODO: can I safely thread this loop?
         for output in self.outputs.iter_mut() {
-            output.update_data_matrix(mesh)?;
+            output.update_data_matrix(mesh, u)?;
         }
         return Ok(());
     }
@@ -100,7 +105,7 @@ pub trait CorriesWrite {
     /// * `value` - Where to write the data to
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
-    fn write_vector(&self, field: &Array1<f64>, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
+    fn write_vector(&self, field: &ArrayView1<f64>, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         return match value {
             DataValue::VectorFloat(v) => {
                 if mesh_offset == 0 {
