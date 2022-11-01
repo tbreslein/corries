@@ -32,6 +32,7 @@ pub struct Physics<const S: usize, const EQ: usize> {
 
     /// Speed of sound
     pub c_sound: Array1<f64>,
+    c_sound_helper: Array1<f64>,
 
     /// Possible equation index for density
     jdensity: usize,
@@ -97,6 +98,18 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
             },
         }
     }
+
+    /// Updates the speed of sound vector
+    pub fn update_c_sound(&mut self) {
+        match self.mode {
+            PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => {
+                self.update_c_sound_isot();
+            },
+            PhysicsMode::Euler1DAdiabatic => {
+                self.update_c_sound_adiabatic();
+            },
+        }
+    }
 }
 
 /// Initialises a [Physics] object with mesh size `S` and `EQ` equations.
@@ -110,6 +123,7 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
     let prim = Array2::from_elem((EQ, S), 1.1);
     let cons = Array2::from_elem((EQ, S), 1.1);
     let c_sound = Array1::from_elem(S, 1.1);
+    let c_sound_helper = Array1::from_elem(S, 1.1);
 
     let jdensity = match mode {
         PhysicsMode::Euler1DAdiabatic => 0,
@@ -159,6 +173,7 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
         prim,
         cons,
         c_sound,
+        c_sound_helper,
         jdensity,
         jxivelocity,
         jximomentum,
