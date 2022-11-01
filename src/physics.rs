@@ -34,6 +34,9 @@ pub struct Physics<const S: usize, const EQ: usize> {
     pub c_sound: Array1<f64>,
     c_sound_helper: Array1<f64>,
 
+    /// Eigen values
+    pub eigen_vals: Array2<f64>,
+
     /// Possible equation index for density
     jdensity: usize,
 
@@ -110,6 +113,36 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
             },
         }
     }
+
+    /// Calculates the physical flux and saves it in `flux`.
+    pub fn calc_physical_flux(&self, flux: &mut Array2<f64>) {
+        match self.mode {
+            PhysicsMode::Euler1DIsot => {
+                self.calc_physical_flux_euler1d_isot(flux);
+            },
+            PhysicsMode::Euler1DAdiabatic => {
+                self.calc_physical_flux_euler1d_adiabatic(flux);
+            },
+            PhysicsMode::Euler2DIsot => {
+                self.calc_physical_flux_euler2d_isot(flux);
+            },
+        };
+    }
+
+    /// Updates the eigen values
+    pub fn update_eigen_vals(&mut self) {
+        self.eigen_vals
+            .row_mut(0)
+            .assign(&(&self.prim.row(self.jxivelocity) - &self.c_sound));
+        self.eigen_vals
+            .row_mut(EQ - 1)
+            .assign(&(&self.prim.row(self.jxivelocity) + &self.c_sound));
+        for j in 0..(EQ - 1) {
+            self.eigen_vals
+                .row_mut(j)
+                .assign(&(&self.prim.row(self.jxivelocity) - &self.c_sound));
+        }
+    }
 }
 
 /// Initialises a [Physics] object with mesh size `S` and `EQ` equations.
@@ -124,6 +157,7 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
     let cons = Array2::from_elem((EQ, S), 1.1);
     let c_sound = Array1::from_elem(S, 1.1);
     let c_sound_helper = Array1::from_elem(S, 1.1);
+    let eigen_vals = Array2::from_elem((EQ, S), 1.1);
 
     let jdensity = match mode {
         PhysicsMode::Euler1DAdiabatic => 0,
@@ -174,6 +208,7 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
         cons,
         c_sound,
         c_sound_helper,
+        eigen_vals,
         jdensity,
         jxivelocity,
         jximomentum,
