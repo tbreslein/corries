@@ -4,6 +4,8 @@
 
 //! Exports [OutputConfig] for configuring the objects that write output.
 
+use std::fmt;
+
 use color_eyre::eyre::ensure;
 
 use crate::errorhandling::Validation;
@@ -114,8 +116,27 @@ pub enum DataName {
     // =======
     // Physics
     // =======
-    // Prim(usize), // usize -> matrix index
-    // Cons(usize),
+    /// Primitive variables at index given through the payload
+    Prim(usize), // usize -> matrix index
+
+    /// Conservative variables at index given through the payload
+    Cons(usize),
+
+    /// Speed of sound
+    CSound,
+}
+
+impl fmt::Display for DataName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        return match self {
+            DataName::XiCent => write!(f, "XiCent"),
+            DataName::XiWest => write!(f, "XiWest"),
+            DataName::XiEast => write!(f, "XiEast"),
+            DataName::Prim(j) => write!(f, "Prim{}", j),
+            DataName::Cons(j) => write!(f, "Cons{}", j),
+            DataName::CSound => write!(f, "CSound"),
+        };
+    }
 }
 
 /// Enumerates the different types of data that be written to output.
@@ -141,9 +162,13 @@ pub enum DataType {
 }
 
 /// Enumerates the structs / traits a `DataName` may be associated to.
+#[derive(Debug)]
 pub enum StructAssociation {
     /// Value is associated with `Mesh` objects
     Mesh,
+
+    /// Value is associated with `Physics` objects
+    Physics,
 }
 
 impl DataName {
@@ -153,6 +178,9 @@ impl DataName {
             Self::XiCent => DataType::VectorFloat,
             Self::XiWest => DataType::VectorFloat,
             Self::XiEast => DataType::VectorFloat,
+            Self::Prim(_) => DataType::VectorFloat,
+            Self::Cons(_) => DataType::VectorFloat,
+            Self::CSound => DataType::VectorFloat,
         };
     }
 
@@ -162,6 +190,9 @@ impl DataName {
             Self::XiCent => StructAssociation::Mesh,
             Self::XiWest => StructAssociation::Mesh,
             Self::XiEast => StructAssociation::Mesh,
+            Self::Prim(_) => StructAssociation::Physics,
+            Self::Cons(_) => StructAssociation::Physics,
+            Self::CSound => StructAssociation::Physics,
         };
     }
 }

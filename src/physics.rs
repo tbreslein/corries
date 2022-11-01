@@ -4,11 +4,12 @@
 
 //! Exports the [Physics] struct that handles the variables and physical state of the simulation.
 
+use color_eyre::{Result, eyre::bail};
 use ndarray::{Array1, Array2};
 
 use crate::{
-    config::physicsconfig::{PhysicsConfig, PhysicsMode},
-    units::Units,
+    config::{physicsconfig::{PhysicsConfig, PhysicsMode}, outputconfig::{DataName, StructAssociation}},
+    units::Units, writer::{CorriesWrite, DataValue},
 };
 
 mod systems;
@@ -166,4 +167,17 @@ pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig
         is_isothermal,
         units,
     };
+}
+
+impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
+    fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
+        match (name.association(), name) {
+            (StructAssociation::Physics, DataName::Prim(j)) => self.write_vector(&self.prim.row(*j), value, mesh_offset),
+            (StructAssociation::Physics, DataName::Cons(j)) => self.write_vector(&self.cons.row(*j), value, mesh_offset),
+            (StructAssociation::Physics, DataName::CSound) => self.write_vector(&self.c_sound.view(), value, mesh_offset),
+            (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Mesh!", name),
+            (StructAssociation::Mesh, _) => bail!("name.association() for {:?} returned {:?}", name, name.association())
+        }?;
+        return Ok(());
+    }
 }
