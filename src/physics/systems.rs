@@ -3,3 +3,4 @@
 // License: MIT
 
 pub mod euler1disot;
+pub mod euler2disot;
