@@ -17,14 +17,14 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         self.update_prim_linear_velocity_euler(self.jetavelocity);
     }
 
-    /// Calculates the physical flux for isothermal 1D Euler
+    /// Calculates the physical flux for isothermal 2D Euler
     #[inline(always)]
     pub fn calc_physical_flux_euler2d_isot(&self, flux: &mut Array2<f64>) {
         self.calc_physical_flux_euler1d_isot(flux);
         self.calc_eta_momentum_flux_euler1d_isot(flux);
     }
 
-    /// Calculates the xi momentum flux for isothermal 1D Euler
+    /// Calculates the eta momentum flux for isothermal 2D Euler
     #[inline(always)]
     pub fn calc_eta_momentum_flux_euler1d_isot(&self, flux: &mut Array2<f64>) {
         azip!((etamom_flux in flux.row_mut(self.jximomentum), &xivel in self.prim.row(self.jxivelocity), &etamom in self.cons.row(self.jetamomentum)) *etamom_flux = xivel * etamom);

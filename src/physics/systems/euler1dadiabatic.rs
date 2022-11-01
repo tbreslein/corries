@@ -61,7 +61,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         azip!((ximom_flux in flux.row_mut(self.jximomentum), &xivel in self.prim.row(self.jxivelocity), &ximom in self.cons.row(self.jximomentum), &p in self.prim.row(self.jpressure)) *ximom_flux = xivel * ximom + p);
     }
 
-    /// Calculates the density flux for isothermal 1D Euler
+    /// Calculates the energy flux for adiabatic 1D Euler
     #[inline(always)]
     pub fn calc_energy_flux_euler1d_isot(&self, flux: &mut Array2<f64>) {
         azip!((energy_flux in flux.row_mut(self.jenergy), &e in self.cons.row(self.jenergy), &p in self.prim.row(self.jpressure), &xivel in self.prim.row(self.jxivelocity)) *energy_flux = (e + p) * xivel);
