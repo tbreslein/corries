@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports [PhysicsConfig] for configuring the physics equations and conditions.
+
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
 
@@ -11,8 +13,17 @@ use crate::units::UnitsMode;
 /// Enum for the different kinds of Physics available
 #[derive(Debug, Copy, Clone)]
 pub enum PhysicsMode {
+    /// 1D isothermal Euler equations
     Euler1DIsot,
+
+    /// 2D isothermal Euler equations
     Euler2DIsot,
+
+    /// 1D adiabatic Euler equations
+    Euler1DAdiabatic,
+    // Euler2DAdiabatic,
+    // NavStoIsot,
+    // NavStoAdiabatic,
 }
 
 /// Carries information about how the mesh should shaped

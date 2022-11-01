@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports [MeshConfig] for configuring the mesh of the simulation.
+
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
 
@@ -10,6 +12,7 @@ use crate::errorhandling::Validation;
 /// Enum for the different kinds of Meshes available
 #[derive(Debug, Copy, Clone)]
 pub enum MeshMode {
+    /// Cartesian mesh
     Cartesian,
 }
 

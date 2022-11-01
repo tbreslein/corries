@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports [OutputConfig] for configuring the objects that write output.
+
 use color_eyre::eyre::ensure;
 
 use crate::errorhandling::Validation;
@@ -68,14 +70,20 @@ impl Validation for OutputConfig {
 /// Enumerates the different streams an `Output` may write to
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StreamMode {
+    /// Streams to stdout
     Stdout,
+
+    /// Streams to a file
     File,
 }
 
 /// Enumerates whether an `Output` writes scalar or vector values
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToStringConversionMode {
+    /// Writes scalars
     Scalar,
+
+    /// Writes vectors
     Vector,
 }
 
@@ -103,10 +111,6 @@ pub enum DataName {
 
     /// xi coordinates at a cell's east border (Vector)
     XiEast,
-
-    // TODO: remove these
-    NComp,
-    NAll,
     // =======
     // Physics
     // =======
@@ -120,15 +124,25 @@ pub enum DataName {
 /// implement DataName::datatype().
 #[derive(Debug, PartialEq, Eq)]
 pub enum DataType {
+    /// Value is an `i32`
     Int,
+
+    /// Value is a `usize`
     Usize,
+
+    /// Value is an `f64`
     Float,
+
+    /// Value is a vector-like container of `f64`
     VectorFloat,
+
+    /// Value is a `String`
     String,
 }
 
 /// Enumerates the structs / traits a `DataName` may be associated to.
 pub enum StructAssociation {
+    /// Value is associated with `Mesh` objects
     Mesh,
 }
 
@@ -139,8 +153,6 @@ impl DataName {
             Self::XiCent => DataType::VectorFloat,
             Self::XiWest => DataType::VectorFloat,
             Self::XiEast => DataType::VectorFloat,
-            Self::NComp => DataType::Int,
-            Self::NAll => DataType::Int,
         };
     }
 
@@ -150,8 +162,6 @@ impl DataName {
             Self::XiCent => StructAssociation::Mesh,
             Self::XiWest => StructAssociation::Mesh,
             Self::XiEast => StructAssociation::Mesh,
-            Self::NComp => StructAssociation::Mesh,
-            Self::NAll => StructAssociation::Mesh,
         };
     }
 }
