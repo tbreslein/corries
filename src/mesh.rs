@@ -6,7 +6,7 @@ use crate::config::meshconfig::{MeshConfig, MeshMode};
 use crate::config::outputconfig::{DataName, StructAssociation};
 use crate::errorhandling::Validation;
 use crate::writer::{CorriesWrite, DataValue};
-use color_eyre::eyre::{ensure, Context, bail};
+use color_eyre::eyre::{bail, ensure, Context};
 use color_eyre::Result;
 use ndarray::Array1;
 
@@ -447,7 +447,9 @@ impl<const S: usize> CorriesWrite for Mesh<S> {
             (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west.view(), value, mesh_offset),
             (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east.view(), value, mesh_offset),
             (StructAssociation::Mesh, _) => bail!("Tried associating {:?} with Mesh!", name),
-            (StructAssociation::Physics, _) => bail!("name.association() for {:?} returned {:?}", name, name.association())
+            (StructAssociation::Physics, _) => {
+                bail!("name.association() for {:?} returned {:?}", name, name.association())
+            },
         }?;
         return Ok(());
     }
@@ -477,7 +479,8 @@ mod tests {
                 prop_assume!(mesh.is_ok());
                 let mesh = mesh.unwrap();
                 prop_assume!(mesh.xi_in < mesh.xi_out);
-                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], epsilon = 10.0f64.powi(-12));
+                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(mesh.xi_out, mesh.xi_east[mesh.ixi_out], max_relative = 10.0f64.powi(-12));
             }
         }
     }
