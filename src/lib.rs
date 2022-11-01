@@ -2,6 +2,15 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+#![warn(missing_docs)]
+
+//! Corries - CORrosive RIEman Solver
+//!
+//! Library to run 1D-hydrodynamics simulations solved with Riemann solvers.
+//!
+//! Provides the [run_sim] and [get_n_equations] functions, as well as the [config::CorriesConfig] struct.
+//! The [run_sim] function is used to start a simulation configured through its input arguments.
+
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
@@ -23,7 +32,7 @@ mod writer;
 ///
 /// # Arguments
 ///
-/// * `config` - The `CorriesConfig` the simulation is based on
+/// * `config` - The [CorriesConfig] the simulation is based on
 pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
@@ -44,8 +53,11 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     return Ok(());
 }
 
+/// Compile time function to return the number of equations according to the [PhysicsMode]
+/// argument.
 pub const fn get_n_equations(physics_mode: PhysicsMode) -> usize {
     return match physics_mode {
+        PhysicsMode::Euler1DAdiabatic => 3,
         PhysicsMode::Euler1DIsot => 2,
         PhysicsMode::Euler2DIsot => 3,
     };

@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports the [UnitsMode] and [Units] structs for configuring and using unit systems.
+
 /// Length scale in CGS units
 const LENGTH_CGS: f64 = 0.01;
 
@@ -11,13 +13,17 @@ const MASS_CGS: f64 = 0.001;
 /// Enum for the different kinds of unit systems available
 #[derive(Debug, Copy, Clone)]
 pub enum UnitsMode {
+    /// Use SI units
     SI,
+
+    /// Use CGS units
     CGS,
 }
 
 /// Struct that serves to know the type units the simulation uses, and exposes methods to convert
 /// between different units.
 pub struct Units {
+    /// the type of units during the simulation
     mode: UnitsMode,
 }
 

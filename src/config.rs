@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
+
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 

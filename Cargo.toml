@@ -26,12 +26,17 @@ categories = ["science", "mathematics"]
 # name = "sod"
 # path = "tests/sod.rs"
 
+[[bench]]
+name = "bench"
+harness = false
+
 [dependencies]
 color-eyre = { version = "0.6", default-features = false }
-ndarray = { version = "0.15", features = ["blas"] }
+ndarray = { version = "0.15", features = ["blas", "approx-0_5"] }
 blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
 
 [dev-dependencies]
 proptest = { version = "1" }
 approx = { version = "0.5" }
+criterion = "0.4.0"
