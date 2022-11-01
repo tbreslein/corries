@@ -27,6 +27,12 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Calculates the eta momentum flux for isothermal 2D Euler
     #[inline(always)]
     pub fn calc_eta_momentum_flux_euler1d_isot(&self, flux: &mut Array2<f64>) {
-        azip!((etamom_flux in flux.row_mut(self.jximomentum), &xivel in self.prim.row(self.jxivelocity), &etamom in self.cons.row(self.jetamomentum)) *etamom_flux = xivel * etamom);
+        azip!(
+            (
+                etamom_flux in flux.row_mut(self.jximomentum),
+                &xivel in self.prim.row(self.jxivelocity),
+                &etamom in self.cons.row(self.jetamomentum)
+            )
+            *etamom_flux = xivel * etamom);
     }
 }

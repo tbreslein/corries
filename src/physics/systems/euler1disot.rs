@@ -52,12 +52,24 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Calculates the density flux for isothermal 1D Euler
     #[inline(always)]
     pub fn calc_density_flux_euler1d_isot(&self, flux: &mut Array2<f64>) {
-        azip!((dens_flux in flux.row_mut(self.jdensity), &ximom in self.cons.row(self.jximomentum)) *dens_flux = ximom);
+        azip!(
+            (
+                dens_flux in flux.row_mut(self.jdensity),
+                &ximom in self.cons.row(self.jximomentum)
+            )
+            *dens_flux = ximom);
     }
 
     /// Calculates the xi momentum flux for isothermal 1D Euler
     #[inline(always)]
     pub fn calc_xi_momentum_flux_euler1d_isot(&self, flux: &mut Array2<f64>) {
-        azip!((ximom_flux in flux.row_mut(self.jximomentum), &dens in self.cons.row(self.jdensity), &xivel in self.prim.row(self.jxivelocity), &cs in &self.c_sound) *ximom_flux = dens * (xivel * xivel + cs * cs));
+        azip!(
+            (
+                ximom_flux in flux.row_mut(self.jximomentum),
+                &dens in self.cons.row(self.jdensity),
+                &xivel in self.prim.row(self.jxivelocity),
+                &cs in &self.c_sound
+            )
+            *ximom_flux = dens * (xivel * xivel + cs * cs));
     }
 }
