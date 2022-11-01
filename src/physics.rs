@@ -148,9 +148,10 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Calculates the CFL time step width
     pub fn calc_dt_cfl(&mut self, dt_cfl_param: f64, mesh: &Mesh<S>) -> Result<f64> {
         self.update_eigen_vals();
-        let dt = dt_cfl_param / Zip::from(self.eigen_vals.row(EQ - 1))
-            .and(&mesh.cell_width_inv)
-            .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
+        let dt = dt_cfl_param
+            / Zip::from(self.eigen_vals.row(EQ - 1))
+                .and(&mesh.cell_width_inv)
+                .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
         if !dt.is_finite() {
             bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
         }
