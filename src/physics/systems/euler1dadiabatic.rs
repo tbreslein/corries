@@ -38,4 +38,10 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
                         * &self.cons.row(self.jximomentum))),
         );
     }
+
+    /// Updates the speed of sound vector; no-op for isothermal physics
+    #[inline(always)]
+    pub fn update_c_sound_adiabatic(&mut self) {
+        return;
+    }
 }
