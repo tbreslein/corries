@@ -15,6 +15,7 @@ use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
 use physics::init_physics;
+use rhs::numflux::init_numflux;
 use writer::Writer;
 
 use crate::{config::outputconfig::StreamMode, errorhandling::Validation, rhs::Rhs};
@@ -36,8 +37,10 @@ mod writer;
 pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    let u = init_physics::<S, EQ>(&config.physicsconf);
-    let _rhs = Rhs::new();
+    let mut u = init_physics::<S, EQ>(&config.physicsconf);
+    let mut numflux = init_numflux();
+    let mut rhs: Rhs<S, EQ> = Rhs::new(&mut numflux);
+    rhs.update_dflux_dxi(&mut u, &mesh);
 
     // // TEMP:
     let output_count_max = 2;
