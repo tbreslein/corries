@@ -28,21 +28,16 @@ Things to read:
 ### Small things
 
 - [ ] Fix Mesh unit tests
-- [ ] add approx features for ndarray?
-- [ ] Add unit tests for Units and Variables
 - [ ] more linting?
 - [ ] can I macro metadata_dump?
 
 ### Big Steps
 
-- [ ] Implement Physics and Euler1DIsot
-- [ ] Implement Numflux and HLL
 - [ ] Implement TimeInteg and RKF
-- [ ] Add boundary conditions
 - [ ] Add general initial conditions structure + Noh integration test
-- [ ] Add Euler1DAdiabatic + Sod test
+- [ ] Add Sod test
 - [ ] Add KT solver
-- [ ] Add Euler2DIsot + Euler2DAdiabatic
+- [ ] Add Euler2DAdiabatic
 - [ ] Add NavStoIsot + NavStoAdiabatic
 - [ ] Play around with threading + add benchmarking pipeline
 - [ ] Add cylindrical geometry + Source + GeometricSource + Sedov test
