@@ -32,6 +32,12 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     }
 
     pub fn update_dflux_dxi(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
+        self.update_physics(u, mesh);
         self.numflux.calc_dflux_dxi(&mut self.dflux_dxi, u, &mesh);
+    }
+
+    fn update_physics(&self, u: &mut Physics<S, EQ>, _mesh: &Mesh<S>) {
+        u.update_prim();
+        u.update_cons();
     }
 }

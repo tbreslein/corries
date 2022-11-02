@@ -41,8 +41,8 @@ impl<const S: usize, const EQ: usize> Hll<S, EQ> {
 
 impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
     fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
+        // NOTE: Assumes that u.eigen_vals are already up to date
         u.calc_physical_flux_euler1d_adiabatic(&mut self.flux_phys);
-        u.update_eigen_vals();
         let slice = s![mesh.ixi_in-1..=mesh.ixi_out];
         let slice_p1 = s![mesh.ixi_in..=mesh.ixi_out+1];
 

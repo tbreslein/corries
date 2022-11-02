@@ -103,18 +103,6 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         }
     }
 
-    /// Updates the speed of sound vector
-    pub fn update_c_sound(&mut self) {
-        match self.mode {
-            PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => {
-                self.update_c_sound_isot();
-            },
-            PhysicsMode::Euler1DAdiabatic => {
-                self.update_c_sound_adiabatic();
-            },
-        }
-    }
-
     /// Calculates the physical flux and saves it in `flux`.
     pub fn calc_physical_flux(&self, flux: &mut Array2<f64>) {
         match self.mode {
@@ -130,8 +118,26 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         };
     }
 
+    /// Updates values in [Physics] outside of `self.prim` and `self.cons`
+    pub fn update_derived_variables(&mut self) {
+        self.update_c_sound();
+        self.update_eigen_vals();
+    }
+
+    /// Updates the speed of sound vector
+    fn update_c_sound(&mut self) {
+        match self.mode {
+            PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => {
+                self.update_c_sound_isot();
+            },
+            PhysicsMode::Euler1DAdiabatic => {
+                self.update_c_sound_adiabatic();
+            },
+        }
+    }
+
     /// Updates the eigen values
-    pub fn update_eigen_vals(&mut self) {
+    fn update_eigen_vals(&mut self) {
         self.eigen_vals
             .row_mut(0)
             .assign(&(&self.prim.row(self.jxivelocity) - &self.c_sound));
