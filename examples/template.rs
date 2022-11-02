@@ -4,6 +4,7 @@
 
 use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
+use corries::config::numericsconfig::{NumFluxMode, NumericsConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::run_sim;
@@ -16,6 +17,7 @@ fn main() -> Result<()> {
 
     run_sim::<SIZE, N_EQUATIONS>(config::CorriesConfig {
         name: "accretiondisk".to_string(),
+        print_banner: true,
         meshconf: MeshConfig {
             mode: MeshMode::Cartesian,
             xi_in: 0.1,
@@ -27,6 +29,9 @@ fn main() -> Result<()> {
             units_mode: UnitsMode::SI,
             adiabatic_index: 2.0 / 3.0,
             c_sound_0: 1.0,
+        },
+        numericsconf: NumericsConfig {
+            numflux_mode: NumFluxMode::Hll,
         },
         writerconf: vec![
             OutputConfig {
