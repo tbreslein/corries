@@ -27,6 +27,9 @@ pub struct CorriesConfig {
     /// Name of the simulation; may not be empty
     pub name: String,
 
+    /// Whether to print the Corries banner to stdout
+    pub print_banner: bool,
+
     /// Config for Mesh objects
     pub meshconf: MeshConfig,
 

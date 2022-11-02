@@ -18,7 +18,7 @@ use physics::init_physics;
 use rhs::numflux::init_numflux;
 use writer::Writer;
 
-use crate::{config::outputconfig::StreamMode, errorhandling::Validation, rhs::Rhs};
+use crate::{errorhandling::Validation, rhs::Rhs};
 
 pub mod config;
 #[macro_use]
@@ -38,7 +38,7 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
     let mut u = init_physics::<S, EQ>(&config.physicsconf);
-    let mut numflux = init_numflux();
+    let mut numflux = init_numflux(&config.numericsconf);
     let mut rhs: Rhs<S, EQ> = Rhs::new(&mut numflux);
     rhs.update_dflux_dxi(&mut u, &mesh);
 
@@ -47,7 +47,7 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     let mut writer = Writer::new(&config, &mesh, output_count_max)?;
     //
     // // first output
-    if writer.outputs.iter().any(|o| o.stream_mode == StreamMode::Stdout) {
+    if config.print_banner {
         print_banner();
     }
     writer.update_data_matrices(&mesh, &u)?;

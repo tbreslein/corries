@@ -5,9 +5,13 @@
 //! Exports the [NumFlux] trait that identifies structs that can calculate numerical flux, and the
 //! [init_numflux] function that handles constructing [NumFlux] objects.
 
-use ndarray::{Array2, s};
+use ndarray::{s, Array2};
 
-use crate::{physics::Physics, mesh::Mesh};
+use crate::{
+    config::numericsconfig::{NumFluxMode, NumericsConfig},
+    mesh::Mesh,
+    physics::Physics,
+};
 
 use self::hll::Hll;
 
@@ -20,8 +24,10 @@ pub trait NumFlux<const S: usize, const EQ: usize> {
 }
 
 /// Constructs an `impl Numflux<S, EQ>`.
-pub fn init_numflux<const S: usize, const EQ: usize>() -> impl NumFlux<S, EQ> {
-    return Hll::new();
+pub fn init_numflux<const S: usize, const EQ: usize>(numericsconf: &NumericsConfig) -> impl NumFlux<S, EQ> {
+    return match numericsconf.numflux_mode {
+        NumFluxMode::Hll => Hll::new(),
+    };
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.
@@ -38,8 +44,10 @@ pub fn init_numflux<const S: usize, const EQ: usize>() -> impl NumFlux<S, EQ> {
 fn calc_dflux_xi_generic<const S: usize>(dflux_dxi: &mut Array2<f64>, flux_num: &Array2<f64>, mesh: &Mesh<S>) {
     for j in 0..dflux_dxi.ncols() {
         let s = s![mesh.ixi_in..=mesh.ixi_out];
-        let s_m1 = s![mesh.ixi_in-1..=mesh.ixi_out-1];
-        dflux_dxi.row_mut(j).slice_mut(s).assign(&(&mesh.deta_dphi_d_volume.slice(s) * (&flux_num.row(j).slice(s) - &flux_num.row(j).slice(s_m1))));
+        let s_m1 = s![mesh.ixi_in - 1..=mesh.ixi_out - 1];
+        dflux_dxi
+            .row_mut(j)
+            .slice_mut(s)
+            .assign(&(&mesh.deta_dphi_d_volume.slice(s) * (&flux_num.row(j).slice(s) - &flux_num.row(j).slice(s_m1))));
     }
 }
-
