@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports the [Mesh] struct that provides coordinates and geometric information
+
 use crate::config::meshconfig::{MeshConfig, MeshMode};
 use crate::config::outputconfig::{DataName, StructAssociation};
 use crate::errorhandling::Validation;

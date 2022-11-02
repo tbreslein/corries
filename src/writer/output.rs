@@ -36,6 +36,9 @@ pub struct Output {
     /// Current output counter
     output_counter: usize,
 
+    /// Maximum output counter
+    output_counter_max: usize,
+
     /// How many digits the file counter for file output needs
     output_counter_width: usize,
 
@@ -83,8 +86,8 @@ impl Output {
     ///
     /// * `outputconf` - `OutputConfig` containing configuration to build `Output` objects
     /// * `mesh` - provides information about the mesh in this simulation
-    /// * `output_count_max` - How many distinct outputs should be written during this run
-    pub fn new<const S: usize>(outputconfig: &OutputConfig, mesh: &Mesh<S>, output_count_max: usize) -> Result<Self> {
+    /// * `output_counter_max` - How many distinct outputs should be written during this run
+    pub fn new<const S: usize>(outputconfig: &OutputConfig, mesh: &Mesh<S>, output_counter_max: usize) -> Result<Self> {
         let rows = match outputconfig.string_conversion_mode {
             ToStringConversionMode::Scalar => 1,
             ToStringConversionMode::Vector => {
@@ -147,7 +150,8 @@ impl Output {
             mesh_offset,
             first_output: true,
             output_counter: 0,
-            output_counter_width: f64::log10(output_count_max as f64) as usize + 1,
+            output_counter_max,
+            output_counter_width: f64::log10(output_counter_max as f64) as usize + 1,
             should_print_metadata: outputconfig.should_print_metadata,
             precision: outputconfig.precision,
             width: match outputconfig.formatter_mode {
