@@ -8,11 +8,13 @@ use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 
 use self::meshconfig::MeshConfig;
+use self::numericsconfig::NumericsConfig;
 use self::outputconfig::OutputConfig;
 use self::physicsconfig::PhysicsConfig;
 use crate::errorhandling::Validation;
 
 pub mod meshconfig;
+pub mod numericsconfig;
 pub mod outputconfig;
 pub mod physicsconfig;
 
@@ -30,6 +32,9 @@ pub struct CorriesConfig {
 
     /// Config for Physics objects
     pub physicsconf: PhysicsConfig,
+
+    /// Config for everything related to numerics
+    pub numericsconf: NumericsConfig,
 
     /// Config for Writer objects
     pub writerconf: Vec<OutputConfig>,
@@ -53,6 +58,7 @@ impl CorriesConfig {
         let mut s = "".to_string();
         s += "### Corries Configuration\n";
         s += &format!("# name: {}\n", self.name);
+
         s += "# meshconf:\n";
         s += &format!("#     mode: {:?}\n", self.meshconf.mode);
         s += &format!("#     n_comp: {}\n", MESH_COMP_SIZE);
@@ -60,6 +66,16 @@ impl CorriesConfig {
         s += &format!("#     xi_in: {}\n", self.meshconf.xi_in);
         s += &format!("#     xi_out: {}\n", self.meshconf.xi_out);
         s += &format!("#     ratio_disk: {}\n", self.meshconf.ratio_disk);
+
+        s += "# physicsconf:\n";
+        s += &format!("#     mode: {:?}\n", self.physicsconf.mode);
+        s += &format!("#     units_mode: {:?}\n", self.physicsconf.units_mode);
+        s += &format!("#     adiabatic_index: {}\n", self.physicsconf.adiabatic_index);
+        s += &format!("#     c_sound_0: {}\n", self.physicsconf.c_sound_0);
+
+        s += "# numericsconf:\n";
+        s += &format!("#     numflux_mode: {:?}\n", self.numericsconf.numflux_mode);
+
         s += "# writerconf:\n";
         for (i, outputconf) in self.writerconf.iter().enumerate() {
             s += &format!("#   outputconf[{}]\n", i);
