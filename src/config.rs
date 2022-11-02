@@ -18,6 +18,57 @@ pub mod numericsconfig;
 pub mod outputconfig;
 pub mod physicsconfig;
 
+/// Enumerates the different boundary conditions
+#[derive(Debug)]
+pub enum BoundaryMode {
+    /// Set of custom boundary conditions applied to each variable
+    Custom(Vec<(PhysicsVariable, CustomBoundaryMode)>),
+}
+
+/// Enumerates the possible custom boundary conditions
+#[derive(Debug, Clone, Copy)]
+pub enum CustomBoundaryMode {
+    /// Extrapolate the values near the boundary into the ghost cells
+    Extrapolate,
+
+    /// Specialised version of Extrapolate for mass density in the Kepler case
+    ExtrapolateDensityKepler,
+
+    /// Specialised version of Extrapolate for eta velocity in the Kepler case
+    ExtrapolateEtaVelocityKepler,
+
+    /// Like NoGradients, but multiplies the value in the ghost cell with a very small number
+    NearZero,
+
+    /// No gradients condition; copies the value closest to the boundary into the ghost cells.
+    NoGradients,
+
+    /// Reflects outgoing flow, and applies NoGradients to incoming flow
+    OutflowNoGradients,
+
+    /// Reflects outgoing flow, and applies Extrapolate to incoming flow
+    OutFlowExtrapolate,
+
+    /// Like NoGradients, but switches the sign of the values in the ghost cells
+    Reflecting,
+}
+
+/// Enumerates the different variables held by `Physics` objects
+#[derive(Debug, Clone, Copy)]
+pub enum PhysicsVariable {
+    /// Mass density
+    Density,
+
+    /// Velocity along the xi direction
+    XiVelocity,
+
+    /// Velocity along the eta direction
+    EtaVelocity,
+
+    /// Pressure, duh...
+    Pressure,
+}
+
 /// Struct that carries the full configuration info for a simulation.
 ///
 /// This struct is used in the beginning of a run to initialise all the runtime-objects that are
@@ -35,6 +86,12 @@ pub struct CorriesConfig {
 
     /// Config for Physics objects
     pub physicsconf: PhysicsConfig,
+
+    /// boundary condition on the west border of the computational area
+    pub boundary_condition_west: BoundaryMode,
+
+    /// boundary condition on the east border of the computational area
+    pub boundary_condition_east: BoundaryMode,
 
     /// Config for everything related to numerics
     pub numericsconf: NumericsConfig,

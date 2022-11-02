@@ -4,12 +4,12 @@
 
 //! Exports the [Hll] struct.
 
-use ndarray::{Array2, Array1, s};
+use ndarray::{s, Array1, Array2};
 
-use crate::{physics::Physics, mesh::Mesh};
+use crate::{mesh::Mesh, physics::Physics};
 
-use super::NumFlux;
 use super::calc_dflux_xi_generic;
+use super::NumFlux;
 
 /// Handles calculating numerical flux using the HLL scheme
 pub struct Hll<const S: usize, const EQ: usize> {
@@ -35,7 +35,14 @@ pub struct Hll<const S: usize, const EQ: usize> {
 impl<const S: usize, const EQ: usize> Hll<S, EQ> {
     /// Constructs a new [Hll] object
     pub fn new() -> Self {
-        return Self {flux_phys: Array2::zeros((EQ, S)), sl: Array1::zeros(S), sr: Array1::zeros(S), inv_sr_minus_sl: Array1::zeros(S), sr_times_sl: Array1::zeros(S), flux_num: Array2::zeros((EQ, S))};
+        return Self {
+            flux_phys: Array2::zeros((EQ, S)),
+            sl: Array1::zeros(S),
+            sr: Array1::zeros(S),
+            inv_sr_minus_sl: Array1::zeros(S),
+            sr_times_sl: Array1::zeros(S),
+            flux_num: Array2::zeros((EQ, S)),
+        };
     }
 }
 
@@ -43,17 +50,21 @@ impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
     fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
         // NOTE: Assumes that u.eigen_vals are already up to date
         u.calc_physical_flux_euler1d_adiabatic(&mut self.flux_phys);
-        let slice = s![mesh.ixi_in-1..=mesh.ixi_out];
-        let slice_p1 = s![mesh.ixi_in..=mesh.ixi_out+1];
+        let slice = s![mesh.ixi_in - 1..=mesh.ixi_out];
+        let slice_p1 = s![mesh.ixi_in..=mesh.ixi_out + 1];
 
-        for i in mesh.ixi_in-1..=mesh.ixi_out {
-            self.sl[i] = 0.0f64.min(u.eigen_vals[[0, i]].min(u.eigen_vals[[0, i+1]]));
-            self.sr[i] = 0.0f64.max(u.eigen_vals[[EQ-1, i]].max(u.eigen_vals[[EQ-1, i+1]]));
+        for i in mesh.ixi_in - 1..=mesh.ixi_out {
+            self.sl[i] = 0.0f64.min(u.eigen_vals[[0, i]].min(u.eigen_vals[[0, i + 1]]));
+            self.sr[i] = 0.0f64.max(u.eigen_vals[[EQ - 1, i]].max(u.eigen_vals[[EQ - 1, i + 1]]));
         }
 
         // TODO: Benchmark this version against azip, Zip and raw for loops
-        self.inv_sr_minus_sl.slice_mut(slice).assign(&(1.0 / (&self.sr.slice(slice) - &self.sl.slice(slice))));
-        self.sr_times_sl.slice_mut(slice).assign(&(&self.sr.slice(slice) * &self.sl.slice(slice)));
+        self.inv_sr_minus_sl
+            .slice_mut(slice)
+            .assign(&(1.0 / (&self.sr.slice(slice) - &self.sl.slice(slice))));
+        self.sr_times_sl
+            .slice_mut(slice)
+            .assign(&(&self.sr.slice(slice) * &self.sl.slice(slice)));
 
         // TODO: Benchmark this version against azip, Zip and raw for loops
         for j in 0..EQ {
@@ -66,8 +77,11 @@ impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
             let sl = self.sl.slice(slice);
             let sr = self.sr.slice(slice);
 
-            flux_num_j.slice_mut(slice).assign(&(&a * (&sr * &flux_phys_j.slice(slice) - &sl * &flux_phys_j.slice(slice_p1) + &b * (&uc_j.slice(slice_p1) - &uc_j.slice(slice)))));
+            flux_num_j.slice_mut(slice).assign(
+                &(&a * (&sr * &flux_phys_j.slice(slice) - &sl * &flux_phys_j.slice(slice_p1)
+                    + &b * (&uc_j.slice(slice_p1) - &uc_j.slice(slice)))),
+            );
         }
-        calc_dflux_xi_generic(dflux_dxi, &self.flux_num, &mesh);
+        calc_dflux_xi_generic(dflux_dxi, &self.flux_num, mesh);
     }
 }

@@ -7,7 +7,7 @@
 
 use ndarray::Array2;
 
-use crate::{physics::Physics, mesh::Mesh};
+use crate::{boundaryconditions::BoundaryConditionContainer, config::CorriesConfig, mesh::Mesh, physics::Physics};
 
 use self::numflux::NumFlux;
 
@@ -20,24 +20,28 @@ pub struct Rhs<'a, const S: usize, const EQ: usize> {
 
     /// Stores the numerical flux derivative along xi
     pub dflux_dxi: Array2<f64>,
+
+    pub boundary_conditions: BoundaryConditionContainer<S, EQ>,
 }
 
 impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     /// Constructs a new [Rhs] object.
-    pub fn new(numflux: &'a mut dyn NumFlux<S, EQ>) -> Self {
+    pub fn new(config: &CorriesConfig, u: &Physics<S, EQ>, numflux: &'a mut dyn NumFlux<S, EQ>) -> Self {
         return Rhs {
             numflux,
             dflux_dxi: Array2::zeros((EQ, S)),
+            boundary_conditions: BoundaryConditionContainer::new(config, u),
         };
     }
 
     pub fn update_dflux_dxi(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
         self.update_physics(u, mesh);
-        self.numflux.calc_dflux_dxi(&mut self.dflux_dxi, u, &mesh);
+        self.numflux.calc_dflux_dxi(&mut self.dflux_dxi, u, mesh);
     }
 
-    fn update_physics(&self, u: &mut Physics<S, EQ>, _mesh: &Mesh<S>) {
+    fn update_physics(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
         u.update_prim();
+        self.boundary_conditions.apply(u, mesh);
         u.update_cons();
     }
 }

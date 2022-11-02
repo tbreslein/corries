@@ -11,6 +11,7 @@ use crate::{
     config::{
         outputconfig::{DataName, StructAssociation},
         physicsconfig::{PhysicsConfig, PhysicsMode},
+        PhysicsVariable,
     },
     mesh::Mesh,
     units::Units,
@@ -162,6 +163,32 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
             bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
         }
         return Ok(dt);
+    }
+
+    /// Converts a [PhysicsVariable] `var` to the corresponding index for `self.mode`.
+    ///
+    /// Returns an `Err` if the `var` is not part of this mode.
+    pub fn convert_physics_variable_to_index(&self, var: PhysicsVariable) -> Result<usize> {
+        return match var {
+            PhysicsVariable::Density => Ok(self.jdensity),
+            PhysicsVariable::XiVelocity => Ok(self.jxivelocity),
+            PhysicsVariable::EtaVelocity => match self.mode {
+                PhysicsMode::Euler1DIsot | PhysicsMode::Euler1DAdiabatic => bail!(
+                    "var {:?} cannot be converted to usize, because it is not part of the PhysicsMode {:?}!",
+                    var,
+                    self.mode
+                ),
+                PhysicsMode::Euler2DIsot => Ok(self.jetavelocity),
+            },
+            PhysicsVariable::Pressure => match self.mode {
+                PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => bail!(
+                    "var {:?} cannot be converted to usize, because it is not part of the PhysicsMode {:?}!",
+                    var,
+                    self.mode
+                ),
+                PhysicsMode::Euler1DAdiabatic => Ok(self.jpressure),
+            },
+        };
     }
 }
 

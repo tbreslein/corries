@@ -20,6 +20,7 @@ use writer::Writer;
 
 use crate::{errorhandling::Validation, rhs::Rhs};
 
+mod boundaryconditions;
 pub mod config;
 #[macro_use]
 mod errorhandling;
@@ -39,7 +40,7 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
     let mut u = init_physics::<S, EQ>(&config.physicsconf);
     let mut numflux = init_numflux(&config.numericsconf);
-    let mut rhs: Rhs<S, EQ> = Rhs::new(&mut numflux);
+    let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
     rhs.update_dflux_dxi(&mut u, &mesh);
 
     // // TEMP:
