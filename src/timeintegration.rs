@@ -4,7 +4,7 @@
 
 //! TODO
 
-use color_eyre::{Result, eyre::bail};
+use color_eyre::{eyre::bail, Result};
 
 use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics, rhs::Rhs};
 
@@ -44,7 +44,11 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
         self.solver.next_solution(&mut self.time, u, rhs, mesh)?;
         self.time.iter += 1;
         if self.time.iter >= self.time.iter_max {
-            bail!("time.iter reached time.iter_max! time.iter = {}, time.iter_max = {}", self.time.iter, self.time.iter_max);
+            bail!(
+                "time.iter reached time.iter_max! time.iter = {}, time.iter_max = {}",
+                self.time.iter,
+                self.time.iter_max
+            );
         }
         return Ok(());
     }
