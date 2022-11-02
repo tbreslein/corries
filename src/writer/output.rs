@@ -33,12 +33,6 @@ pub struct Output {
     /// Whether this is this `Output`'s first output in this run
     first_output: bool,
 
-    /// Current output counter
-    output_counter: usize,
-
-    /// Maximum output counter
-    output_counter_max: usize,
-
     /// How many digits the file counter for file output needs
     output_counter_width: usize,
 
@@ -149,8 +143,6 @@ impl Output {
         return Ok(Output {
             mesh_offset,
             first_output: true,
-            output_counter: 0,
-            output_counter_max,
             output_counter_width: f64::log10(output_counter_max as f64) as usize + 1,
             should_print_metadata: outputconfig.should_print_metadata,
             precision: outputconfig.precision,
@@ -201,9 +193,9 @@ impl Output {
     }
 
     /// Makes this `Output` object write data in `self.data_matrix` into a stream.
-    pub fn write_output(&mut self) -> Result<()> {
+    pub fn write_output(&mut self, output_counter: usize) -> Result<()> {
         self.data_matrix_to_stream_strings()?;
-        self.stream()?;
+        self.stream(output_counter)?;
         self.first_output = false;
         return Ok(());
     }
@@ -285,7 +277,7 @@ impl Output {
     }
 
     /// Writes `self.stream_strings` into a stream depending on `self.stream_mode`.
-    fn stream(&mut self) -> Result<()> {
+    fn stream(&mut self, output_counter: usize) -> Result<()> {
         match self.stream_mode {
             StreamMode::Stdout => {
                 if self.first_output {
@@ -315,7 +307,7 @@ impl Output {
                 },
                 ToStringConversionMode::Vector => {
                     let full_path_string =
-                        self.file_name.clone() + &self.get_output_count_string() + &self.file_name_ending;
+                        self.file_name.clone() + &self.get_output_count_string(output_counter) + &self.file_name_ending;
                     let path = Path::new(&full_path_string);
                     let mut file = File::options()
                         .write(true)
@@ -350,7 +342,7 @@ impl Output {
     }
 
     /// Returns the `String` containing the output counter padded with leading zeros.
-    fn get_output_count_string(&self) -> String {
-        return format!("{:0w$}", self.output_counter, w = self.output_counter_width);
+    fn get_output_count_string(&self, output_counter: usize) -> String {
+        return format!("{:0w$}", output_counter, w = self.output_counter_width);
     }
 }

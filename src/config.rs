@@ -96,6 +96,10 @@ pub struct CorriesConfig {
     /// Config for everything related to numerics
     pub numericsconf: NumericsConfig,
 
+    /// The number of outputs to write during the simulation, not counting output for the initial
+    /// state
+    pub output_counter_max: usize,
+
     /// Config for Writer objects
     pub writerconf: Vec<OutputConfig>,
 }
