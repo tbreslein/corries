@@ -16,6 +16,7 @@ use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
 use physics::init_physics;
 use rhs::numflux::init_numflux;
+use timeintegration::TimeIntegration;
 use writer::Writer;
 
 use crate::{errorhandling::Validation, rhs::Rhs};
@@ -43,18 +44,35 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     let mut numflux = init_numflux(&config.numericsconf);
     let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
     rhs.update_dflux_dxi(&mut u, &mesh);
+    let mut timeintegration: TimeIntegration<S, EQ> =
+        TimeIntegration::new(&config.numericsconf, config.output_counter_max);
 
-    // // TEMP:
-    let output_count_max = 2;
-    let mut writer = Writer::new(&config, &mesh, output_count_max)?;
-    //
-    // // first output
+    let mut writer = Writer::new(&config, &mesh)?;
+
+    // first output
     if config.print_banner {
         print_banner();
     }
-    writer.update_data_matrices(&mesh, &u)?;
     writer.write_metadata::<S>(&config)?;
-    writer.write_output()?;
+    loop {
+        if timeintegration.time.t >= timeintegration.time.t_next_output {
+            timeintegration.time.t_next_output += timeintegration.time.dt_output;
+
+            writer.update_data_matrices(&mesh, &u)?;
+            // thread this call?
+            writer.write_output()?;
+        }
+        if timeintegration.time.t >= timeintegration.time.t_end {
+            break;
+        }
+
+        // TODO: next solution
+        if let err @ Err(_) = timeintegration.next_solution(&mut u, &mut rhs, &mesh) {
+            writer.update_data_matrices(&mesh, &u)?;
+            writer.write_output()?;
+            return err;
+        }
+    }
     return Ok(());
 }
 
