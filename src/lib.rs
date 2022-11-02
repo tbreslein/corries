@@ -27,6 +27,7 @@ mod errorhandling;
 mod mesh;
 pub mod physics;
 mod rhs;
+mod timeintegration;
 pub mod units;
 mod writer;
 
