@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [RungeKuttaFehlberg] struct
 
 use color_eyre::Result;
 use ndarray::{Array2, Array3, Axis};
@@ -20,6 +20,7 @@ use super::{timestep::TimeStep, TimeSolver};
 
 mod butchertableau;
 
+/// Struct for solving the time integration step using Runge-Kutta-Fehlberg methods.
 pub struct RungeKuttaFehlberg<const S: usize, const EQ: usize> {
     /// Butcher Tableau for the Runge-Kutta method
     bt: ButcherTableau,
@@ -105,6 +106,8 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
         // should already have that solution from the last iteration of the while loop.
         // In an earlier iteration skipping this call for embedded methods did not work, so I
         // should play around with this again, since this call can be quite expensive.
+        // Idea: I could put the while loop into the `if self.bt.asc` block up top, and this single
+        // call into the associated else block
         let _ = self.calc_rkf_solution(time.dt, u, rhs, mesh)?;
         time.t += time.dt;
         return Ok(());
@@ -112,6 +115,12 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
 }
 
 impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
+    /// Constructs a new [RungeKuttaFehlberg] object
+    ///
+    /// # Arguments
+    ///
+    /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
+    /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
     pub fn new(rkfconfig: &RkfConfig, physicsconfig: &PhysicsConfig) -> Self {
         let bt = ButcherTableau::new(rkfconfig);
         let order = bt.order;
@@ -132,6 +141,14 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         };
     }
 
+    /// Calculates a single solution with an RKF method.
+    ///
+    /// # Arguments
+    ///
+    /// * `dt_in` - Input time step width
+    /// * `u` - Input [Physics] state
+    /// * `rhs` - Solves the right-hand side
+    /// * `mesh` - Information about spatial properties
     fn calc_rkf_solution(
         &mut self,
         dt_in: f64,

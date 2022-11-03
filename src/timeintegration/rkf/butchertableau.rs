@@ -2,23 +2,40 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [ButcherTableau] struct
 
 use ndarray::{ArrayD, IxDyn};
 
 use crate::config::numericsconfig::{RKFMode, RkfConfig};
 
+/// Carries the butcher tableau needed for implement different Runge-Kutta-Fehlberg methods
 pub struct ButcherTableau {
+    /// Order of the method
     pub order: usize,
+
+    /// Coefficient matrix a
     pub a: ArrayD<f64>,
+
+    /// Coefficient vector b for high-order solutions
     pub b_high: ArrayD<f64>,
+
+    /// Coefficient vector b for low-order solutions
     pub b_low: ArrayD<f64>,
+
+    /// Coefficient vector c
     pub c: ArrayD<f64>,
+
+    /// Whether to use automated step control
     pub asc: bool,
 }
 
 #[rustfmt::skip]
 impl ButcherTableau {
+    /// Constructs a new [ButcherTableau] object.
+    ///
+    /// # Argument
+    ///
+    /// * `rkfconfig` - RKF specific configuration
     pub fn new(rkfconfig: &RkfConfig) -> Self {
         let order = get_order(rkfconfig.rkf_mode);
         let asc = rkfconfig.asc;
@@ -41,7 +58,10 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0]
                 ).unwrap(),
-                asc: rkfconfig.asc,
+                asc: {
+                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                    false
+                }
             },
             RKFMode::RK2 => Self {
                 order,
@@ -62,7 +82,10 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.5]
                 ).unwrap(),
-                asc
+                asc: {
+                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                    false
+                }
             },
             RKFMode::RK3 => Self {
                 order,
@@ -107,7 +130,10 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.5, 0.5, 1.0]
                 ).unwrap(),
-                asc
+                asc: {
+                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                    false
+                }
             },
             RKFMode::Heun2 => Self {
                 order,
@@ -128,7 +154,10 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 1.0]
                 ).unwrap(),
-                asc
+                asc: {
+                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                    false
+                }
             },
             RKFMode::RKF12 => Self {
                 order,
@@ -229,6 +258,7 @@ impl ButcherTableau {
     
 }
 
+/// Takes an [RKFMode] and returns the order of the method.
 fn get_order(mode: RKFMode) -> usize {
     return match mode {
         RKFMode::RK1 => 1,
