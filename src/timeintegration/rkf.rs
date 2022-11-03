@@ -9,6 +9,7 @@ use ndarray::{Array2, Array3, Axis};
 
 use crate::{
     config::{numericsconfig::RkfConfig, physicsconfig::PhysicsConfig},
+    errorhandling::Validation,
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
@@ -255,5 +256,11 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         u.cons.assign(&self.utilde.cons);
         rhs.update_physics(u, mesh);
         return Ok(dt_out);
+    }
+}
+
+impl<const S: usize, const EQ: usize> Validation for RungeKuttaFehlberg<S, EQ> {
+    fn validate(&self) -> Result<()> {
+        todo!();
     }
 }

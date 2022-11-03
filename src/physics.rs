@@ -15,7 +15,7 @@ use crate::{
     },
     mesh::Mesh,
     units::Units,
-    writer::{CorriesWrite, DataValue},
+    writer::{CorriesWrite, DataValue}, errorhandling::Validation,
 };
 
 mod systems;
@@ -288,6 +288,12 @@ impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
             },
         }?;
         return Ok(());
+    }
+}
+
+impl<const S: usize, const EQ: usize> Validation for Physics<S, EQ> {
+    fn validate(&self) -> Result<()> {
+        todo!();
     }
 }
 

@@ -4,8 +4,10 @@
 
 //! Exports the [Hll] struct.
 
+use color_eyre::Result;
 use ndarray::{s, Array1, Array2};
 
+use crate::errorhandling::Validation;
 use crate::{mesh::Mesh, physics::Physics};
 
 use super::calc_dflux_xi_generic;
@@ -83,5 +85,11 @@ impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
             );
         }
         calc_dflux_xi_generic(dflux_dxi, &self.flux_num, mesh);
+    }
+}
+
+impl<const S: usize, const EQ: usize> Validation for Hll<S, EQ> {
+    fn validate(&self) -> Result<()> {
+        todo!();
     }
 }

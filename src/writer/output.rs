@@ -10,7 +10,7 @@ use color_eyre::{
     eyre::{bail, WrapErr},
     Result,
 };
-use ndarray::{ArrayD, IxDyn};
+use ndarray::Array1;
 
 use crate::physics::Physics;
 use crate::{
@@ -105,7 +105,7 @@ impl Output {
                 DataType::Float => data_matrix.push(DataValue::Float(0.0)),
                 DataType::String => data_matrix.push(DataValue::String("".to_string())),
                 DataType::VectorFloat => {
-                    data_matrix.push(DataValue::VectorFloat(ArrayD::zeros(IxDyn(&[S - 2 * mesh_offset]))))
+                    data_matrix.push(DataValue::VectorFloat(Array1::zeros([S - 2 * mesh_offset])))
                 },
             };
         }

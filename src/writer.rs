@@ -3,7 +3,7 @@
 // License: MIT
 
 use color_eyre::{eyre::bail, Result};
-use ndarray::{s, ArrayD, ArrayView1};
+use ndarray::{s, Array1, ArrayView1};
 
 use self::output::Output;
 use crate::{
@@ -32,7 +32,7 @@ pub enum DataValue {
     Int(i32),
     Usize(usize),
     Float(f64),
-    VectorFloat(ArrayD<f64>),
+    VectorFloat(Array1<f64>),
     String(String),
 }
 
