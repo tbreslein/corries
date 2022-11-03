@@ -14,7 +14,7 @@
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
-use physics::init_physics;
+use physics::Physics;
 use rhs::numflux::init_numflux;
 use timeintegration::TimeIntegration;
 use writer::Writer;
@@ -40,7 +40,7 @@ mod writer;
 pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconfig).context("Constructing Mesh")?;
-    let mut u = init_physics::<S, EQ>(&config.physicsconfig);
+    let mut u: Physics<S, EQ> = Physics::new(&config.physicsconfig);
     let mut numflux = init_numflux(&config.numericsconfig);
     let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
     let mut timeintegration: TimeIntegration<S, EQ> = TimeIntegration::new(&config);

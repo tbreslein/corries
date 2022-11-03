@@ -74,6 +74,84 @@ pub struct Physics<const S: usize, const EQ: usize> {
 }
 
 impl<const S: usize, const EQ: usize> Physics<S, EQ> {
+    /// Initialises a [Physics] object with mesh size `S` and `EQ` equations.
+    ///
+    /// # Arguments
+    ///
+    /// * `physicsconf` - Contains configuration for the [Physics] object
+    pub fn new(physicsconf: &PhysicsConfig) -> Self {
+        let mode = physicsconf.mode;
+
+        let prim = Array2::from_elem((EQ, S), 1.1);
+        let cons = Array2::from_elem((EQ, S), 1.1);
+        let c_sound = Array1::from_elem(S, 1.1);
+        let c_sound_helper = Array1::from_elem(S, 1.1);
+        let eigen_vals = Array2::from_elem((EQ, S), 1.1);
+
+        let jdensity = match mode {
+            PhysicsMode::Euler1DAdiabatic => 0,
+            PhysicsMode::Euler1DIsot => 0,
+            PhysicsMode::Euler2DIsot => 0,
+        };
+        let jxivelocity = match mode {
+            PhysicsMode::Euler1DAdiabatic => 1,
+            PhysicsMode::Euler1DIsot => 1,
+            PhysicsMode::Euler2DIsot => 1,
+        };
+        let jximomentum = match mode {
+            PhysicsMode::Euler1DAdiabatic => 1,
+            PhysicsMode::Euler1DIsot => 1,
+            PhysicsMode::Euler2DIsot => 1,
+        };
+        let jetavelocity = match mode {
+            PhysicsMode::Euler1DAdiabatic => usize::MAX,
+            PhysicsMode::Euler1DIsot => usize::MAX,
+            PhysicsMode::Euler2DIsot => 2,
+        };
+        let jetamomentum = match mode {
+            PhysicsMode::Euler1DAdiabatic => usize::MAX,
+            PhysicsMode::Euler1DIsot => usize::MAX,
+            PhysicsMode::Euler2DIsot => 2,
+        };
+        let jenergy = match mode {
+            PhysicsMode::Euler1DAdiabatic => 2,
+            PhysicsMode::Euler1DIsot => usize::MAX,
+            PhysicsMode::Euler2DIsot => usize::MAX,
+        };
+        let jpressure = match mode {
+            PhysicsMode::Euler1DAdiabatic => 2,
+            PhysicsMode::Euler1DIsot => usize::MAX,
+            PhysicsMode::Euler2DIsot => usize::MAX,
+        };
+
+        let adiabatic_index = physicsconf.adiabatic_index;
+        let is_adiabatic = match mode {
+            PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => false,
+            PhysicsMode::Euler1DAdiabatic => true,
+        };
+        let is_isothermal = !is_adiabatic;
+        let units = Units::new(physicsconf.units_mode);
+        return Self {
+            mode,
+            prim,
+            cons,
+            c_sound,
+            c_sound_helper,
+            eigen_vals,
+            jdensity,
+            jxivelocity,
+            jximomentum,
+            jetavelocity,
+            jetamomentum,
+            jenergy,
+            jpressure,
+            adiabatic_index,
+            is_adiabatic,
+            is_isothermal,
+            units,
+        };
+    }
+
     /// Updates the conservative variables in [self.cons] using the primitive variables [self.prim]
     pub fn update_cons(&mut self) {
         match self.mode {
@@ -192,84 +270,6 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     }
 }
 
-/// Initialises a [Physics] object with mesh size `S` and `EQ` equations.
-///
-/// # Arguments
-///
-/// * `physicsconf` - Contains configuration for the [Physics] object
-pub fn init_physics<const S: usize, const EQ: usize>(physicsconf: &PhysicsConfig) -> Physics<S, EQ> {
-    let mode = physicsconf.mode;
-
-    let prim = Array2::from_elem((EQ, S), 1.1);
-    let cons = Array2::from_elem((EQ, S), 1.1);
-    let c_sound = Array1::from_elem(S, 1.1);
-    let c_sound_helper = Array1::from_elem(S, 1.1);
-    let eigen_vals = Array2::from_elem((EQ, S), 1.1);
-
-    let jdensity = match mode {
-        PhysicsMode::Euler1DAdiabatic => 0,
-        PhysicsMode::Euler1DIsot => 0,
-        PhysicsMode::Euler2DIsot => 0,
-    };
-    let jxivelocity = match mode {
-        PhysicsMode::Euler1DAdiabatic => 1,
-        PhysicsMode::Euler1DIsot => 1,
-        PhysicsMode::Euler2DIsot => 1,
-    };
-    let jximomentum = match mode {
-        PhysicsMode::Euler1DAdiabatic => 1,
-        PhysicsMode::Euler1DIsot => 1,
-        PhysicsMode::Euler2DIsot => 1,
-    };
-    let jetavelocity = match mode {
-        PhysicsMode::Euler1DAdiabatic => usize::MAX,
-        PhysicsMode::Euler1DIsot => usize::MAX,
-        PhysicsMode::Euler2DIsot => 2,
-    };
-    let jetamomentum = match mode {
-        PhysicsMode::Euler1DAdiabatic => usize::MAX,
-        PhysicsMode::Euler1DIsot => usize::MAX,
-        PhysicsMode::Euler2DIsot => 2,
-    };
-    let jenergy = match mode {
-        PhysicsMode::Euler1DAdiabatic => 2,
-        PhysicsMode::Euler1DIsot => usize::MAX,
-        PhysicsMode::Euler2DIsot => usize::MAX,
-    };
-    let jpressure = match mode {
-        PhysicsMode::Euler1DAdiabatic => 2,
-        PhysicsMode::Euler1DIsot => usize::MAX,
-        PhysicsMode::Euler2DIsot => usize::MAX,
-    };
-
-    let adiabatic_index = physicsconf.adiabatic_index;
-    let is_adiabatic = match mode {
-        PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => false,
-        PhysicsMode::Euler1DAdiabatic => true,
-    };
-    let is_isothermal = !is_adiabatic;
-    let units = Units::new(physicsconf.units_mode);
-    return Physics {
-        mode,
-        prim,
-        cons,
-        c_sound,
-        c_sound_helper,
-        eigen_vals,
-        jdensity,
-        jxivelocity,
-        jximomentum,
-        jetavelocity,
-        jetamomentum,
-        jenergy,
-        jpressure,
-        adiabatic_index,
-        is_adiabatic,
-        is_isothermal,
-        units,
-    };
-}
-
 impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
@@ -313,11 +313,11 @@ mod tests {
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
-                let mut u0: Physics<S, EQ> = init_physics(&physicsconf);
+                let mut u0: Physics<S, EQ> = Physics::new(&physicsconf);
                 u0.prim.row_mut(0).fill(p0);
                 u0.prim.row_mut(1).fill(p1);
                 u0.prim.row_mut(2).fill(p2);
-                let mut u: Physics<S, EQ> = init_physics(&physicsconf);
+                let mut u: Physics<S, EQ> = Physics::new(&physicsconf);
                 u.prim.row_mut(0).fill(p0);
                 u.prim.row_mut(1).fill(p1);
                 u.prim.row_mut(2).fill(p2);
@@ -346,10 +346,10 @@ mod tests {
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
-                let mut u0: Physics<S, EQ> = init_physics(&physicsconf);
+                let mut u0: Physics<S, EQ> = Physics::new(&physicsconf);
                 u0.prim.row_mut(0).fill(p0);
                 u0.prim.row_mut(1).fill(p1);
-                let mut u: Physics<S, EQ> = init_physics(&physicsconf);
+                let mut u: Physics<S, EQ> = Physics::new(&physicsconf);
                 u.prim.row_mut(0).fill(p0);
                 u.prim.row_mut(1).fill(p1);
 
@@ -377,11 +377,11 @@ mod tests {
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
-                let mut u0: Physics<S, EQ> = init_physics(&physicsconf);
+                let mut u0: Physics<S, EQ> = Physics::new(&physicsconf);
                 u0.prim.row_mut(0).fill(p0);
                 u0.prim.row_mut(1).fill(p1);
                 u0.prim.row_mut(2).fill(p2);
-                let mut u: Physics<S, EQ> = init_physics(&physicsconf);
+                let mut u: Physics<S, EQ> = Physics::new(&physicsconf);
                 u.prim.row_mut(0).fill(p0);
                 u.prim.row_mut(1).fill(p1);
                 u.prim.row_mut(2).fill(p2);
