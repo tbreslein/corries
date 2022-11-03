@@ -8,7 +8,7 @@ use color_eyre::Result;
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
-    config::{numericsconfig::NumericsConfig, physicsconfig::PhysicsConfig},
+    config::{numericsconfig::RkfConfig, physicsconfig::PhysicsConfig},
     mesh::Mesh,
     physics::{init_physics, Physics},
     rhs::Rhs,
@@ -112,8 +112,8 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
 }
 
 impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
-    pub fn new(numericsconfig: &NumericsConfig, physicsconfig: &PhysicsConfig) -> Self {
-        let bt = ButcherTableau::new(numericsconfig);
+    pub fn new(rkfconfig: &RkfConfig, physicsconfig: &PhysicsConfig) -> Self {
+        let bt = ButcherTableau::new(rkfconfig);
         let order = bt.order;
         return Self {
             bt,
@@ -121,9 +121,9 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             err_new: 0.0,
             err_old: 0.0,
             n_asc: 0,
-            asc_relative_tolerance: numericsconfig.asc_relative_tolerance,
-            asc_absolute_tolerance: numericsconfig.asc_absolute_tolerance,
-            asc_timestep_friction: numericsconfig.asc_timestep_friction,
+            asc_relative_tolerance: rkfconfig.asc_relative_tolerance,
+            asc_absolute_tolerance: rkfconfig.asc_absolute_tolerance,
+            asc_timestep_friction: rkfconfig.asc_timestep_friction,
             solution_accepted: false,
             u_cons_low: Array2::zeros((EQ, S)),
             u_prim_old: Array2::zeros((EQ, S)),

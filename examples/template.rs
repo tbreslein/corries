@@ -4,9 +4,10 @@
 
 use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
-use corries::config::numericsconfig::{NumFluxMode, NumericsConfig};
+use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
+use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
 use corries::run_sim;
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
@@ -18,22 +19,44 @@ fn main() -> Result<()> {
     run_sim::<SIZE, N_EQUATIONS>(config::CorriesConfig {
         name: "accretiondisk".to_string(),
         print_banner: true,
-        meshconf: MeshConfig {
+        meshconfig: MeshConfig {
             mode: MeshMode::Cartesian,
             xi_in: 0.1,
             xi_out: 10.0,
             ratio_disk: 1.0,
         },
-        physicsconf: PhysicsConfig {
+        physicsconfig: PhysicsConfig {
             mode: PhysicsMode::Euler1DIsot,
             units_mode: UnitsMode::SI,
-            adiabatic_index: 2.0 / 3.0,
+            adiabatic_index: 1.4,
             c_sound_0: 1.0,
         },
-        numericsconf: NumericsConfig {
+        boundary_condition_west: BoundaryMode::Custom(vec![
+            (PhysicsVariable::Density, CustomBoundaryMode::NoGradients),
+            (PhysicsVariable::XiVelocity, CustomBoundaryMode::NoGradients),
+        ]),
+        boundary_condition_east: BoundaryMode::Custom(vec![
+            (PhysicsVariable::Density, CustomBoundaryMode::NoGradients),
+            (PhysicsVariable::XiVelocity, CustomBoundaryMode::NoGradients),
+        ]),
+        numericsconfig: NumericsConfig {
             numflux_mode: NumFluxMode::Hll,
+            time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
+                rkf_mode: config::numericsconfig::RKFMode::RK4,
+                asc: false,
+                asc_relative_tolerance: 0.001,
+                asc_absolute_tolerance: 0.1,
+                asc_timestep_friction: 0.08,
+            }),
+            iter_max: usize::MAX - 2,
+            t0: 0.0,
+            t_end: 10.0,
+            dt_min: 10.0f64.powi(-12),
+            dt_max: f64::MAX,
+            dt_cfl_param: 0.1,
         },
-        writerconf: vec![
+        output_counter_max: 10,
+        writerconfig: vec![
             OutputConfig {
                 stream_mode: StreamMode::Stdout,
                 formatter_mode: FormatterMode::TSV,

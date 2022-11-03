@@ -6,7 +6,7 @@
 
 use ndarray::{ArrayD, IxDyn};
 
-use crate::config::numericsconfig::{NumericsConfig, RKFMode};
+use crate::config::numericsconfig::{RKFMode, RkfConfig};
 
 pub struct ButcherTableau {
     pub order: usize,
@@ -19,9 +19,10 @@ pub struct ButcherTableau {
 
 #[rustfmt::skip]
 impl ButcherTableau {
-    pub fn new(numericsconfig: &NumericsConfig) -> Self {
-        let order = get_order(numericsconfig.rkf_mode);
-        return match numericsconfig.rkf_mode {
+    pub fn new(rkfconfig: &RkfConfig) -> Self {
+        let order = get_order(rkfconfig.rkf_mode);
+        let asc = rkfconfig.asc;
+        return match rkfconfig.rkf_mode {
             RKFMode::RK1 => Self {
                 order,
                 a: ArrayD::from_shape_vec(
@@ -40,7 +41,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc: rkfconfig.asc,
             },
             RKFMode::RK2 => Self {
                 order,
@@ -61,7 +62,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.5]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::RK3 => Self {
                 order,
@@ -83,7 +84,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.5, 1.0]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::RK4 => Self {
                 order,
@@ -106,7 +107,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.5, 0.5, 1.0]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::Heun2 => Self {
                 order,
@@ -127,7 +128,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 1.0]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::RKF12 => Self {
                 order,
@@ -149,7 +150,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.5, 1.0]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::RKF45 => Self {
                 order,
@@ -174,7 +175,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.25, 0.375, 12.0/13.0, 1.0, 0.5]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::SSPRK3 => Self {
                 order,
@@ -196,7 +197,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0,  1.0, 0.5]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
             RKFMode::SSPRK5 => Self {
                 order,
@@ -221,7 +222,7 @@ impl ButcherTableau {
                     IxDyn(&[order]),
                     vec![0.0, 0.36717, 0.58522, 0.44156, 0.8464]
                 ).unwrap(),
-                asc: numericsconfig.asc,
+                asc
             },
         };
     }

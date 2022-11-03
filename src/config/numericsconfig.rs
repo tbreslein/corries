@@ -15,13 +15,6 @@ pub enum NumFluxMode {
     Hll,
 }
 
-/// Enum for the different kinds of time integration schemes available
-#[derive(Debug, Copy, Clone)]
-pub enum TimeIntegrationMode {
-    /// Runge-Kutta-Fehlberg
-    RKF,
-}
-
 /// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
 #[derive(Debug, Copy, Clone)]
 pub enum RKFMode {
@@ -53,6 +46,32 @@ pub enum RKFMode {
     SSPRK5,
 }
 
+/// Enumerates the different types of configuration for time integration schemes
+#[derive(Debug)]
+pub enum TimeIntegrationConfig {
+    /// Runge-Kutta-Fehlberg
+    Rkf(RkfConfig),
+}
+
+/// Configures the Runge-Kutta-Fehlberg scheme
+#[derive(Debug)]
+pub struct RkfConfig {
+    /// Type of RKF scheme to use
+    pub rkf_mode: RKFMode,
+
+    /// Whether to use automated time step control
+    pub asc: bool,
+
+    /// Relative tolerance for automated time step control
+    pub asc_relative_tolerance: f64,
+
+    /// Absolte tolerance for automated time step control
+    pub asc_absolute_tolerance: f64,
+
+    /// Timestep "friction" for automated time step control
+    pub asc_timestep_friction: f64,
+}
+
 /// Carries information about how the mesh should shaped
 #[derive(Debug)]
 pub struct NumericsConfig {
@@ -60,7 +79,7 @@ pub struct NumericsConfig {
     pub numflux_mode: NumFluxMode,
 
     /// The type of time integration scheme to use
-    pub time_integration_mode: TimeIntegrationMode,
+    pub time_integration_config: TimeIntegrationConfig,
 
     /// Maximum number of time step iterations throughout the simulation
     pub iter_max: usize,
@@ -79,21 +98,6 @@ pub struct NumericsConfig {
 
     /// CFL parameter
     pub dt_cfl_param: f64,
-
-    /// Type of RKF scheme to use
-    pub rkf_mode: RKFMode,
-
-    /// Whether to use automated time step control
-    pub asc: bool,
-
-    /// Relative tolerance for automated time step control
-    pub asc_relative_tolerance: f64,
-
-    /// Absolte tolerance for automated time step control
-    pub asc_absolute_tolerance: f64,
-
-    /// Timestep "friction" for automated time step control
-    pub asc_timestep_friction: f64,
 }
 
 impl Validation for NumericsConfig {
