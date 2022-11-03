@@ -5,9 +5,14 @@
 //! TODO
 
 use color_eyre::Result;
-use ndarray::{Array2, Axis, Array3};
+use ndarray::{Array2, Array3, Axis};
 
-use crate::{mesh::Mesh, physics::{Physics, init_physics}, rhs::Rhs, config::{numericsconfig::NumericsConfig, physicsconfig::PhysicsConfig}};
+use crate::{
+    config::{numericsconfig::NumericsConfig, physicsconfig::PhysicsConfig},
+    mesh::Mesh,
+    physics::{init_physics, Physics},
+    rhs::Rhs,
+};
 
 use self::butchertableau::ButcherTableau;
 
@@ -24,7 +29,7 @@ pub struct RungeKuttaFehlberg<const S: usize, const EQ: usize> {
 
     /// Newly calculated error in this asc step
     err_new: f64,
-    
+
     /// Error from the previous asc step
     err_old: f64,
 
@@ -68,6 +73,7 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
         time.iter += 1;
         self.n_asc = 0;
         time.calc_dt_expl(u, mesh)?;
+        time.cap_dt();
 
         if self.bt.asc {
             self.u_prim_old.assign(&u.prim);
@@ -81,6 +87,7 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
             self.dt_temp = self.calc_rkf_solution(time.dt, u, rhs, mesh)?;
             if self.err_new < 1.0 {
                 time.dt = self.dt_temp;
+                time.cap_dt();
                 self.solution_accepted = true;
             }
 
@@ -106,7 +113,7 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
 
 impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
     pub fn new(numericsconfig: &NumericsConfig, physicsconfig: &PhysicsConfig) -> Self {
-        let bt = ButcherTableau::new(numericsconfig); 
+        let bt = ButcherTableau::new(numericsconfig);
         let order = bt.order;
         return Self {
             bt,
@@ -125,14 +132,22 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         };
     }
 
-    fn calc_rkf_solution(&mut self, dt_in: f64, u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, mesh: &Mesh<S>) -> Result<f64> {
+    fn calc_rkf_solution(
+        &mut self,
+        dt_in: f64,
+        u: &mut Physics<S, EQ>,
+        rhs: &mut Rhs<S, EQ>,
+        mesh: &Mesh<S>,
+    ) -> Result<f64> {
         let mut dt_out = dt_in;
         self.k_bundle.fill(0.0);
         // calculate the k_bundle entries
         for q in 0..self.bt.order {
             self.utilde.cons.assign(&u.cons);
             for p in 0..q {
-                self.utilde.cons.assign(&(&self.utilde.cons - dt_out * &self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)));
+                self.utilde
+                    .cons
+                    .assign(&(&self.utilde.cons - dt_out * &self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)));
             }
             rhs.update(u, mesh);
             let mut k_bundle_q = self.k_bundle.index_axis_mut(Axis(0), q);
@@ -142,22 +157,32 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         // calculate high order solution
         self.utilde.cons.assign(&u.cons);
         for q in 0..self.bt.order {
-            self.utilde.cons.assign(&(&self.utilde.cons - dt_out * &self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)));
+            self.utilde
+                .cons
+                .assign(&(&self.utilde.cons - dt_out * &self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)));
         }
 
         if !self.solution_accepted {
             // calculate low order solution
             self.u_cons_low.assign(&u.cons);
             for q in 0..self.bt.order {
-                self.utilde.cons.assign(&(&self.u_cons_low - dt_out * &self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)));
+                self.utilde
+                    .cons
+                    .assign(&(&self.u_cons_low - dt_out * &self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)));
             }
 
             // calc err_new
             self.err_new = {
                 let mut err_max = 0.0f64;
                 for j in 0..EQ {
-                    for i in 2..S-2 {
-                        err_max = err_max.max((self.utilde.cons[[j,i]] - self.u_cons_low[[j,i]] / (self.asc_relative_tolerance * (self.utilde.cons[[j,i]] + self.asc_absolute_tolerance).abs())).abs());
+                    for i in 2..S - 2 {
+                        err_max = err_max.max(
+                            (self.utilde.cons[[j, i]]
+                                - self.u_cons_low[[j, i]]
+                                    / (self.asc_relative_tolerance
+                                        * (self.utilde.cons[[j, i]] + self.asc_absolute_tolerance).abs()))
+                            .abs(),
+                        );
                     }
                 }
                 err_max

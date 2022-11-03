@@ -4,7 +4,7 @@
 
 //! TODO
 
-use color_eyre::Result;
+use color_eyre::{eyre::bail, Result};
 
 use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics};
 
@@ -14,9 +14,7 @@ pub struct TimeStep {
     pub iter: usize,
     pub iter_max: usize,
     pub t: f64,
-    t0: f64,
     pub t_end: f64,
-    t_old: f64,
     pub dt: f64,
     dt_min: f64,
     dt_max: f64,
@@ -36,9 +34,7 @@ impl TimeStep {
             iter: 0,
             iter_max: numericsconfig.iter_max,
             t: numericsconfig.t0,
-            t0: numericsconfig.t0,
             t_end: numericsconfig.t_end,
-            t_old: numericsconfig.t0,
             dt: 0.0,
             dt_min: numericsconfig.dt_min,
             dt_max: numericsconfig.dt_max,
@@ -57,8 +53,22 @@ impl TimeStep {
     ) -> Result<()> {
         // let dt_cfl_pair = (u.calc_dt_cfl(self.dt_cfl_param, &mesh), DtKind::CFL);
         //TODO: source term time steps
-        self.dt = u.calc_dt_cfl(self.dt_cfl_param, &mesh)?;
-        self.dt_kind = DtKind::CFL;
+        self.dt = u.calc_dt_cfl(self.dt_cfl_param, mesh)?;
+        if self.dt < self.dt_min {
+            bail!(
+                "Time step width dt dipped below dt_min! Got dt = {}, dt_min = {}",
+                self.dt,
+                self.dt_min
+            );
+        }
+        self.dt_kind = DtKind::Cfl;
         return Ok(());
+    }
+
+    pub fn cap_dt(&mut self) {
+        self.dt = self.dt.min(self.dt_max);
+        if (self.dt + self.t) / self.t_next_output > 1.0 {
+            self.dt = self.t_next_output - self.t;
+        }
     }
 }

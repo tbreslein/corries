@@ -22,9 +22,6 @@ pub struct Writer {
     /// Current output counter
     output_counter: usize,
 
-    /// Maximum output counter
-    output_counter_max: usize,
-
     /// Whether we should perform an output at this point
     pub should_perform_output: bool,
 }
@@ -56,7 +53,6 @@ impl Writer {
         return Ok(Writer {
             outputs,
             output_counter: 0,
-            output_counter_max: config.output_counter_max,
             should_perform_output: true,
         });
     }

@@ -6,12 +6,7 @@
 
 use color_eyre::{eyre::bail, Result};
 
-use crate::{
-    config::CorriesConfig,
-    mesh::Mesh,
-    physics::Physics,
-    rhs::Rhs,
-};
+use crate::{config::CorriesConfig, mesh::Mesh, physics::Physics, rhs::Rhs};
 
 use self::{rkf::RungeKuttaFehlberg, timestep::TimeStep};
 
@@ -20,7 +15,7 @@ mod timestep;
 
 pub enum DtKind {
     Init,
-    CFL,
+    Cfl,
 }
 
 trait TimeSolver<const S: usize, const EQ: usize> {
