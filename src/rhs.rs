@@ -5,9 +5,10 @@
 //! Exports the [Rhs] struct that carries objects and methods for solving the right-hand side of a
 //! set of equations.
 
+use color_eyre::Result;
 use ndarray::Array2;
 
-use crate::{boundaryconditions::BoundaryConditionContainer, config::CorriesConfig, mesh::Mesh, physics::Physics};
+use crate::{boundaryconditions::BoundaryConditionContainer, config::CorriesConfig, mesh::Mesh, physics::Physics, errorhandling::Validation};
 
 use self::numflux::NumFlux;
 
@@ -81,5 +82,11 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
         u.update_derived_variables();
         self.boundary_conditions.apply(u, mesh);
         u.update_cons();
+    }
+}
+
+impl<'a, const S: usize, const EQ: usize> Validation for Rhs<'a, S, EQ> {
+    fn validate(&self) -> Result<()> {
+        todo!();
     }
 }

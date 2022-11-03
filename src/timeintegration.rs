@@ -8,6 +8,7 @@ use color_eyre::{eyre::bail, Result};
 
 use crate::{
     config::{numericsconfig::TimeIntegrationConfig, CorriesConfig},
+    errorhandling::Validation,
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
@@ -90,5 +91,11 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
             );
         }
         return Ok(());
+    }
+}
+
+impl<const S: usize, const EQ: usize> Validation for TimeIntegration<S, EQ> {
+    fn validate(&self) -> Result<()> {
+        todo!();
     }
 }

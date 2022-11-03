@@ -21,7 +21,7 @@ macro_rules! check_finite_multiple_doubles {
     };
 }
 
-/// Macro to check that the elements of an `ArrayD` is finite.
+/// Macro to check that the elements of an `Array` are finite.
 macro_rules! check_finite_arrayd {
     ($s:ident.$x:ident) => {
         ensure!(
@@ -33,14 +33,14 @@ macro_rules! check_finite_arrayd {
     };
 }
 
-/// Macro to check that an `ArrayD` is non-empty.
+/// Macro to check that an `Array` is non-empty.
 macro_rules! check_nonempty_arrayd {
     ($s:ident.$x:ident) => {
         ensure!(!$s.$x.is_empty(), "{0} is empty!", stringify!($x))
     };
 }
 
-/// Macro to check that an `ArrayD` is non-empty and its elements are finite.
+/// Macro to check that an `Array` is non-empty and its elements are finite.
 macro_rules! check_nonempty_finite_arrayd {
     ($s:ident.$x:ident) => {
         check_nonempty_arrayd!($s.$x);
@@ -48,7 +48,7 @@ macro_rules! check_nonempty_finite_arrayd {
     };
 }
 
-/// Macro to check that, for each `ArrayD` in a list of `ArrayD`, that it is non-empty and their elements are finite.
+/// Macro to check that, for each `Array` in a list of `Array`, that it is non-empty and their elements are finite.
 macro_rules! check_nonempty_finite_multiple_arrayd {
     ($($s:ident.$x:ident),*) => {
         $(check_nonempty_finite_arrayd!($s.$x);)*
