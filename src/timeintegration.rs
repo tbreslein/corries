@@ -6,7 +6,12 @@
 
 use color_eyre::{eyre::bail, Result};
 
-use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics, rhs::Rhs};
+use crate::{
+    config::CorriesConfig,
+    mesh::Mesh,
+    physics::Physics,
+    rhs::Rhs,
+};
 
 use self::{rkf::RungeKuttaFehlberg, timestep::TimeStep};
 
@@ -34,15 +39,14 @@ pub struct TimeIntegration<const S: usize, const EQ: usize> {
 }
 
 impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
-    pub fn new(numericsconfig: &NumericsConfig, output_counter_max: usize) -> Self {
+    pub fn new(config: &CorriesConfig) -> Self {
         return Self {
-            time: TimeStep::new(numericsconfig, output_counter_max),
-            solver: Box::new(RungeKuttaFehlberg::new()),
+            time: TimeStep::new(&config.numericsconfig, config.output_counter_max),
+            solver: Box::new(RungeKuttaFehlberg::new(&config.numericsconfig, &config.physicsconfig)),
         };
     }
     pub fn next_solution(&mut self, u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         self.solver.next_solution(&mut self.time, u, rhs, mesh)?;
-        self.time.iter += 1;
         if self.time.iter >= self.time.iter_max {
             bail!(
                 "time.iter reached time.iter_max! time.iter = {}, time.iter_max = {}",

@@ -82,10 +82,10 @@ pub struct CorriesConfig {
     pub print_banner: bool,
 
     /// Config for Mesh objects
-    pub meshconf: MeshConfig,
+    pub meshconfig: MeshConfig,
 
     /// Config for Physics objects
-    pub physicsconf: PhysicsConfig,
+    pub physicsconfig: PhysicsConfig,
 
     /// boundary condition on the west border of the computational area
     pub boundary_condition_west: BoundaryMode,
@@ -94,21 +94,21 @@ pub struct CorriesConfig {
     pub boundary_condition_east: BoundaryMode,
 
     /// Config for everything related to numerics
-    pub numericsconf: NumericsConfig,
+    pub numericsconfig: NumericsConfig,
 
     /// The number of outputs to write during the simulation, not counting output for the initial
     /// state
     pub output_counter_max: usize,
 
     /// Config for Writer objects
-    pub writerconf: Vec<OutputConfig>,
+    pub writerconfig: Vec<OutputConfig>,
 }
 
 impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {
         ensure!(!self.name.is_empty(), "name must not be empty!");
-        self.meshconf.validate().context("Validating config.meshconf")?;
-        for outputconf in self.writerconf.iter() {
+        self.meshconfig.validate().context("Validating config.meshconf")?;
+        for outputconf in self.writerconfig.iter() {
             outputconf.validate().context("Validating config.writerconf")?;
         }
         return Ok(());
@@ -124,24 +124,24 @@ impl CorriesConfig {
         s += &format!("# name: {}\n", self.name);
 
         s += "# meshconf:\n";
-        s += &format!("#     mode: {:?}\n", self.meshconf.mode);
+        s += &format!("#     mode: {:?}\n", self.meshconfig.mode);
         s += &format!("#     n_comp: {}\n", MESH_COMP_SIZE);
         // s += &format!("#     n_gc: {}\n", NGC);
-        s += &format!("#     xi_in: {}\n", self.meshconf.xi_in);
-        s += &format!("#     xi_out: {}\n", self.meshconf.xi_out);
-        s += &format!("#     ratio_disk: {}\n", self.meshconf.ratio_disk);
+        s += &format!("#     xi_in: {}\n", self.meshconfig.xi_in);
+        s += &format!("#     xi_out: {}\n", self.meshconfig.xi_out);
+        s += &format!("#     ratio_disk: {}\n", self.meshconfig.ratio_disk);
 
         s += "# physicsconf:\n";
-        s += &format!("#     mode: {:?}\n", self.physicsconf.mode);
-        s += &format!("#     units_mode: {:?}\n", self.physicsconf.units_mode);
-        s += &format!("#     adiabatic_index: {}\n", self.physicsconf.adiabatic_index);
-        s += &format!("#     c_sound_0: {}\n", self.physicsconf.c_sound_0);
+        s += &format!("#     mode: {:?}\n", self.physicsconfig.mode);
+        s += &format!("#     units_mode: {:?}\n", self.physicsconfig.units_mode);
+        s += &format!("#     adiabatic_index: {}\n", self.physicsconfig.adiabatic_index);
+        s += &format!("#     c_sound_0: {}\n", self.physicsconfig.c_sound_0);
 
         s += "# numericsconf:\n";
-        s += &format!("#     numflux_mode: {:?}\n", self.numericsconf.numflux_mode);
+        s += &format!("#     numflux_mode: {:?}\n", self.numericsconfig.numflux_mode);
 
         s += "# writerconf:\n";
-        for (i, outputconf) in self.writerconf.iter().enumerate() {
+        for (i, outputconf) in self.writerconfig.iter().enumerate() {
             s += &format!("#   outputconf[{}]\n", i);
             s += &format!("#     stream_mode: {:?}\n", outputconf.stream_mode);
             s += &format!("#     formatter_mode: {:?}\n", outputconf.formatter_mode);

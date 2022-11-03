@@ -39,13 +39,11 @@ mod writer;
 /// * `config` - The [CorriesConfig] the simulation is based on
 pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
     config.validate().context("Validating config")?;
-    let mesh: Mesh<S> = Mesh::new(&config.meshconf).context("Constructing Mesh")?;
-    let mut u = init_physics::<S, EQ>(&config.physicsconf);
-    let mut numflux = init_numflux(&config.numericsconf);
+    let mesh: Mesh<S> = Mesh::new(&config.meshconfig).context("Constructing Mesh")?;
+    let mut u = init_physics::<S, EQ>(&config.physicsconfig);
+    let mut numflux = init_numflux(&config.numericsconfig);
     let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
-    rhs.update_dflux_dxi(&mut u, &mesh);
-    let mut timeintegration: TimeIntegration<S, EQ> =
-        TimeIntegration::new(&config.numericsconf, config.output_counter_max);
+    let mut timeintegration: TimeIntegration<S, EQ> = TimeIntegration::new(&config);
 
     let mut writer = Writer::new(&config, &mesh)?;
 
