@@ -4,7 +4,7 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
-use color_eyre::eyre::{ensure, Context};
+use color_eyre::eyre::Context;
 use color_eyre::Result;
 
 use self::meshconfig::MeshConfig;
@@ -75,9 +75,6 @@ pub enum PhysicsVariable {
 /// used throughout the simulation.
 #[derive(Debug)]
 pub struct CorriesConfig {
-    /// Name of the simulation; may not be empty
-    pub name: String,
-
     /// Whether to print the Corries banner to stdout
     pub print_banner: bool,
 
@@ -106,7 +103,6 @@ pub struct CorriesConfig {
 
 impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {
-        ensure!(!self.name.is_empty(), "name must not be empty!");
         self.meshconfig.validate().context("Validating config.meshconf")?;
         for outputconf in self.writerconfig.iter() {
             outputconf.validate().context("Validating config.writerconf")?;
@@ -121,12 +117,10 @@ impl CorriesConfig {
     pub fn metadata_dump<const MESH_COMP_SIZE: usize>(&self) -> String {
         let mut s = "".to_string();
         s += "### Corries Configuration\n";
-        s += &format!("# name: {}\n", self.name);
 
         s += "# meshconf:\n";
         s += &format!("#     mode: {:?}\n", self.meshconfig.mode);
         s += &format!("#     n_comp: {}\n", MESH_COMP_SIZE);
-        // s += &format!("#     n_gc: {}\n", NGC);
         s += &format!("#     xi_in: {}\n", self.meshconfig.xi_in);
         s += &format!("#     xi_out: {}\n", self.meshconfig.xi_out);
         s += &format!("#     ratio_disk: {}\n", self.meshconfig.ratio_disk);

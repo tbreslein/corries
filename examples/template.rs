@@ -17,7 +17,6 @@ fn main() -> Result<()> {
     const N_EQUATIONS: usize = get_n_equations(PhysicsMode::Euler1DIsot);
 
     run_sim::<SIZE, N_EQUATIONS>(config::CorriesConfig {
-        name: "accretiondisk".to_string(),
         print_banner: true,
         meshconfig: MeshConfig {
             mode: MeshMode::Cartesian,
