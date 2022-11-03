@@ -55,8 +55,8 @@ impl Validation for PhysicsConfig {
         //     self.critical_reynolds
         // );
         ensure!(
-            self.adiabatic_index > 0.0 && self.adiabatic_index < 1.0,
-            "This must hold: 0 < adiabatic_index < 1! Got adiabatic_index = {}",
+            self.adiabatic_index > 1.0 && self.adiabatic_index < 2.0,
+            "This must hold: 1 < adiabatic_index < 2 ! Got adiabatic_index = {}",
             self.adiabatic_index
         );
         ensure!(
