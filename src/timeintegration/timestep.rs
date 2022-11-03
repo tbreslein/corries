@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [TimeStep]
 
 use color_eyre::{eyre::bail, Result};
 
@@ -10,15 +10,34 @@ use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics
 
 use super::DtKind;
 
+/// Information about the time coordinate and related data
 pub struct TimeStep {
+    /// Current iteration counter for the simulation
     pub iter: usize,
+
+    /// Maximum value for `iter`; the simulation will error out if `iter` hits this value
     pub iter_max: usize,
+
+    /// Current time coordinate
     pub t: f64,
+
+    /// Time coordinate at which the simulation terminates
     pub t_end: f64,
+
+    /// Current time step width
     pub dt: f64,
+
+    /// Minimum value for `dt`; the simulation will error out if `dt` dips below this value
     dt_min: f64,
+
+    /// Maximum value for `dt`; simply a safety measure if a good value for `dt_cfl_param` is not
+    /// known yet for this simulation
     dt_max: f64,
+
+    /// CFL safety parameter
     dt_cfl_param: f64,
+
+    /// The limiting factor this iteration's time step width
     dt_kind: DtKind,
 
     /// Time step width between outputs
@@ -29,6 +48,12 @@ pub struct TimeStep {
 }
 
 impl TimeStep {
+    /// Constructs a new [TimeStep] object
+    ///
+    /// # Arguments
+    ///
+    /// * `numericsconfig` - Configuration for everything regarding numerics
+    /// * `output_counter_max` - The number of outputs this simulation produces
     pub fn new(numericsconfig: &NumericsConfig, output_counter_max: usize) -> Self {
         return Self {
             iter: 0,
@@ -45,6 +70,12 @@ impl TimeStep {
         };
     }
 
+    /// Calculates the explicit time step width
+    ///
+    /// # Arguments
+    ///
+    /// * `u` - The current [Physics] state
+    /// * `mesh` - Information about spatial properties
     pub fn calc_dt_expl<const S: usize, const EQ: usize>(
         &mut self,
         u: &mut Physics<S, EQ>,
@@ -65,6 +96,8 @@ impl TimeStep {
         return Ok(());
     }
 
+    /// Caps the time step width to an upper limit, for example so that the time coordinate does
+    /// not exceed the point where the next output should be produced.
     pub fn cap_dt(&mut self) {
         self.dt = self.dt.min(self.dt_max);
         if (self.dt + self.t) / self.t_next_output > 1.0 {
