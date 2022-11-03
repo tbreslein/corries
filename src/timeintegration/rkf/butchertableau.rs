@@ -239,5 +239,5 @@ fn get_order(mode: RKFMode) -> usize {
         RKFMode::RKF45 => 6,
         RKFMode::SSPRK3 => 3,
         RKFMode::SSPRK5 => 5,
-    }
+    };
 }
