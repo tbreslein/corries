@@ -10,7 +10,7 @@ use ndarray::{Array2, Array3, Axis};
 use crate::{
     config::{numericsconfig::RkfConfig, physicsconfig::PhysicsConfig},
     mesh::Mesh,
-    physics::{init_physics, Physics},
+    physics::Physics,
     rhs::Rhs,
 };
 
@@ -136,7 +136,7 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             solution_accepted: false,
             u_cons_low: Array2::zeros((EQ, S)),
             u_prim_old: Array2::zeros((EQ, S)),
-            utilde: init_physics(physicsconfig),
+            utilde: Physics::new(physicsconfig),
             dt_temp: 0.0,
         };
     }
