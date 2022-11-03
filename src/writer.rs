@@ -49,7 +49,7 @@ impl Writer {
     /// * `outputer_count_max` - How many output steps this simulation should be going through
     pub fn new<const S: usize>(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
         let mut outputs = vec![];
-        for outputconf in config.writerconf.iter() {
+        for outputconf in config.writerconfig.iter() {
             let output = Output::new(outputconf, mesh, config.output_counter_max)?;
             outputs.push(output);
         }

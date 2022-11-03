@@ -4,7 +4,9 @@
 
 //! TODO
 
-use crate::config::numericsconfig::NumericsConfig;
+use color_eyre::Result;
+
+use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics};
 
 use super::DtKind;
 
@@ -15,7 +17,7 @@ pub struct TimeStep {
     t0: f64,
     pub t_end: f64,
     t_old: f64,
-    dt: f64,
+    pub dt: f64,
     dt_min: f64,
     dt_max: f64,
     dt_cfl_param: f64,
@@ -45,5 +47,18 @@ impl TimeStep {
             dt_output: (numericsconfig.t_end - numericsconfig.t0) / output_counter_max as f64,
             t_next_output: numericsconfig.t0,
         };
+    }
+
+    pub fn calc_dt_expl<const S: usize, const EQ: usize>(
+        &mut self,
+        u: &mut Physics<S, EQ>,
+        // rhs: &Rhs<S, EQ>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
+        // let dt_cfl_pair = (u.calc_dt_cfl(self.dt_cfl_param, &mesh), DtKind::CFL);
+        //TODO: source term time steps
+        self.dt = u.calc_dt_cfl(self.dt_cfl_param, &mesh)?;
+        self.dt_kind = DtKind::CFL;
+        return Ok(());
     }
 }
