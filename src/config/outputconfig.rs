@@ -60,7 +60,7 @@ impl Validation for OutputConfig {
             for name in self.data_names.iter() {
                 ensure!(
                     name.datatype() != DataType::VectorFloat,
-                    "You cannot write vectors into an Output in Scalar mode! data_name = {:?}",
+                    "You cannot write vectors into an Output in Scalar mode! Got data_name = {:?}",
                     name
                 );
             }

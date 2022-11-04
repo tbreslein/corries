@@ -5,7 +5,10 @@
 //! Exports the [Rhs] struct that carries objects and methods for solving the right-hand side of a
 //! set of equations.
 
-use color_eyre::{Result, eyre::{ensure, Context}};
+use color_eyre::{
+    eyre::{ensure, Context},
+    Result,
+};
 use ndarray::Array2;
 
 use crate::{
@@ -56,7 +59,8 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
     pub fn update(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
-        self.update_dflux_dxi(u, mesh).context("Calling Rhs::update_dflux_dxi in Rhs::update")?;
+        self.update_dflux_dxi(u, mesh)
+            .context("Calling Rhs::update_dflux_dxi in Rhs::update")?;
         self.full_rhs.assign(&self.dflux_dxi);
         return Ok(());
     }
@@ -70,8 +74,11 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     fn update_dflux_dxi(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date; self.update_physics updates u.prim and the
         // derived variables anyways.
-        self.update_physics(u, mesh).context("Calling Rhs::update_physics in Rhs::update_dflux_dxi")?;
-        self.numflux.calc_dflux_dxi(&mut self.dflux_dxi, u, mesh).context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
+        self.update_physics(u, mesh)
+            .context("Calling Rhs::update_physics in Rhs::update_dflux_dxi")?;
+        self.numflux
+            .calc_dflux_dxi(&mut self.dflux_dxi, u, mesh)
+            .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
         return Ok(());
     }
 

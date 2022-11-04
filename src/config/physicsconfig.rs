@@ -44,46 +44,16 @@ pub struct PhysicsConfig {
 
 impl Validation for PhysicsConfig {
     fn validate(&self) -> Result<()> {
-        // ensure!(
-        //     self.mu_si > 0.0,
-        //     "This must hold: mu_si > 0! Got mu_si = {}",
-        //     self.mu_si
-        // );
-        // ensure!(
-        //     self.critical_reynolds > 0.0,
-        //     "This must hold: critical_reynolds > 0! Got critical_reynolds = {}",
-        //     self.critical_reynolds
-        // );
         ensure!(
             self.adiabatic_index > 1.0 && self.adiabatic_index < 2.0,
-            "This must hold: 1 < adiabatic_index < 2 ! Got adiabatic_index = {}",
+            "This must hold: 1 < adiabatic_index < 2 ! Got {}",
             self.adiabatic_index
         );
         ensure!(
             self.c_sound_0 > 0.0,
-            "This must hold: c_sound_0 > 0! Got c_sound_0 = {}",
+            "This must hold: c_sound_0 > 0! Got {}",
             self.c_sound_0
         );
-        // ensure!(
-        //     self.temperature_0 > 0.0,
-        //     "This must hold: temperature_0 > 0! Got temperature_0 = {}",
-        //     self.temperature_0
-        // );
-        // ensure!(
-        //     self.m_central_0 > 0.0,
-        //     "This must hold: m_central_0 > 0! Got m_central_0 = {}",
-        //     self.m_central_0
-        // );
-        // ensure!(
-        //     self.m_disk_0 > 0.0,
-        //     "This must hold: m_disk_0 > 0! Got m_disk_0 = {}",
-        //     self.m_disk_0
-        // );
-        // ensure!(
-        //     self.accretion_efficiency > 0.0 && self.accretion_efficiency <= 1.0,
-        //     "This must hold: 0 < accretion_efficiency <= 1! Got accretion_efficiency = {}",
-        //     self.accretion_efficiency
-        // );
         return Ok(());
     }
 }

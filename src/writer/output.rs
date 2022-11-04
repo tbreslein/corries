@@ -104,9 +104,7 @@ impl Output {
                 DataType::Usize => data_matrix.push(DataValue::Usize(0)),
                 DataType::Float => data_matrix.push(DataValue::Float(0.0)),
                 DataType::String => data_matrix.push(DataValue::String("".to_string())),
-                DataType::VectorFloat => {
-                    data_matrix.push(DataValue::VectorFloat(Array1::zeros([S - 2 * mesh_offset])))
-                },
+                DataType::VectorFloat => data_matrix.push(DataValue::VectorFloat(Array1::zeros([S - 2 * mesh_offset]))),
             };
         }
 
