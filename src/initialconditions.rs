@@ -6,7 +6,10 @@
 
 use color_eyre::{eyre::Context, Result};
 
-use crate::{config::{CorriesConfig, InitialConditions}, physics::Physics};
+use crate::{
+    config::{CorriesConfig, InitialConditions},
+    physics::Physics,
+};
 
 use self::noh::init_noh;
 

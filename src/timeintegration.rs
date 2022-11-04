@@ -70,7 +70,7 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
     pub fn new(config: &CorriesConfig) -> Result<Self> {
         let solver = match &config.numericsconfig.time_integration_config {
             TimeIntegrationConfig::Rkf(rkfconfig) => {
-                let s = RungeKuttaFehlberg::new(rkfconfig, &config).context("Constructing RungeKuttaFehlberg")?;
+                let s = RungeKuttaFehlberg::new(rkfconfig, config).context("Constructing RungeKuttaFehlberg")?;
                 Box::new(s)
             },
         };

@@ -7,7 +7,7 @@ use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
-use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable, InitialConditions};
+use corries::config::{BoundaryMode, CustomBoundaryMode, InitialConditions, PhysicsVariable};
 use corries::run_sim;
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
