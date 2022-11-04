@@ -46,7 +46,8 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     let mut numflux = init_numflux(&config.numericsconfig);
     let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
     apply_initial_conditions(&config, &mut u).context("Applying initial conditions to u")?;
-    let mut timeintegration: TimeIntegration<S, EQ> = TimeIntegration::new(&config).context("Constructing TimeIntegration")?;
+    let mut timeintegration: TimeIntegration<S, EQ> =
+        TimeIntegration::new(&config).context("Constructing TimeIntegration")?;
 
     let mut writer = Writer::new(&config, &mesh).context("Constructing Writer")?;
 

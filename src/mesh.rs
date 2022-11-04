@@ -481,8 +481,8 @@ mod tests {
                 prop_assume!(mesh.is_ok());
                 let mesh = mesh.unwrap();
                 prop_assume!(mesh.xi_in < mesh.xi_out);
-                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], max_relative = 10.0f64.powi(-12));
-                assert_relative_eq!(mesh.xi_out, mesh.xi_east[mesh.ixi_out], max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], max_relative = 1.0e-12);
+                assert_relative_eq!(mesh.xi_out, mesh.xi_east[mesh.ixi_out], max_relative = 1.0e-12);
             }
         }
     }

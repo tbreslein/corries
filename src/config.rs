@@ -12,12 +12,18 @@ use self::numericsconfig::NumericsConfig;
 use self::outputconfig::OutputConfig;
 use self::physicsconfig::PhysicsConfig;
 use crate::errorhandling::Validation;
-use crate::initialconditions::InitialConditions;
 
 pub mod meshconfig;
 pub mod numericsconfig;
 pub mod outputconfig;
 pub mod physicsconfig;
+
+/// Enumerates the different initial conditions
+#[derive(Debug)]
+pub enum InitialConditions {
+    /// Noh test setup
+    Noh,
+}
 
 /// Enumerates the different boundary conditions
 #[derive(Debug)]

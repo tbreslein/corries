@@ -26,7 +26,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     u.update_prim();
     u.update_cons();
     u.update_prim();
-    assert_relative_eq!(u.prim, u0.prim, epsilon = 10.0f64.powi(-12));
+    assert_relative_eq!(u.prim, u0.prim, epsilon = 1.0e-12);
 
     group.sample_size(1000);
     group.bench_function("update", |b| {

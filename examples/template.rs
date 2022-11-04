@@ -7,7 +7,7 @@ use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
-use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
+use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable, InitialConditions};
 use corries::run_sim;
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
@@ -30,6 +30,7 @@ fn main() -> Result<()> {
             adiabatic_index: 1.4,
             c_sound_0: 1.0,
         },
+        initial_conditions: InitialConditions::Noh,
         boundary_condition_west: BoundaryMode::Custom(vec![
             (PhysicsVariable::Density, CustomBoundaryMode::NoGradients),
             (PhysicsVariable::XiVelocity, CustomBoundaryMode::NoGradients),
@@ -50,7 +51,7 @@ fn main() -> Result<()> {
             iter_max: usize::MAX - 2,
             t0: 0.0,
             t_end: 10.0,
-            dt_min: 10.0f64.powi(-12),
+            dt_min: 1.0e-12,
             dt_max: f64::MAX,
             dt_cfl_param: 0.1,
         },

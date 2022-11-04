@@ -230,7 +230,7 @@ impl Output {
                         DataValue::Int(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::Usize(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::Float(x) => {
-                            self.stream_strings[0] += &format!("{:>width$.*}", self.precision, x, width = self.width)
+                            self.stream_strings[0] += &format!("{:>width$.*e}", self.precision, x, width = self.width)
                         },
                         DataValue::String(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::VectorFloat(_) => {
@@ -252,14 +252,14 @@ impl Output {
                             },
                             DataValue::Float(x) => {
                                 self.stream_strings[i] +=
-                                    &format!("{:>width$.*}", self.precision, x, width = self.width)
+                                    &format!("{:>width$.*e}", self.precision, x, width = self.width)
                             },
                             DataValue::String(x) => {
                                 self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
                             },
                             DataValue::VectorFloat(v) => {
                                 self.stream_strings[i] +=
-                                    &format!("{:>width$.*}", self.precision, v[i], width = self.width)
+                                    &format!("{:>width$.*e}", self.precision, v[i], width = self.width)
                             },
                         };
                         self.stream_strings[i].push(self.delimiter);

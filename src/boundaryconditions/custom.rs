@@ -124,13 +124,13 @@ fn extrapolate_etavel_kepler_east<const S: usize, const EQ: usize>(j: usize, u: 
 
 fn near_zero_west<const S: usize, const EQ: usize>(j: usize, u: &mut Physics<S, EQ>) {
     for i in 0..=1 {
-        u.prim.row_mut(j)[i] = 10.0f64.powi(-10) * u.prim.row(j)[2];
+        u.prim.row_mut(j)[i] = 1.0e-10 * u.prim.row(j)[2];
     }
 }
 
 fn near_zero_east<const S: usize, const EQ: usize>(j: usize, u: &mut Physics<S, EQ>) {
     for i in S - 2..=S - 1 {
-        u.prim.row_mut(j)[i] = 10.0f64.powi(-10) * u.prim.row(j)[S - 3];
+        u.prim.row_mut(j)[i] = 1.0e-10 * u.prim.row(j)[S - 3];
     }
 }
 
