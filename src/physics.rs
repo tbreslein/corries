@@ -44,25 +44,25 @@ pub struct Physics<const S: usize, const EQ: usize> {
     pub eigen_vals: Array2<f64>,
 
     /// Possible equation index for density
-    jdensity: usize,
+    pub jdensity: usize,
 
     /// Possible equation index for velocity in the xi direction
-    jxivelocity: usize,
+    pub jxivelocity: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jximomentum: usize,
+    pub jximomentum: usize,
 
     /// Possible equation index for velocity in the xi direction
-    jetavelocity: usize,
+    pub jetavelocity: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jetamomentum: usize,
+    pub jetamomentum: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jenergy: usize,
+    pub jenergy: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jpressure: usize,
+    pub jpressure: usize,
 
     /// Adiabatic index
     pub adiabatic_index: f64,
@@ -378,7 +378,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-10));
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-10);
             }
         }
     }
@@ -409,7 +409,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-12);
             }
         }
     }
@@ -442,7 +442,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-12);
             }
         }
     }

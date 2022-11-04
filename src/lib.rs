@@ -13,6 +13,7 @@
 
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
+use initialconditions::apply_initial_conditions;
 use mesh::Mesh;
 use physics::Physics;
 use rhs::numflux::init_numflux;
@@ -25,6 +26,7 @@ mod boundaryconditions;
 pub mod config;
 #[macro_use]
 mod errorhandling;
+mod initialconditions;
 mod mesh;
 pub mod physics;
 mod rhs;
@@ -43,7 +45,8 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
     let mut u: Physics<S, EQ> = Physics::new(&config.physicsconfig);
     let mut numflux = init_numflux(&config.numericsconfig);
     let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
-    let mut timeintegration: TimeIntegration<S, EQ> = TimeIntegration::new(&config);
+    apply_initial_conditions(&config, &mut u).context("Applying initial conditions to u")?;
+    let mut timeintegration: TimeIntegration<S, EQ> = TimeIntegration::new(&config).context("Constructing TimeIntegration")?;
 
     let mut writer = Writer::new(&config, &mesh).context("Constructing Writer")?;
 

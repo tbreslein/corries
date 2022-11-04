@@ -11,7 +11,7 @@ use crate::errorhandling::Validation;
 use crate::units::UnitsMode;
 
 /// Enum for the different kinds of Physics available
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PhysicsMode {
     /// 1D isothermal Euler equations
     Euler1DIsot,

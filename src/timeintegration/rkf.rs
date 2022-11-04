@@ -11,8 +11,9 @@ use color_eyre::{
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
-    config::{numericsconfig::RkfConfig, physicsconfig::PhysicsConfig},
+    config::{numericsconfig::RkfConfig, CorriesConfig},
     errorhandling::Validation,
+    initialconditions::apply_initial_conditions,
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
@@ -130,10 +131,13 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
     ///
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    pub fn new(rkfconfig: &RkfConfig, physicsconfig: &PhysicsConfig) -> Self {
+    pub fn new(rkfconfig: &RkfConfig, config: &CorriesConfig) -> Result<Self> {
         let bt = ButcherTableau::new(rkfconfig);
         let order = bt.order;
-        return Self {
+        let mut utilde: Physics<S, EQ> = Physics::new(&config.physicsconfig);
+        apply_initial_conditions(config, &mut utilde)
+            .context("Applying initial conditions to RungeKuttaFehlberg.utilde")?;
+        return Ok(Self {
             bt,
             k_bundle: Array3::zeros([order, EQ, S]),
             err_new: 0.0,
@@ -145,9 +149,9 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             solution_accepted: false,
             u_cons_low: Array2::zeros((EQ, S)),
             u_prim_old: Array2::zeros((EQ, S)),
-            utilde: Physics::new(physicsconfig),
+            utilde,
             dt_temp: 0.0,
-        };
+        });
     }
 
     /// Calculates a single solution with an RKF method.

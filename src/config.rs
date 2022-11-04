@@ -12,6 +12,7 @@ use self::numericsconfig::NumericsConfig;
 use self::outputconfig::OutputConfig;
 use self::physicsconfig::PhysicsConfig;
 use crate::errorhandling::Validation;
+use crate::initialconditions::InitialConditions;
 
 pub mod meshconfig;
 pub mod numericsconfig;
@@ -83,6 +84,9 @@ pub struct CorriesConfig {
 
     /// Config for Physics objects
     pub physicsconfig: PhysicsConfig,
+
+    /// The initial conditions being applied to the [Physics] object
+    pub initial_conditions: InitialConditions,
 
     /// boundary condition on the west border of the computational area
     pub boundary_condition_west: BoundaryMode,
