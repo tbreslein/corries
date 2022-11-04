@@ -5,10 +5,13 @@
 //! Exports the [Rhs] struct that carries objects and methods for solving the right-hand side of a
 //! set of equations.
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::{ensure, Context}};
 use ndarray::Array2;
 
-use crate::{boundaryconditions::BoundaryConditionContainer, config::CorriesConfig, mesh::Mesh, physics::Physics, errorhandling::Validation};
+use crate::{
+    boundaryconditions::BoundaryConditionContainer, config::CorriesConfig, errorhandling::Validation, mesh::Mesh,
+    physics::Physics,
+};
 
 use self::numflux::NumFlux;
 
@@ -52,9 +55,10 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    pub fn update(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
-        self.update_dflux_dxi(u, mesh);
+    pub fn update(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
+        self.update_dflux_dxi(u, mesh).context("Calling Rhs::update_dflux_dxi in Rhs::update")?;
         self.full_rhs.assign(&self.dflux_dxi);
+        return Ok(());
     }
 
     /// Updates the numerical flux derivative `dflux_dxi`
@@ -63,11 +67,12 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    fn update_dflux_dxi(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
+    fn update_dflux_dxi(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date; self.update_physics updates u.prim and the
         // derived variables anyways.
-        self.update_physics(u, mesh);
-        self.numflux.calc_dflux_dxi(&mut self.dflux_dxi, u, mesh);
+        self.update_physics(u, mesh).context("Calling Rhs::update_physics in Rhs::update_dflux_dxi")?;
+        self.numflux.calc_dflux_dxi(&mut self.dflux_dxi, u, mesh).context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
+        return Ok(());
     }
 
     /// Calls different methods of `u` to update everything, assuming the conservative variables
@@ -77,16 +82,28 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     ///
     /// * `u` - The current [Physics] state about to be updated
     /// * `mesh` - Information about spatial properties
-    pub fn update_physics(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
+    pub fn update_physics(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         u.update_prim();
         u.update_derived_variables();
         self.boundary_conditions.apply(u, mesh);
         u.update_cons();
+        u.validate().context("Calling u.validate in Rhs::update_physics")?;
+        return Ok(());
     }
 }
 
 impl<'a, const S: usize, const EQ: usize> Validation for Rhs<'a, S, EQ> {
     fn validate(&self) -> Result<()> {
-        todo!();
+        ensure!(
+            self.dflux_dxi.fold(true, |acc, x| acc && x.is_finite()),
+            "Rhs::dflux_dxi must be finite! Got: {}",
+            self.dflux_dxi
+        );
+        ensure!(
+            self.full_rhs.fold(true, |acc, x| acc && x.is_finite()),
+            "Rhs::full_rhs must be finite! Got: {}",
+            self.full_rhs
+        );
+        return Ok(());
     }
 }

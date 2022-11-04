@@ -4,7 +4,10 @@
 
 //! Exports the [Physics] struct that handles the variables and physical state of the simulation.
 
-use color_eyre::{eyre::bail, Result};
+use color_eyre::{
+    eyre::{bail, ensure},
+    Result,
+};
 use ndarray::{Array1, Array2, Zip};
 
 use crate::{
@@ -13,9 +16,10 @@ use crate::{
         physicsconfig::{PhysicsConfig, PhysicsMode},
         PhysicsVariable,
     },
+    errorhandling::Validation,
     mesh::Mesh,
     units::Units,
-    writer::{CorriesWrite, DataValue}, errorhandling::Validation,
+    writer::{CorriesWrite, DataValue},
 };
 
 mod systems;
@@ -293,7 +297,50 @@ impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
 
 impl<const S: usize, const EQ: usize> Validation for Physics<S, EQ> {
     fn validate(&self) -> Result<()> {
-        todo!();
+        ensure!(
+            self.prim.fold(true, |acc, x| acc && x.is_finite()),
+            "Physics::prim must be finite! Got: {}",
+            self.prim
+        );
+        ensure!(
+            self.cons.fold(true, |acc, x| acc && x.is_finite()),
+            "Physics::cons must be finite! Got: {}",
+            self.cons
+        );
+        match self.mode {
+            PhysicsMode::Euler1DAdiabatic => {
+                ensure!(
+                    self.prim.row(self.jdensity).fold(true, |acc, x| acc && x > &0.0),
+                    "Mass density must be positive! Got: {}",
+                    self.prim.row(self.jdensity)
+                );
+                ensure!(
+                    self.prim.row(self.jpressure).fold(true, |acc, x| acc && x > &0.0),
+                    "Pressure must be positive! Got: {}",
+                    self.prim.row(self.jpressure)
+                );
+                ensure!(
+                    self.c_sound.fold(true, |acc, x| acc && x.is_finite()),
+                    "Physics::c_sound must be finite! Got: {}",
+                    self.c_sound
+                );
+            },
+            PhysicsMode::Euler1DIsot => {
+                ensure!(
+                    self.prim.row(self.jdensity).fold(true, |acc, x| acc && x > &0.0),
+                    "Mass density must be positive! Got: {}",
+                    self.prim.row(self.jdensity)
+                );
+            },
+            PhysicsMode::Euler2DIsot => {
+                ensure!(
+                    self.prim.row(self.jdensity).fold(true, |acc, x| acc && x > &0.0),
+                    "Mass density must be positive! Got: {}",
+                    self.prim.row(self.jdensity)
+                );
+            },
+        }
+        return Ok(());
     }
 }
 
