@@ -4,6 +4,7 @@
 
 //! Exports the [Hll] struct.
 
+use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 use ndarray::{s, Array1, Array2};
 
@@ -49,7 +50,7 @@ impl<const S: usize, const EQ: usize> Hll<S, EQ> {
 }
 
 impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
-    fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) {
+    fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         // NOTE: Assumes that u.eigen_vals are already up to date
         u.calc_physical_flux_euler1d_adiabatic(&mut self.flux_phys);
         let slice = s![mesh.ixi_in - 1..=mesh.ixi_out];
@@ -85,11 +86,41 @@ impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
             );
         }
         calc_dflux_xi_generic(dflux_dxi, &self.flux_num, mesh);
+
+        self.validate().context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
+        return Ok(());
     }
 }
 
 impl<const S: usize, const EQ: usize> Validation for Hll<S, EQ> {
     fn validate(&self) -> Result<()> {
-        todo!();
+        ensure!(
+            self.flux_phys.fold(true, |acc, x| acc && x.is_finite()),
+            "Hll::flux_phys must be finite! Got: {}",
+            self.flux_phys
+        );
+        ensure!(
+            self.sl.fold(true, |acc, x| acc && x.is_finite()),
+            "Hll::sl must be finite! Got: {}",
+            self.sl
+        );
+        ensure!(
+            self.sr.fold(true, |acc, x| acc && x.is_finite()),
+            "Hll::sr must be finite! Got: {}",
+            self.sr
+        );
+        ensure!(
+            self.inv_sr_minus_sl.fold(true, |acc, x| acc && x.is_finite()),
+            "Hll::inv_sr_minus_sl must be finite! Got:\ninv_sr_minus_sl = {}\nsr = {}\nsl = {}",
+            self.inv_sr_minus_sl,
+            self.sr,
+            self.sl
+        );
+        ensure!(
+            self.flux_num.fold(true, |acc, x| acc && x.is_finite()),
+            "Hll::flux_num must be finite! Got: {}",
+            self.flux_num
+        );
+        return Ok(());
     }
 }

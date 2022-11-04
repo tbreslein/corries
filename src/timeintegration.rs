@@ -4,7 +4,7 @@
 
 //! Exports the [TimeIntegration] struct, and the [DtKind] enum.
 
-use color_eyre::{eyre::bail, Result};
+use color_eyre::{eyre::{bail, Context}, Result};
 
 use crate::{
     config::{numericsconfig::TimeIntegrationConfig, CorriesConfig},
@@ -82,7 +82,7 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
     /// * `rhs` - solves the right-hand side
     /// * `mesh` - Information about spatial properties
     pub fn next_solution(&mut self, u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
-        self.solver.next_solution(&mut self.time, u, rhs, mesh)?;
+        self.solver.next_solution(&mut self.time, u, rhs, mesh).context("Calling TimeIntegration::solver.next_solution in TimeIntegration::next_solution")?;
         if self.time.iter >= self.time.iter_max {
             bail!(
                 "time.iter reached time.iter_max! time.iter = {}, time.iter_max = {}",
@@ -91,11 +91,5 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
             );
         }
         return Ok(());
-    }
-}
-
-impl<const S: usize, const EQ: usize> Validation for TimeIntegration<S, EQ> {
-    fn validate(&self) -> Result<()> {
-        todo!();
     }
 }

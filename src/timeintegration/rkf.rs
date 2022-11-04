@@ -4,7 +4,7 @@
 
 //! Exports the [RungeKuttaFehlberg] struct
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::{ensure, Context}};
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
@@ -74,7 +74,7 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
     ) -> Result<()> {
         time.iter += 1;
         self.n_asc = 0;
-        time.calc_dt_expl(u, mesh)?;
+        time.calc_dt_expl(u, mesh).context("time.calc_dt_expl at the beginning of RungeKuttaFehlberg::next_solution")?;
         time.cap_dt();
 
         if self.bt.asc {
@@ -86,7 +86,7 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
         }
 
         while !self.solution_accepted {
-            self.dt_temp = self.calc_rkf_solution(time.dt, u, rhs, mesh)?;
+            self.dt_temp = self.calc_rkf_solution(time.dt, u, rhs, mesh).context("RungeKuttaFehlberg::calc_rkf_solution in the while loop in RungeKuttaFehlberg::next_solution")?;
             if self.err_new < 1.0 {
                 time.dt = self.dt_temp;
                 time.cap_dt();
@@ -109,7 +109,7 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
         // should play around with this again, since this call can be quite expensive.
         // Idea: I could put the while loop into the `if self.bt.asc` block up top, and this single
         // call into the associated else block
-        let _ = self.calc_rkf_solution(time.dt, u, rhs, mesh)?;
+        let _ = self.calc_rkf_solution(time.dt, u, rhs, mesh).context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
         time.t += time.dt;
         return Ok(());
     }
@@ -167,7 +167,7 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
                     .cons
                     .assign(&(&self.utilde.cons - dt_out * &self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)));
             }
-            rhs.update(u, mesh);
+            rhs.update(u, mesh).context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
             let mut k_bundle_q = self.k_bundle.index_axis_mut(Axis(0), q);
             k_bundle_q.assign(&rhs.full_rhs);
         }
@@ -253,14 +253,21 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             // self.u_cons_low.fill(0.0);
         }
 
+        self.validate().context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         u.cons.assign(&self.utilde.cons);
-        rhs.update_physics(u, mesh);
+        rhs.update_physics(u, mesh).context("Calling rhs.update_physics at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         return Ok(dt_out);
     }
 }
 
 impl<const S: usize, const EQ: usize> Validation for RungeKuttaFehlberg<S, EQ> {
     fn validate(&self) -> Result<()> {
-        todo!();
+        ensure!(
+            self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),
+            "RungeKuttaFehlberg::u_cons_low must be finite! Got: {}",
+            self.u_cons_low
+        );
+        self.utilde.validate().context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;
+        return Ok(());
     }
 }

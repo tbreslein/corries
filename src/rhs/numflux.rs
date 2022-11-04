@@ -5,6 +5,7 @@
 //! Exports the [NumFlux] trait that identifies structs that can calculate numerical flux, and the
 //! [init_numflux] function that handles constructing [NumFlux] objects.
 
+use color_eyre::Result;
 use ndarray::{s, Array2};
 
 use crate::{
@@ -20,7 +21,7 @@ mod hll;
 /// Trait for structs that can calculate numerical flux
 pub trait NumFlux<const S: usize, const EQ: usize> {
     /// Calculates the numerical derivative along the xi direction
-    fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>);
+    fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()>;
 }
 
 /// Constructs an `impl Numflux<S, EQ>`.
