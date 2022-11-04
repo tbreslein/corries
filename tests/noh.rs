@@ -48,11 +48,12 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         ]),
     };
 
-    let file_name = "noh_".to_owned() + match mode {
-        PhysicsMode::Euler1DAdiabatic => "euler1d_adiabatic",
-        PhysicsMode::Euler1DIsot => "euler1d_isot",
-        PhysicsMode::Euler2DIsot => "euler2d_isot",
-    };
+    let file_name = "noh_".to_owned()
+        + match mode {
+            PhysicsMode::Euler1DAdiabatic => "euler1d_adiabatic",
+            PhysicsMode::Euler1DIsot => "euler1d_isot",
+            PhysicsMode::Euler2DIsot => "euler2d_isot",
+        };
     let folder_name = "results/integrationtests/noh_".to_owned() + &file_name;
 
     return config::CorriesConfig {
@@ -114,7 +115,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 should_print_metadata: false,
                 data_names: vec![DataName::XiCent],
             },
-            ],
+        ],
     };
 }
 
