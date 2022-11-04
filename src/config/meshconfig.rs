@@ -42,7 +42,7 @@ impl Validation for MeshConfig {
         );
         ensure!(
             self.ratio_disk > 0.0 && self.ratio_disk <= 1.0,
-            "This must hold: 0.0 < ratio_disk <= 1.0! Got ratio_disk = {}",
+            "This must hold: 0.0 < ratio_disk <= 1.0! Got {}",
             self.ratio_disk
         );
         return Ok(());

@@ -4,7 +4,10 @@
 
 //! Exports [NumericsConfig] for configuring the numerical schemes
 
-use color_eyre::Result;
+use color_eyre::{
+    eyre::{ensure, Context},
+    Result,
+};
 
 use crate::errorhandling::Validation;
 
@@ -51,6 +54,14 @@ pub enum RKFMode {
 pub enum TimeIntegrationConfig {
     /// Runge-Kutta-Fehlberg
     Rkf(RkfConfig),
+}
+
+impl Validation for TimeIntegrationConfig {
+    fn validate(&self) -> Result<()> {
+        return match self {
+            TimeIntegrationConfig::Rkf(c) => c.validate().context("Validating RkfConfig"),
+        };
+    }
 }
 
 /// Configures the Runge-Kutta-Fehlberg scheme
@@ -102,6 +113,49 @@ pub struct NumericsConfig {
 
 impl Validation for NumericsConfig {
     fn validate(&self) -> Result<()> {
+        ensure!(
+            self.iter_max > 0,
+            "This must hold: iter_max > 0 ! Got {}",
+            self.iter_max
+        );
+        ensure!(self.t0 >= 0.0, "This must hold: t0 > 0.0 ! Got {}", self.t0);
+        ensure!(
+            self.t_end > self.t0,
+            "This must hold: t_end > t0 ! Got t_end = {} ; t0 = {}",
+            self.t_end,
+            self.t0
+        );
+        ensure!(self.dt_min > 0.0, "This must hold: dt_min > 0.0 ! Got {}", self.dt_min);
+        ensure!(self.dt_max > 0.0, "This must hold: dt_max > 0.0 ! Got {}", self.dt_max);
+        ensure!(
+            self.dt_cfl_param > 0.0,
+            "This must hold: dt_cfl_param > 0.0 ! Got {}",
+            self.dt_cfl_param
+        );
+        self.time_integration_config
+            .validate()
+            .context("Validating config.numericsconfig.time_integration_config")?;
+        return Ok(());
+    }
+}
+
+impl Validation for RkfConfig {
+    fn validate(&self) -> Result<()> {
+        ensure!(
+            self.asc_absolute_tolerance > 0.0,
+            "This must hold: asc_absolute_tolerance > 0.0 ! Got {}",
+            self.asc_absolute_tolerance
+        );
+        ensure!(
+            self.asc_relative_tolerance > 0.0,
+            "This must hold: asc_relative_tolerance > 0.0 ! Got {}",
+            self.asc_relative_tolerance
+        );
+        ensure!(
+            self.asc_timestep_friction > 0.0,
+            "This must hold: asc_timestep_friction > 0.0 ! Got {}",
+            self.asc_timestep_friction
+        );
         return Ok(());
     }
 }

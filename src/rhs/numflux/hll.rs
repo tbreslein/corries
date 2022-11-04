@@ -87,7 +87,8 @@ impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
         }
         calc_dflux_xi_generic(dflux_dxi, &self.flux_num, mesh);
 
-        self.validate().context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
+        self.validate()
+            .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
         return Ok(());
     }
 }

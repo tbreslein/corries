@@ -103,7 +103,13 @@ pub struct CorriesConfig {
 
 impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {
-        self.meshconfig.validate().context("Validating config.meshconf")?;
+        self.meshconfig.validate().context("Validating config.meshconfig")?;
+        self.physicsconfig
+            .validate()
+            .context("Validating config.physicsconfig")?;
+        self.numericsconfig
+            .validate()
+            .context("Validating config.numericsconfig")?;
         for outputconf in self.writerconfig.iter() {
             outputconf.validate().context("Validating config.writerconf")?;
         }
