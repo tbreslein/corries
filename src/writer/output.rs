@@ -229,7 +229,9 @@ impl Output {
 
     /// Transforms `self.data_matrix` into `self.stream_strings`.
     fn data_matrix_to_stream_strings(&mut self) -> Result<()> {
-        self.stream_strings.iter_mut().for_each(|line| line.clear());
+        self.stream_strings.iter_mut().for_each(|line| {
+            *line = " ".to_string();
+        });
         match self.string_conversion_mode {
             ToStringConversionMode::Scalar => {
                 for value in self.data_matrix.iter() {
