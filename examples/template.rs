@@ -60,14 +60,14 @@ fn main() -> Result<()> {
                 OutputConfig {
                     stream_mode: StreamMode::Stdout,
                     formatter_mode: FormatterMode::TSV,
-                    string_conversion_mode: ToStringConversionMode::Vector,
+                    string_conversion_mode: ToStringConversionMode::Scalar,
                     folder_name: "".to_string(),
                     should_clear_out_folder: false,
                     file_name: "".to_string(),
                     precision: 3,
                     should_print_ghostcells: false,
                     should_print_metadata: true,
-                    data_names: vec![DataName::Prim(0), DataName::Cons(1)],
+                    data_names: vec![DataName::Iter, DataName::T, DataName::Dt, DataName::DtKind],
                 },
                 OutputConfig {
                     stream_mode: StreamMode::File,
