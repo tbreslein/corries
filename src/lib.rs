@@ -43,7 +43,9 @@ mod writer;
 /// ## Function arguments
 ///
 /// * `config` - The [CorriesConfig] the simulation is based on
-pub fn init_sim<const S: usize, const EQ: usize>(config: &CorriesConfig) -> Result<(Physics<S, EQ>, Rhs<S, EQ>, TimeIntegration<S, EQ>, Mesh<S>, Writer)> {
+pub fn init_sim<const S: usize, const EQ: usize>(
+    config: &CorriesConfig,
+) -> Result<(Physics<S, EQ>, Rhs<S, EQ>, TimeIntegration<S, EQ>, Mesh<S>, Writer)> {
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconfig).context("Constructing Mesh")?;
     let u: Physics<S, EQ> = Physics::new(&config.physicsconfig);
@@ -66,11 +68,17 @@ pub fn init_sim<const S: usize, const EQ: usize>(config: &CorriesConfig) -> Resu
 /// # Arguments
 ///
 /// * `u` - The [Physics] the simulation is based on
-/// * `rhs` - The [Rhs] that solves the right-hand side 
+/// * `rhs` - The [Rhs] that solves the right-hand side
 /// * `timeintegration` - The [TimeIntegration] that solves the time integration step
 /// * `mesh` - The [Mesh] the simulation runs on
 /// * `writer` - The [Writer] that writes output
-pub fn run_loop<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, timeintegration: &mut TimeIntegration<S, EQ>, mesh: &Mesh<S>, writer: &mut Writer) -> Result<()>{
+pub fn run_loop<const S: usize, const EQ: usize>(
+    u: &mut Physics<S, EQ>,
+    rhs: &mut Rhs<S, EQ>,
+    timeintegration: &mut TimeIntegration<S, EQ>,
+    mesh: &Mesh<S>,
+    writer: &mut Writer,
+) -> Result<()> {
     loop {
         if timeintegration.time.t >= timeintegration.time.t_next_output {
             timeintegration.time.t_next_output += timeintegration.time.dt_output;
