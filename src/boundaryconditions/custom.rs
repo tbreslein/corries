@@ -189,3 +189,150 @@ fn reflecting_east<const S: usize, const EQ: usize>(j: usize, u: &mut Physics<S,
         u.prim[[j, S - 3 + i]] = -1.0 * u.prim[[j, S - 2 - i]]
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::{config::{meshconfig::{MeshConfig, MeshMode}, physicsconfig::{PhysicsConfig, PhysicsMode}}, units::UnitsMode};
+
+    use super::*;
+    use approx::assert_relative_eq;
+    use ndarray::Array2;
+    const S: usize = 6;
+    const EQ: usize = 3;
+    const MESHCONFIG: MeshConfig = MeshConfig {
+        mode: MeshMode::Cartesian,
+        xi_in: 2.0,
+        xi_out: 3.0,
+        ratio_disk: 1.0,
+    };
+    const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig {mode: PhysicsMode::Euler1DAdiabatic, units_mode: UnitsMode::SI, adiabatic_index: 1.4, c_sound_0: 1.0};
+
+    #[test]
+    fn extrapolation_test() {
+        // Also test this on log meshes
+        let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        u.prim.assign(&Array2::from_shape_vec((EQ, S), vec![
+            0.0, 0.0, 0.25, 0.25, 0.0, 0.0,
+            0.0, 0.0, -2.0, -1.5, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap());
+        let u_prim_expect = Array2::from_shape_vec((EQ, S), vec![
+            0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+            -3.0, -2.5, -2.0, -1.5, -1.0, -0.5,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap();
+        for j in 0..EQ {
+            extrapolate_west(j, &mut u, &mesh);
+            extrapolate_east(j, &mut u, &mesh);
+        }
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+
+    #[test]
+    fn near_zero_test() {
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        u.prim.assign(&Array2::from_shape_vec((EQ, S), vec![
+            0.0, 0.0, 0.25, 0.25, 0.0, 0.0,
+            0.0, 0.0, -2.0, -1.5, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap());
+        let u_prim_expect = Array2::from_shape_vec((EQ, S), vec![
+            0.25e-10, 0.25e-10, 0.25, 0.25, 0.25e-10, 0.25e-10,
+            -2.0e-10, -2.0e-10, -2.0, -1.5, -1.5e-10, -1.5e-10,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap();
+        for j in 0..EQ {
+            near_zero_west(j, &mut u);
+            near_zero_east(j, &mut u);
+        }
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+
+    #[test]
+    fn no_gradients_test() {
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        u.prim.assign(&Array2::from_shape_vec((EQ, S), vec![
+            0.0, 0.0, 0.25, 0.25, 0.0, 0.0,
+            0.0, 0.0, -2.0, -1.5, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap());
+
+        let u_prim_expect = Array2::from_shape_vec((EQ, S), vec![
+            0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+            -2.0, -2.0, -2.0, -1.5, -1.5, -1.5,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap();
+
+        for j in 0..EQ {
+            no_gradients_west(j, &mut u);
+            no_gradients_east(j, &mut u);
+        }
+
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+    
+    #[test]
+    fn outflow_no_gradients_test() {
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        u.prim.assign(&Array2::from_shape_vec((EQ, S), vec![
+            0.0, 0.0, 0.25, 0.25, 0.0, 0.0,
+            0.0, 0.0, -2.0, -1.5, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap());
+        let u_prim_expect = Array2::from_shape_vec((EQ, S), vec![
+            -0.25, -0.25, 0.25, 0.25, 0.25, 0.25,
+            -2.0, -2.0, -2.0, -1.5, 1.5, 2.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap();
+        for j in 0..EQ {
+            outflow_no_gradients_west(j, &mut u);
+            outflow_no_gradients_east(j, &mut u);
+        }
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+
+    #[test]
+    fn outflow_extrapolate_test() {
+        // Also test this on log meshes
+        let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        u.prim.assign(&Array2::from_shape_vec((EQ, S), vec![
+            0.0, 0.0, 0.25, 0.25, 0.0, 0.0,
+            0.0, 0.0, -2.0, -1.5, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap());
+        let u_prim_expect = Array2::from_shape_vec((EQ, S), vec![
+            -0.25, -0.25, 0.25, 0.25, 0.25, 0.25,
+            -3.0, -2.5, -2.0, -1.5, 1.5, 2.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap();
+        for j in 0..EQ {
+            outflow_extrapolate_west(j, &mut u, &mesh);
+            outflow_extrapolate_east(j, &mut u, &mesh);
+        }
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+
+    #[test]
+    fn reflecting_test() {
+        // Also test this on log meshes
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        u.prim.assign(&Array2::from_shape_vec((EQ, S), vec![
+            0.0, 0.0, 0.25, 0.25, 0.0, 0.0,
+            0.0, 0.0, -2.0, -1.5, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap());
+        let u_prim_expect = Array2::from_shape_vec((EQ, S), vec![
+            -0.25, -0.25, 0.25, 0.25, -0.25, -0.25,
+            1.5, 2.0, -2.0, -1.5, 1.5, 2.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        ]).unwrap();
+        for j in 0..EQ {
+            reflecting_west(j, &mut u);
+            reflecting_east(j, &mut u);
+        }
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+}
