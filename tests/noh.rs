@@ -2,16 +2,18 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
-use corries::config::{BoundaryMode, CustomBoundaryMode, InitialConditions, PhysicsVariable};
-use corries::run_sim;
+use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
+use corries::physics::Physics;
+use corries::{init_sim, run_loop};
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
 
-const SIZE: usize = 1000;
+const SIZE: usize = 100;
 
 fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     let boundary_conditions_west = match mode {
@@ -57,7 +59,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     let folder_name = "results/integrationtests/noh_".to_owned() + &file_name;
 
     return config::CorriesConfig {
-        print_banner: true,
+        print_banner: false,
         meshconfig: MeshConfig {
             mode: MeshMode::Cartesian,
             xi_in: 1.0,
@@ -70,7 +72,6 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             adiabatic_index: 1.4,
             c_sound_0: 1.0,
         },
-        initial_conditions: InitialConditions::Noh,
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
         numericsconfig: NumericsConfig {
@@ -91,18 +92,18 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         },
         output_counter_max: 1,
         writerconfig: vec![
-            OutputConfig {
-                stream_mode: StreamMode::Stdout,
-                formatter_mode: FormatterMode::TSV,
-                string_conversion_mode: ToStringConversionMode::Vector,
-                folder_name: "".to_string(),
-                should_clear_out_folder: false,
-                file_name: "".to_string(),
-                precision: 3,
-                should_print_ghostcells: false,
-                should_print_metadata: true,
-                data_names: vec![DataName::Prim(0), DataName::Cons(1)],
-            },
+            // OutputConfig {
+            //     stream_mode: StreamMode::Stdout,
+            //     formatter_mode: FormatterMode::TSV,
+            //     string_conversion_mode: ToStringConversionMode::Vector,
+            //     folder_name: "".to_string(),
+            //     should_clear_out_folder: false,
+            //     file_name: "".to_string(),
+            //     precision: 3,
+            //     should_print_ghostcells: false,
+            //     should_print_metadata: true,
+            //     data_names: vec![DataName::Prim(0), DataName::Cons(1)],
+            // },
             OutputConfig {
                 stream_mode: StreamMode::File,
                 formatter_mode: FormatterMode::CSV,
@@ -119,23 +120,48 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     };
 }
 
-#[test]
-fn noh_euler1d_adiabatic() {
-    const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
-    const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
-    assert!(run_sim::<SIZE, N_EQUATIONS>(get_config(PHYSICS_MODE)).is_ok());
+fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
+    let breakpoint_index = ((S - 1) as f64 * 0.5) as usize;
+    u.prim.fill(0.0);
+    u.cons.fill(0.0);
+    for i in 0..breakpoint_index {
+        u.prim[[u.jdensity, i]] = 1.0;
+        u.prim[[u.jxivelocity, i]] = 1.0;
+    }
+    for i in breakpoint_index..S {
+        u.prim[[u.jdensity, i]] = 1.0;
+        u.prim[[u.jxivelocity, i]] = -1.0;
+    }
+    if u.is_adiabatic {
+        u.prim.row_mut(u.jpressure).fill(1.0e-5)
+    }
+    return;
 }
 
+// #[test]
+// fn noh_euler1d_adiabatic() {
+//     const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
+//     const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
+//     let (mut u, mut rhs, mut timeintegration, mesh, mut writer) = init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).unwrap();
+//     init_noh(&mut u);
+//     assert!(run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).is_ok());
+// }
+
 #[test]
-fn noh_euler1d_isot() {
+fn noh_euler1d_isot() -> Result<()> {
     const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DIsot;
     const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
-    assert!(run_sim::<SIZE, N_EQUATIONS>(get_config(PHYSICS_MODE)).is_ok());
+    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) = init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE))?;
+    init_noh(&mut u);
+    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer)?;
+    return Ok(());
 }
 
-#[test]
-fn noh_euler2d_isot() {
-    const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler2DIsot;
-    const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
-    assert!(run_sim::<SIZE, N_EQUATIONS>(get_config(PHYSICS_MODE)).is_ok());
-}
+// #[test]
+// fn noh_euler2d_isot() {
+//     const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler2DIsot;
+//     const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
+//     let (mut u, mut rhs, mut timeintegration, mesh, mut writer) = init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).unwrap();
+//     init_noh(&mut u);
+//     assert!(run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).is_ok());
+// }

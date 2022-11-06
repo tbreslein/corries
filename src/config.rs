@@ -18,13 +18,6 @@ pub mod numericsconfig;
 pub mod outputconfig;
 pub mod physicsconfig;
 
-/// Enumerates the different initial conditions
-#[derive(Debug)]
-pub enum InitialConditions {
-    /// Noh test setup
-    Noh,
-}
-
 /// Enumerates the different boundary conditions
 #[derive(Debug)]
 pub enum BoundaryMode {
@@ -90,9 +83,6 @@ pub struct CorriesConfig {
 
     /// Config for Physics objects
     pub physicsconfig: PhysicsConfig,
-
-    /// The initial conditions being applied to the [Physics] object
-    pub initial_conditions: InitialConditions,
 
     /// boundary condition on the west border of the computational area
     pub boundary_condition_west: BoundaryMode,

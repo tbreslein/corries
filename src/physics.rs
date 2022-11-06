@@ -156,6 +156,20 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         };
     }
 
+    /// Assigns a [Physics] to `self`.
+    ///
+    /// This is basically a copy function, but I did not want to implement `Copy` because that
+    /// could lead to unwanted implicit copies.
+    ///
+    /// # Arguments
+    ///
+    /// * `rhs` - The object whose fields are assigned to `self`
+    pub fn assign(&mut self, rhs: &Physics<S, EQ>) {
+        self.prim.assign(&rhs.prim);
+        self.cons.assign(&rhs.cons);
+        self.c_sound.assign(&rhs.c_sound);
+    }
+
     /// Updates the conservative variables in [self.cons] using the primitive variables [self.prim]
     pub fn update_cons(&mut self) {
         match self.mode {

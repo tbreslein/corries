@@ -13,10 +13,8 @@
 
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
-use initialconditions::apply_initial_conditions;
 use mesh::Mesh;
 use physics::Physics;
-use rhs::numflux::init_numflux;
 use timeintegration::TimeIntegration;
 use writer::Writer;
 
@@ -26,7 +24,6 @@ mod boundaryconditions;
 pub mod config;
 #[macro_use]
 mod errorhandling;
-mod initialconditions;
 mod mesh;
 pub mod physics;
 mod rhs;
@@ -34,36 +31,52 @@ mod timeintegration;
 pub mod units;
 mod writer;
 
-/// Runs a Corries simulation.
+/// Initialises and returns the objects needed for running a corries simulation.
 ///
 /// # Arguments
 ///
+/// ## Generic arguments
+///
+/// * `S` - Size of the mesh, as in the number of cells
+/// * `EQ` - The number of equations in the type of physics
+///
+/// ## Function arguments
+///
 /// * `config` - The [CorriesConfig] the simulation is based on
-pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result<()> {
+pub fn init_sim<const S: usize, const EQ: usize>(config: &CorriesConfig) -> Result<(Physics<S, EQ>, Rhs<S, EQ>, TimeIntegration<S, EQ>, Mesh<S>, Writer)> {
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconfig).context("Constructing Mesh")?;
-    let mut u: Physics<S, EQ> = Physics::new(&config.physicsconfig);
-    let mut numflux = init_numflux(&config.numericsconfig);
-    let mut rhs: Rhs<S, EQ> = Rhs::new(&config, &u, &mut numflux);
-    apply_initial_conditions(&config, &mut u).context("Applying initial conditions to u")?;
-    let mut timeintegration: TimeIntegration<S, EQ> =
-        TimeIntegration::new(&config).context("Constructing TimeIntegration")?;
-
+    let u: Physics<S, EQ> = Physics::new(&config.physicsconfig);
+    let rhs: Rhs<S, EQ> = Rhs::new(&config, &u);
+    let timeintegration: TimeIntegration<S, EQ> =
+        TimeIntegration::new(&config, &u).context("Constructing TimeIntegration")?;
     let mut writer = Writer::new(&config, &mesh).context("Constructing Writer")?;
 
-    // first output
     if config.print_banner {
         print_banner();
     }
     writer
         .write_metadata::<S>(&config)
         .context("Calling writer.write_metadata in run_sim")?;
+    return Ok((u, rhs, timeintegration, mesh, writer));
+}
+
+/// Runs the core loop of a corries simulation
+///
+/// # Arguments
+///
+/// * `u` - The [Physics] the simulation is based on
+/// * `rhs` - The [Rhs] that solves the right-hand side 
+/// * `timeintegration` - The [TimeIntegration] that solves the time integration step
+/// * `mesh` - The [Mesh] the simulation runs on
+/// * `writer` - The [Writer] that writes output
+pub fn run_loop<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, timeintegration: &mut TimeIntegration<S, EQ>, mesh: &Mesh<S>, writer: &mut Writer) -> Result<()>{
     loop {
         if timeintegration.time.t >= timeintegration.time.t_next_output {
             timeintegration.time.t_next_output += timeintegration.time.dt_output;
 
             writer
-                .update_data_matrices(&mesh, &u)
+                .update_data_matrices(mesh, u)
                 .context("Calling writer.update_data_matrices in run_sim")?;
             // thread this call?
             writer
@@ -75,9 +88,9 @@ pub fn run_sim<const S: usize, const EQ: usize>(config: CorriesConfig) -> Result
         }
 
         // TODO: next solution
-        if let err @ Err(_) = timeintegration.next_solution(&mut u, &mut rhs, &mesh) {
+        if let err @ Err(_) = timeintegration.next_solution(u, rhs, mesh) {
             writer
-                .update_data_matrices(&mesh, &u)
+                .update_data_matrices(mesh, u)
                 .context("Calling writer.update_data_matrices during the error dump in run_sim")?;
             writer
                 .write_output()

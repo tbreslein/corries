@@ -13,7 +13,6 @@ use ndarray::{Array2, Array3, Axis};
 use crate::{
     config::{numericsconfig::RkfConfig, CorriesConfig},
     errorhandling::Validation,
-    initialconditions::apply_initial_conditions,
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
@@ -131,12 +130,11 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
     ///
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    pub fn new(rkfconfig: &RkfConfig, config: &CorriesConfig) -> Result<Self> {
+    pub fn new(rkfconfig: &RkfConfig, config: &CorriesConfig, u: &Physics<S, EQ>) -> Result<Self> {
         let bt = ButcherTableau::new(rkfconfig);
         let order = bt.order;
         let mut utilde: Physics<S, EQ> = Physics::new(&config.physicsconfig);
-        apply_initial_conditions(config, &mut utilde)
-            .context("Applying initial conditions to RungeKuttaFehlberg.utilde")?;
+        utilde.assign(u);
         return Ok(Self {
             bt,
             k_bundle: Array3::zeros([order, EQ, S]),
@@ -173,7 +171,7 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         self.k_bundle.fill(0.0);
         // calculate the k_bundle entries
         for q in 0..self.bt.order {
-            self.utilde.cons.assign(&u.cons);
+            self.utilde.assign(&u);
             for p in 0..q {
                 self.utilde
                     .cons

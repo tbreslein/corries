@@ -16,17 +16,17 @@ use crate::{
     physics::Physics,
 };
 
-use self::numflux::NumFlux;
+use self::numflux::{init_numflux, NumFlux};
 
 pub mod numflux;
 
 /// Carries objects and methods for solving the right-hand side of a set of equations.
-pub struct Rhs<'a, const S: usize, const EQ: usize> {
+pub struct Rhs<const S: usize, const EQ: usize> {
     /// Full summed up rhs
     pub full_rhs: Array2<f64>,
 
     /// Calculates the numerical flux
-    numflux: &'a mut dyn NumFlux<S, EQ>,
+    numflux: Box<dyn NumFlux<S, EQ>>,
 
     /// Stores the numerical flux derivative along xi
     dflux_dxi: Array2<f64>,
@@ -35,7 +35,7 @@ pub struct Rhs<'a, const S: usize, const EQ: usize> {
     pub boundary_conditions: BoundaryConditionContainer<S, EQ>,
 }
 
-impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
+impl<const S: usize, const EQ: usize> Rhs<S, EQ> {
     /// Constructs a new [Rhs] object.
     ///
     /// # Arguments
@@ -43,10 +43,10 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     /// * `config` - Configuration for the whole simulation
     /// * `u` - The main [Physics] object for this simulation
     /// * `numflux` - The [dyn NumFlux] object about to be stored in this [Rhs] object
-    pub fn new(config: &CorriesConfig, u: &Physics<S, EQ>, numflux: &'a mut dyn NumFlux<S, EQ>) -> Self {
+    pub fn new(config: &CorriesConfig, u: &Physics<S, EQ>) -> Self {
         return Rhs {
             full_rhs: Array2::zeros((EQ, S)),
-            numflux,
+            numflux: Box::new(init_numflux(&config.numericsconfig)),
             dflux_dxi: Array2::zeros((EQ, S)),
             boundary_conditions: BoundaryConditionContainer::new(config, u),
         };
@@ -99,7 +99,7 @@ impl<'a, const S: usize, const EQ: usize> Rhs<'a, S, EQ> {
     }
 }
 
-impl<'a, const S: usize, const EQ: usize> Validation for Rhs<'a, S, EQ> {
+impl<const S: usize, const EQ: usize> Validation for Rhs<S, EQ> {
     fn validate(&self) -> Result<()> {
         ensure!(
             self.dflux_dxi.fold(true, |acc, x| acc && x.is_finite()),

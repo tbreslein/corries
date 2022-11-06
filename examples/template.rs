@@ -7,8 +7,8 @@ use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
-use corries::config::{BoundaryMode, CustomBoundaryMode, InitialConditions, PhysicsVariable};
-use corries::run_sim;
+use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
+use corries::{init_sim, run_loop};
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
 
@@ -16,7 +16,7 @@ fn main() -> Result<()> {
     const SIZE: usize = 14;
     const N_EQUATIONS: usize = get_n_equations(PhysicsMode::Euler1DIsot);
 
-    run_sim::<SIZE, N_EQUATIONS>(config::CorriesConfig {
+    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) = init_sim::<SIZE, N_EQUATIONS>(&config::CorriesConfig {
         print_banner: true,
         meshconfig: MeshConfig {
             mode: MeshMode::Cartesian,
@@ -30,7 +30,6 @@ fn main() -> Result<()> {
             adiabatic_index: 1.4,
             c_sound_0: 1.0,
         },
-        initial_conditions: InitialConditions::Noh,
         boundary_condition_west: BoundaryMode::Custom(vec![
             (PhysicsVariable::Density, CustomBoundaryMode::NoGradients),
             (PhysicsVariable::XiVelocity, CustomBoundaryMode::NoGradients),
@@ -82,5 +81,7 @@ fn main() -> Result<()> {
                 data_names: vec![DataName::XiCent],
             },
         ],
-    })
+    })?;
+
+    return run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer);
 }
