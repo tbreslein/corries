@@ -125,3 +125,66 @@ impl<const S: usize, const EQ: usize> Validation for Hll<S, EQ> {
         return Ok(());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        config::{
+            meshconfig::{MeshConfig, MeshMode},
+            physicsconfig::{PhysicsConfig, PhysicsMode},
+        },
+        units::UnitsMode,
+    };
+
+    use super::*;
+    use approx::assert_relative_eq;
+    use ndarray::Array2;
+    const S: usize = 6;
+    const EQ: usize = 2;
+    const MESHCONFIG: MeshConfig = MeshConfig {
+        mode: MeshMode::Cartesian,
+        xi_in: 2.0,
+        xi_out: 3.0,
+        ratio_disk: 1.0,
+    };
+    const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig {
+        mode: PhysicsMode::Euler1DIsot,
+        units_mode: UnitsMode::SI,
+        adiabatic_index: 1.4,
+        c_sound_0: 1.0,
+    };
+
+fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
+    let breakpoint_index = ((S - 1) as f64 * 0.5) as usize;
+    u.prim.fill(0.0);
+    u.cons.fill(0.0);
+    for i in 0..breakpoint_index {
+        u.prim[[u.jdensity, i]] = 1.0;
+        u.prim[[u.jxivelocity, i]] = 1.0;
+    }
+    for i in breakpoint_index..S {
+        u.prim[[u.jdensity, i]] = 1.0;
+        u.prim[[u.jxivelocity, i]] = -1.0;
+    }
+    return;
+}
+
+    #[test]
+    fn hll_test() {
+        // Also test this on log meshes
+        let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
+        let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
+        init_noh(&mut u);
+        let mut hll: Hll<S, EQ> = Hll::new();
+
+        let u_prim_expect = Array2::from_shape_vec(
+            (EQ, S),
+            vec![0.0, 0.0, -4.0, -4.0, 0.0, 0.0, 0.0, 0.0, 8.0, -8.0, 0.0, 0.0],
+        )
+        .unwrap();
+
+        let mut dflux_dxi = Array2::zeros((EQ, S));
+        hll.calc_dflux_dxi(&mut dflux_dxi, &mut u, &mesh).unwrap();
+        assert_relative_eq!(u.prim, u_prim_expect, max_relative = 1.0e-12);
+    }
+}
