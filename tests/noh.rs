@@ -101,7 +101,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 file_name: "".to_string(),
                 precision: 3,
                 should_print_ghostcells: false,
-                should_print_metadata: true,
+                should_print_metadata: false,
                 data_names: vec![DataName::Iter, DataName::T, DataName::Dt, DataName::DtKind],
             },
             OutputConfig {
