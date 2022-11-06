@@ -44,7 +44,10 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Updates the speed of sound vector; no-op for isothermal physics
     #[inline(always)]
     pub fn update_c_sound_adiabatic(&mut self) {
-        return;
+        self.c_sound_helper
+            .assign(&(self.adiabatic_index * &self.prim.row(self.jpressure) / &self.prim.row(self.jdensity)));
+        self.c_sound_helper.mapv_inplace(f64::sqrt);
+        self.c_sound.assign(&self.c_sound_helper);
     }
 
     /// Calculates the physical flux for adiabatic 1D Euler
