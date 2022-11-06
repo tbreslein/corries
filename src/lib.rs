@@ -84,7 +84,7 @@ pub fn run_loop<const S: usize, const EQ: usize>(
             timeintegration.time.t_next_output += timeintegration.time.dt_output;
 
             writer
-                .update_data_matrices(mesh, u)
+                .update_data_matrices(mesh, u, timeintegration)
                 .context("Calling writer.update_data_matrices in run_sim")?;
             // thread this call?
             writer
@@ -98,7 +98,7 @@ pub fn run_loop<const S: usize, const EQ: usize>(
         // TODO: next solution
         if let err @ Err(_) = timeintegration.next_solution(u, rhs, mesh) {
             writer
-                .update_data_matrices(mesh, u)
+                .update_data_matrices(mesh, u, timeintegration)
                 .context("Calling writer.update_data_matrices during the error dump in run_sim")?;
             writer
                 .write_output()

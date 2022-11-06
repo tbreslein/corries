@@ -10,6 +10,7 @@ use crate::{
     config::{outputconfig::DataName, CorriesConfig},
     mesh::Mesh,
     physics::Physics,
+    timeintegration::TimeIntegration,
 };
 
 mod output;
@@ -66,10 +67,11 @@ impl Writer {
         &mut self,
         mesh: &Mesh<S>,
         u: &Physics<S, EQ>,
+        timeintegration: &TimeIntegration<S, EQ>,
     ) -> Result<()> {
         // TODO: can I safely thread this loop?
         for output in self.outputs.iter_mut() {
-            output.update_data_matrix(mesh, u)?;
+            output.update_data_matrix(mesh, u, timeintegration)?;
         }
         return Ok(());
     }

@@ -4,6 +4,8 @@
 
 //! Exports the [TimeIntegration] struct, and the [DtKind] enum.
 
+use std::fmt::Display;
+
 use color_eyre::{
     eyre::{bail, Context},
     Result,
@@ -28,6 +30,15 @@ pub enum DtKind {
 
     /// CFL limited
     Cfl,
+}
+
+impl Display for DtKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return match self {
+            DtKind::Init => write!(f, "init"),
+            DtKind::Cfl => write!(f, "cfl"),
+        };
+    }
 }
 
 /// Trait for objects that solve the time integration step and produce new solutions

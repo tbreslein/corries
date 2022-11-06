@@ -13,6 +13,7 @@ use color_eyre::{
 use ndarray::Array1;
 
 use crate::physics::Physics;
+use crate::timeintegration::TimeIntegration;
 use crate::{
     config::{
         outputconfig::{
@@ -180,11 +181,17 @@ impl Output {
         &mut self,
         mesh: &Mesh<S>,
         u: &Physics<S, EQ>,
+        timeintegration: &TimeIntegration<S, EQ>,
     ) -> Result<()> {
         for (i, name) in self.data_names.iter().enumerate() {
             match name.association() {
                 StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
                 StructAssociation::Physics => u.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
+                StructAssociation::TimeStep => {
+                    timeintegration
+                        .time
+                        .collect_data(name, &mut self.data_matrix[i], self.mesh_offset)
+                },
             }?;
         }
         return Ok(());

@@ -6,7 +6,7 @@
 
 use color_eyre::{eyre::bail, Result};
 
-use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics};
+use crate::{config::{numericsconfig::NumericsConfig, outputconfig::{DataName, StructAssociation}}, mesh::Mesh, physics::Physics, writer::{CorriesWrite, DataValue}};
 
 use super::DtKind;
 
@@ -103,5 +103,29 @@ impl TimeStep {
         if (self.dt + self.t) / self.t_next_output > 1.0 {
             self.dt = self.t_next_output - self.t;
         }
+    }
+}
+
+impl CorriesWrite for TimeStep {
+    fn collect_data(&self, name: &DataName, value: &mut DataValue, _: usize) -> Result<()> {
+        match (name.association(), name) {
+            (StructAssociation::TimeStep, DataName::Iter) => {
+                *value = DataValue::Usize(self.iter)
+            },
+            (StructAssociation::TimeStep, DataName::T) => {
+                *value = DataValue::Float(self.t)
+            },
+            (StructAssociation::TimeStep, DataName::Dt) => {
+                *value = DataValue::Float(self.dt)
+            },
+            (StructAssociation::TimeStep, DataName::DtKind) => {
+                *value = DataValue::String(format!("{}", self.dt_kind))
+            },
+            (StructAssociation::TimeStep, _) => bail!("Tried associating {:?} with Time!", name),
+            (StructAssociation::Mesh, _) | (StructAssociation::Physics, _) => {
+                bail!("name.association() for {:?} returned {:?}", name, name.association())
+            },
+        };
+        return Ok(());
     }
 }

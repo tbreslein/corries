@@ -300,8 +300,8 @@ impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
             (StructAssociation::Physics, DataName::CSound) => {
                 self.write_vector(&self.c_sound.view(), value, mesh_offset)
             },
-            (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Mesh!", name),
-            (StructAssociation::Mesh, _) => {
+            (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Physics!", name),
+            (StructAssociation::Mesh, _) | (StructAssociation::TimeStep, _) => {
                 bail!("name.association() for {:?} returned {:?}", name, name.association())
             },
         }?;
