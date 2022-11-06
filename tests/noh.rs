@@ -9,9 +9,9 @@ use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, Strea
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
 use corries::physics::Physics;
-use corries::{init_sim, run_loop};
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
+use corries::{init_sim, run_loop};
 
 const SIZE: usize = 100;
 
@@ -77,7 +77,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         numericsconfig: NumericsConfig {
             numflux_mode: NumFluxMode::Hll,
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
-                rkf_mode: config::numericsconfig::RKFMode::SSPRK5,
+                rkf_mode: config::numericsconfig::RKFMode::RK1,
                 asc: false,
                 asc_relative_tolerance: 0.001,
                 asc_absolute_tolerance: 0.1,
@@ -151,7 +151,8 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
 fn noh_euler1d_isot() -> Result<()> {
     const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DIsot;
     const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
-    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) = init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE))?;
+    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
+        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE))?;
     init_noh(&mut u);
     run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer)?;
     return Ok(());
