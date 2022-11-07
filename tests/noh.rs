@@ -57,7 +57,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             PhysicsMode::Euler1DIsot => "euler1d_isot",
             PhysicsMode::Euler2DIsot => "euler2d_isot",
         };
-    let folder_name = "results/integrationtests/noh_".to_owned() + &file_name;
+    let folder_name = "results/integrationtests/".to_owned() + &file_name;
     let data_names_vector = match mode {
         PhysicsMode::Euler1DAdiabatic => vec![
             DataName::XiCent,
