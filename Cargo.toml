@@ -4,7 +4,7 @@
 
 [package]
 name = "corries"
-version = "0.0.1-alpha"
+version = "0.1.0"
 edition = "2021"
 authors = [ "tbreslein <github.com/tbreslein>" ]
 description = "Library for simulating 1D-hydrodynamics using Riemann solvers"
