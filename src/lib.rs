@@ -15,7 +15,7 @@ use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
 use mesh::Mesh;
 use physics::Physics;
-use timeintegration::TimeIntegration;
+use timeintegration::{DtKind, TimeIntegration};
 use writer::Writer;
 
 use crate::{errorhandling::Validation, rhs::Rhs};
@@ -97,6 +97,7 @@ pub fn run_loop<const S: usize, const EQ: usize>(
 
         // TODO: next solution
         if let err @ Err(_) = timeintegration.next_solution(u, rhs, mesh) {
+            timeintegration.time.dt_kind = DtKind::ErrorDump;
             writer
                 .update_data_matrices(mesh, u, timeintegration)
                 .context("Calling writer.update_data_matrices during the error dump in run_sim")?;

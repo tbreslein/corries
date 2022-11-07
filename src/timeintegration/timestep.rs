@@ -46,7 +46,7 @@ pub struct TimeStep {
     dt_cfl_param: f64,
 
     /// The limiting factor this iteration's time step width
-    dt_kind: DtKind,
+    pub dt_kind: DtKind,
 
     /// Time step width between outputs
     pub dt_output: f64,

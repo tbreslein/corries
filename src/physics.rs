@@ -5,12 +5,13 @@
 //! Exports the [Physics] struct that handles the variables and physical state of the simulation.
 
 use color_eyre::{
-    eyre::{bail, ensure},
+    eyre::{bail, ensure, Context},
     Result,
 };
 use ndarray::{Array1, Array2, Zip};
 
 use crate::{
+    boundaryconditions::BoundaryConditionContainer,
     config::{
         outputconfig::{DataName, StructAssociation},
         physicsconfig::{PhysicsConfig, PhysicsMode},
@@ -286,6 +287,34 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
                 PhysicsMode::Euler1DAdiabatic => Ok(self.jpressure),
             },
         };
+    }
+
+    /// Assume that `self.prim` is up to date, update derived variables, boundaries and
+    /// conservative variables.
+    pub fn update_everything_from_prim(
+        &mut self,
+        boundary_conditions: &mut BoundaryConditionContainer<S, EQ>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
+        self.update_derived_variables();
+        boundary_conditions.apply(self, mesh);
+        self.update_cons();
+        self.validate()
+            .context("Calling u.validate in u.update_everything_from_prim")?;
+        return Ok(());
+    }
+
+    /// Assume that `self.cons` is up to date, update derived variables, boundaries and
+    /// primitive variables.
+    pub fn update_everything_from_cons(
+        &mut self,
+        boundary_conditions: &mut BoundaryConditionContainer<S, EQ>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
+        self.update_prim();
+        self.update_everything_from_prim(boundary_conditions, mesh)
+            .context("Calling u.update_everything_from_prim inside u.update_everything_from_cons")?;
+        return Ok(());
     }
 }
 

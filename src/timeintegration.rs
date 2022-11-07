@@ -30,6 +30,9 @@ pub enum DtKind {
 
     /// CFL limited
     Cfl,
+
+    /// Used when dumping state because of an error
+    ErrorDump,
 }
 
 impl Display for DtKind {
@@ -37,6 +40,7 @@ impl Display for DtKind {
         return match self {
             DtKind::Init => write!(f, "init"),
             DtKind::Cfl => write!(f, "cfl"),
+            DtKind::ErrorDump => write!(f, "err"),
         };
     }
 }

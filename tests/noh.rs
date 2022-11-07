@@ -2,6 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use color_eyre::eyre::Context;
 use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
@@ -58,6 +59,11 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         };
     let folder_name = "results/integrationtests/noh_".to_owned() + &file_name;
 
+    let t_end = match mode {
+        PhysicsMode::Euler1DAdiabatic => 1.25,
+        PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => 0.5,
+    };
+
     return config::CorriesConfig {
         print_banner: false,
         meshconfig: MeshConfig {
@@ -84,7 +90,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             }),
             iter_max: usize::MAX - 2,
             t0: 0.0,
-            t_end: 10.0,
+            t_end,
             dt_min: 1.0e-12,
             dt_max: f64::MAX,
             dt_cfl_param: 0.4,
@@ -113,7 +119,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 precision: 7,
                 should_print_ghostcells: true,
                 should_print_metadata: false,
-                data_names: vec![DataName::XiCent],
+                data_names: vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
             },
         ],
     };
@@ -152,9 +158,11 @@ fn noh_euler1d_isot() -> Result<()> {
     const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DIsot;
     const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
     let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
-        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE))?;
+        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).context("Calling init_sim in noh test")?;
     init_noh(&mut u);
-    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer)?;
+    u.update_everything_from_prim(&mut rhs.boundary_conditions, &mesh)
+        .context("Calling u.update_everything_from_prim in noh test")?;
+    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).context("Calling run_loop in noh test")?;
     return Ok(());
 }
 

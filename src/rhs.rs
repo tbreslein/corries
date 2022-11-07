@@ -74,27 +74,11 @@ impl<const S: usize, const EQ: usize> Rhs<S, EQ> {
     fn update_dflux_dxi(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date; self.update_physics updates u.prim and the
         // derived variables anyways.
-        self.update_physics(u, mesh)
-            .context("Calling Rhs::update_physics in Rhs::update_dflux_dxi")?;
+        u.update_everything_from_cons(&mut self.boundary_conditions, mesh)
+            .context("Calling Physics::update_everything_from_prim in Rhs::update_dflux_dxi")?;
         self.numflux
             .calc_dflux_dxi(&mut self.dflux_dxi, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
-        return Ok(());
-    }
-
-    /// Calls different methods of `u` to update everything, assuming the conservative variables
-    /// are up-to-date.
-    ///
-    /// # Arguments
-    ///
-    /// * `u` - The current [Physics] state about to be updated
-    /// * `mesh` - Information about spatial properties
-    pub fn update_physics(&mut self, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
-        u.update_prim();
-        u.update_derived_variables();
-        self.boundary_conditions.apply(u, mesh);
-        u.update_cons();
-        u.validate().context("Calling u.validate in Rhs::update_physics")?;
         return Ok(());
     }
 }
