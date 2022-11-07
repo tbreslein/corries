@@ -172,13 +172,11 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         // calculate the k_bundle entries
         for q in 0..self.bt.order {
             self.utilde.assign(u);
-            dbg!(&self.utilde);
             for p in 0..q {
                 self.utilde
                     .cons
                     .assign(&(&self.utilde.cons - dt_out * &self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)));
             }
-            dbg!(q);
             rhs.update(&mut self.utilde, mesh)
                 .context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
             let mut k_bundle_q = self.k_bundle.index_axis_mut(Axis(0), q);

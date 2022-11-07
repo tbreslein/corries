@@ -84,15 +84,6 @@ impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
                 &(&a * (&sr * &flux_phys_j.slice(slice) - &sl * &flux_phys_j.slice(slice_p1)
                     + &b * (&uc_j.slice(slice_p1) - &uc_j.slice(slice)))),
             );
-            dbg!(j);
-            dbg!(flux_phys_j);
-            dbg!(uc_j);
-            dbg!(&u.eigen_vals);
-            dbg!(a);
-            dbg!(b);
-            dbg!(sl);
-            dbg!(sr);
-            dbg!(flux_num_j);
         }
         calc_dflux_xi_generic(dflux_dxi, &self.flux_num, mesh);
 
