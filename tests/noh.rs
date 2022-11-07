@@ -58,9 +58,14 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             PhysicsMode::Euler2DIsot => "euler2d_isot",
         };
     let folder_name = "results/integrationtests/noh_".to_owned() + &file_name;
+    let data_names_vector =  match mode {
+        PhysicsMode::Euler1DAdiabatic => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1), DataName::Prim(2)],
+        PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
+        PhysicsMode::Euler2DIsot => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1), DataName::Prim(2)],
+    } ;
 
     let t_end = match mode {
-        PhysicsMode::Euler1DAdiabatic => 1.25,
+        PhysicsMode::Euler1DAdiabatic => 0.25,
         PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => 0.5,
     };
 
@@ -119,7 +124,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 precision: 7,
                 should_print_ghostcells: true,
                 should_print_metadata: false,
-                data_names: vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
+                data_names: data_names_vector,
             },
         ],
     };
@@ -139,8 +144,9 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
     }
     if u.is_adiabatic {
         u.prim.row_mut(u.jpressure).fill(1.0e-5)
+    } else {
+        u.c_sound.fill(1.0);
     }
-    u.c_sound.fill(1.0);
     return;
 }
 
