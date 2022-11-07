@@ -68,6 +68,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
         PhysicsMode::Euler2DIsot => vec![
             DataName::XiCent,
+            DataName::T,
             DataName::Prim(0),
             DataName::Prim(1),
             DataName::Prim(2),
@@ -90,7 +91,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         physicsconfig: PhysicsConfig {
             mode,
             units_mode: UnitsMode::SI,
-            adiabatic_index: 1.4,
+            adiabatic_index: 5.0 / 3.0,
         },
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
@@ -100,7 +101,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 rkf_mode: config::numericsconfig::RKFMode::SSPRK5,
                 asc: false,
                 asc_relative_tolerance: 0.001,
-                asc_absolute_tolerance: 0.1,
+                asc_absolute_tolerance: 0.001,
                 asc_timestep_friction: 0.08,
             }),
             iter_max: usize::MAX - 2,
