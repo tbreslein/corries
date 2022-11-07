@@ -11,7 +11,7 @@ format:
 clippy:
 	cargo clippy -- -A clippy::needless_return -A clippy::op_ref
 
-.PHONY: 
+.PHONY:
 check:
 	cargo check
 

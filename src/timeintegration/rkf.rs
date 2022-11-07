@@ -171,7 +171,7 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         self.k_bundle.fill(0.0);
         // calculate the k_bundle entries
         for q in 0..self.bt.order {
-            self.utilde.assign(&u);
+            self.utilde.assign(u);
             for p in 0..q {
                 self.utilde
                     .cons

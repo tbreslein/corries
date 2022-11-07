@@ -37,9 +37,6 @@ pub struct PhysicsConfig {
 
     /// Ratio of specific heats
     pub adiabatic_index: f64,
-
-    /// Global initial speed of sound
-    pub c_sound_0: f64,
 }
 
 impl Validation for PhysicsConfig {
@@ -48,11 +45,6 @@ impl Validation for PhysicsConfig {
             self.adiabatic_index > 1.0 && self.adiabatic_index < 2.0,
             "This must hold: 1 < adiabatic_index < 2 ! Got {}",
             self.adiabatic_index
-        );
-        ensure!(
-            self.c_sound_0 > 0.0,
-            "This must hold: c_sound_0 > 0! Got {}",
-            self.c_sound_0
         );
         return Ok(());
     }

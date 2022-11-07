@@ -70,7 +70,6 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             mode,
             units_mode: UnitsMode::SI,
             adiabatic_index: 1.4,
-            c_sound_0: 1.0,
         },
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
@@ -121,7 +120,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
 }
 
 fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
-    let breakpoint_index = ((S - 1) as f64 * 0.5) as usize;
+    let breakpoint_index = (S as f64 * 0.5) as usize;
     u.prim.fill(0.0);
     u.cons.fill(0.0);
     for i in 0..breakpoint_index {
@@ -135,6 +134,7 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
     if u.is_adiabatic {
         u.prim.row_mut(u.jpressure).fill(1.0e-5)
     }
+    u.c_sound.fill(1.0);
     return;
 }
 

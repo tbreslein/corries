@@ -29,7 +29,6 @@ fn main() -> Result<()> {
                 mode: PhysicsMode::Euler1DIsot,
                 units_mode: UnitsMode::SI,
                 adiabatic_index: 1.4,
-                c_sound_0: 1.0,
             },
             boundary_condition_west: BoundaryMode::Custom(vec![
                 (PhysicsVariable::Density, CustomBoundaryMode::NoGradients),

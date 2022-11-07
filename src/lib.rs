@@ -49,16 +49,16 @@ pub fn init_sim<const S: usize, const EQ: usize>(
     config.validate().context("Validating config")?;
     let mesh: Mesh<S> = Mesh::new(&config.meshconfig).context("Constructing Mesh")?;
     let u: Physics<S, EQ> = Physics::new(&config.physicsconfig);
-    let rhs: Rhs<S, EQ> = Rhs::new(&config, &u);
+    let rhs: Rhs<S, EQ> = Rhs::new(config, &u);
     let timeintegration: TimeIntegration<S, EQ> =
-        TimeIntegration::new(&config, &u).context("Constructing TimeIntegration")?;
-    let mut writer = Writer::new(&config, &mesh).context("Constructing Writer")?;
+        TimeIntegration::new(config, &u).context("Constructing TimeIntegration")?;
+    let mut writer = Writer::new(config, &mesh).context("Constructing Writer")?;
 
     if config.print_banner {
         print_banner();
     }
     writer
-        .write_metadata::<S>(&config)
+        .write_metadata::<S>(config)
         .context("Calling writer.write_metadata in run_sim")?;
     return Ok((u, rhs, timeintegration, mesh, writer));
 }

@@ -86,11 +86,11 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     pub fn new(physicsconf: &PhysicsConfig) -> Self {
         let mode = physicsconf.mode;
 
-        let prim = Array2::from_elem((EQ, S), 1.1);
-        let cons = Array2::from_elem((EQ, S), 1.1);
-        let c_sound = Array1::from_elem(S, 1.1);
-        let c_sound_helper = Array1::from_elem(S, 1.1);
-        let eigen_vals = Array2::from_elem((EQ, S), 1.1);
+        let prim = Array2::zeros((EQ, S));
+        let cons = Array2::zeros((EQ, S));
+        let c_sound = Array1::zeros(S);
+        let c_sound_helper = Array1::zeros(S);
+        let eigen_vals = Array2::zeros((EQ, S));
 
         let jdensity = match mode {
             PhysicsMode::Euler1DAdiabatic => 0,
@@ -135,6 +135,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         };
         let is_isothermal = !is_adiabatic;
         let units = Units::new(physicsconf.units_mode);
+
         return Self {
             mode,
             prim,
@@ -241,7 +242,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         self.eigen_vals
             .row_mut(EQ - 1)
             .assign(&(&self.prim.row(self.jxivelocity) + &self.c_sound));
-        for j in 0..(EQ - 1) {
+        for j in 1..(EQ - 1) {
             self.eigen_vals
                 .row_mut(j)
                 .assign(&(&self.prim.row(self.jxivelocity) - &self.c_sound));
@@ -376,7 +377,6 @@ mod tests {
             fn conversion(p0 in 0.1f64..100.0, p1 in -100.0f64..100.0, p2 in 0.1f64..100.0, gamma in 0.1f64..0.9) {
                 let physicsconf = PhysicsConfig {
                     adiabatic_index: gamma,
-                    c_sound_0: 1.0,
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
@@ -409,7 +409,6 @@ mod tests {
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
                 let physicsconf = PhysicsConfig {
                     adiabatic_index: 0.5,
-                    c_sound_0: 1.0,
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
@@ -440,7 +439,6 @@ mod tests {
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0, p2 in -100_000.0f64..100_000.0) {
                 let physicsconf = PhysicsConfig {
                     adiabatic_index: 0.5,
-                    c_sound_0: 1.0,
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
