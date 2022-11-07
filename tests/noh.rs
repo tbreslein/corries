@@ -77,7 +77,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     };
 
     let t_end = match mode {
-        PhysicsMode::Euler1DAdiabatic => 1.0,
+        PhysicsMode::Euler1DAdiabatic => 0.5,
         PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => 0.5,
     };
 

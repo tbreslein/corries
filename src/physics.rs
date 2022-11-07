@@ -421,7 +421,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-9);
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-10);
             }
         }
     }

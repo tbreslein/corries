@@ -21,7 +21,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     #[inline(always)]
     pub fn update_energy_euler1d(&mut self) {
         self.cons.row_mut(self.jenergy).assign(
-            &(&self.prim.row(self.jpressure) * self.adiabatic_index.recip()
+            &(&self.prim.row(self.jpressure) * (self.adiabatic_index - 1.0).recip()
                 + 0.5
                     * &self.prim.row(self.jdensity)
                     * &self.prim.row(self.jxivelocity)
@@ -33,7 +33,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     #[inline(always)]
     pub fn update_pressure_euler1d(&mut self) {
         self.prim.row_mut(self.jpressure).assign(
-            &(self.adiabatic_index
+            &((self.adiabatic_index - 1.0)
                 * (&self.cons.row(self.jenergy)
                     - 0.5 / &self.cons.row(self.jdensity)
                         * &self.cons.row(self.jximomentum)
