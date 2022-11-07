@@ -21,7 +21,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     #[inline(always)]
     pub fn update_energy_euler1d(&mut self) {
         self.cons.row_mut(self.jenergy).assign(
-            &(&self.prim.row(self.jpressure) * self.adiabatic_index.recip()
+            &(&self.prim.row(self.jpressure) * (self.adiabatic_index - 1.0).recip()
                 + 0.5
                     * &self.prim.row(self.jdensity)
                     * &self.prim.row(self.jxivelocity)
@@ -33,7 +33,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     #[inline(always)]
     pub fn update_pressure_euler1d(&mut self) {
         self.prim.row_mut(self.jpressure).assign(
-            &(self.adiabatic_index
+            &((self.adiabatic_index - 1.0)
                 * (&self.cons.row(self.jenergy)
                     - 0.5 / &self.cons.row(self.jdensity)
                         * &self.cons.row(self.jximomentum)
@@ -44,7 +44,10 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Updates the speed of sound vector; no-op for isothermal physics
     #[inline(always)]
     pub fn update_c_sound_adiabatic(&mut self) {
-        return;
+        self.c_sound_helper
+            .assign(&(self.adiabatic_index * &self.prim.row(self.jpressure) / &self.prim.row(self.jdensity)));
+        self.c_sound_helper.mapv_inplace(f64::sqrt);
+        self.c_sound.assign(&self.c_sound_helper);
     }
 
     /// Calculates the physical flux for adiabatic 1D Euler

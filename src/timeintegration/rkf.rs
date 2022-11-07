@@ -11,7 +11,7 @@ use color_eyre::{
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
-    config::{numericsconfig::RkfConfig, physicsconfig::PhysicsConfig},
+    config::{numericsconfig::RkfConfig, CorriesConfig},
     errorhandling::Validation,
     mesh::Mesh,
     physics::Physics,
@@ -130,10 +130,12 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
     ///
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    pub fn new(rkfconfig: &RkfConfig, physicsconfig: &PhysicsConfig) -> Self {
+    pub fn new(rkfconfig: &RkfConfig, config: &CorriesConfig, u: &Physics<S, EQ>) -> Result<Self> {
         let bt = ButcherTableau::new(rkfconfig);
         let order = bt.order;
-        return Self {
+        let mut utilde: Physics<S, EQ> = Physics::new(&config.physicsconfig);
+        utilde.assign(u);
+        return Ok(Self {
             bt,
             k_bundle: Array3::zeros([order, EQ, S]),
             err_new: 0.0,
@@ -145,9 +147,9 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             solution_accepted: false,
             u_cons_low: Array2::zeros((EQ, S)),
             u_prim_old: Array2::zeros((EQ, S)),
-            utilde: Physics::new(physicsconfig),
+            utilde,
             dt_temp: 0.0,
-        };
+        });
     }
 
     /// Calculates a single solution with an RKF method.
@@ -169,13 +171,13 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         self.k_bundle.fill(0.0);
         // calculate the k_bundle entries
         for q in 0..self.bt.order {
-            self.utilde.cons.assign(&u.cons);
+            self.utilde.assign(u);
             for p in 0..q {
                 self.utilde
                     .cons
                     .assign(&(&self.utilde.cons - dt_out * &self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)));
             }
-            rhs.update(u, mesh)
+            rhs.update(&mut self.utilde, mesh)
                 .context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
             let mut k_bundle_q = self.k_bundle.index_axis_mut(Axis(0), q);
             k_bundle_q.assign(&rhs.full_rhs);
@@ -265,8 +267,8 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
         self.validate()
             .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         u.cons.assign(&self.utilde.cons);
-        rhs.update_physics(u, mesh)
-            .context("Calling rhs.update_physics at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        u.update_everything_from_cons(&mut rhs.boundary_conditions, mesh)
+            .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         return Ok(dt_out);
     }
 }

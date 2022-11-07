@@ -5,12 +5,13 @@
 //! Exports the [Physics] struct that handles the variables and physical state of the simulation.
 
 use color_eyre::{
-    eyre::{bail, ensure},
+    eyre::{bail, ensure, Context},
     Result,
 };
 use ndarray::{Array1, Array2, Zip};
 
 use crate::{
+    boundaryconditions::BoundaryConditionContainer,
     config::{
         outputconfig::{DataName, StructAssociation},
         physicsconfig::{PhysicsConfig, PhysicsMode},
@@ -44,25 +45,25 @@ pub struct Physics<const S: usize, const EQ: usize> {
     pub eigen_vals: Array2<f64>,
 
     /// Possible equation index for density
-    jdensity: usize,
+    pub jdensity: usize,
 
     /// Possible equation index for velocity in the xi direction
-    jxivelocity: usize,
+    pub jxivelocity: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jximomentum: usize,
+    pub jximomentum: usize,
 
     /// Possible equation index for velocity in the xi direction
-    jetavelocity: usize,
+    pub jetavelocity: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jetamomentum: usize,
+    pub jetamomentum: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jenergy: usize,
+    pub jenergy: usize,
 
     /// Possible equation index for momentum in the xi direction
-    jpressure: usize,
+    pub jpressure: usize,
 
     /// Adiabatic index
     pub adiabatic_index: f64,
@@ -86,11 +87,11 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     pub fn new(physicsconf: &PhysicsConfig) -> Self {
         let mode = physicsconf.mode;
 
-        let prim = Array2::from_elem((EQ, S), 1.1);
-        let cons = Array2::from_elem((EQ, S), 1.1);
-        let c_sound = Array1::from_elem(S, 1.1);
-        let c_sound_helper = Array1::from_elem(S, 1.1);
-        let eigen_vals = Array2::from_elem((EQ, S), 1.1);
+        let prim = Array2::zeros((EQ, S));
+        let cons = Array2::zeros((EQ, S));
+        let c_sound = Array1::zeros(S);
+        let c_sound_helper = Array1::zeros(S);
+        let eigen_vals = Array2::zeros((EQ, S));
 
         let jdensity = match mode {
             PhysicsMode::Euler1DAdiabatic => 0,
@@ -135,6 +136,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         };
         let is_isothermal = !is_adiabatic;
         let units = Units::new(physicsconf.units_mode);
+
         return Self {
             mode,
             prim,
@@ -154,6 +156,20 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
             is_isothermal,
             units,
         };
+    }
+
+    /// Assigns a [Physics] to `self`.
+    ///
+    /// This is basically a copy function, but I did not want to implement `Copy` because that
+    /// could lead to unwanted implicit copies.
+    ///
+    /// # Arguments
+    ///
+    /// * `rhs` - The object whose fields are assigned to `self`
+    pub fn assign(&mut self, rhs: &Physics<S, EQ>) {
+        self.prim.assign(&rhs.prim);
+        self.cons.assign(&rhs.cons);
+        self.c_sound.assign(&rhs.c_sound);
     }
 
     /// Updates the conservative variables in [self.cons] using the primitive variables [self.prim]
@@ -227,7 +243,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
         self.eigen_vals
             .row_mut(EQ - 1)
             .assign(&(&self.prim.row(self.jxivelocity) + &self.c_sound));
-        for j in 0..(EQ - 1) {
+        for j in 1..(EQ - 1) {
             self.eigen_vals
                 .row_mut(j)
                 .assign(&(&self.prim.row(self.jxivelocity) - &self.c_sound));
@@ -272,6 +288,34 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
             },
         };
     }
+
+    /// Assume that `self.prim` is up to date, update derived variables, boundaries and
+    /// conservative variables.
+    pub fn update_everything_from_prim(
+        &mut self,
+        boundary_conditions: &mut BoundaryConditionContainer<S, EQ>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
+        self.update_derived_variables();
+        boundary_conditions.apply(self, mesh);
+        self.update_cons();
+        self.validate()
+            .context("Calling u.validate in u.update_everything_from_prim")?;
+        return Ok(());
+    }
+
+    /// Assume that `self.cons` is up to date, update derived variables, boundaries and
+    /// primitive variables.
+    pub fn update_everything_from_cons(
+        &mut self,
+        boundary_conditions: &mut BoundaryConditionContainer<S, EQ>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
+        self.update_prim();
+        self.update_everything_from_prim(boundary_conditions, mesh)
+            .context("Calling u.update_everything_from_prim inside u.update_everything_from_cons")?;
+        return Ok(());
+    }
 }
 
 impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
@@ -286,8 +330,8 @@ impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
             (StructAssociation::Physics, DataName::CSound) => {
                 self.write_vector(&self.c_sound.view(), value, mesh_offset)
             },
-            (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Mesh!", name),
-            (StructAssociation::Mesh, _) => {
+            (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Physics!", name),
+            (StructAssociation::Mesh, _) | (StructAssociation::TimeStep, _) => {
                 bail!("name.association() for {:?} returned {:?}", name, name.association())
             },
         }?;
@@ -362,7 +406,6 @@ mod tests {
             fn conversion(p0 in 0.1f64..100.0, p1 in -100.0f64..100.0, p2 in 0.1f64..100.0, gamma in 0.1f64..0.9) {
                 let physicsconf = PhysicsConfig {
                     adiabatic_index: gamma,
-                    c_sound_0: 1.0,
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
@@ -378,7 +421,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-10));
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-10);
             }
         }
     }
@@ -395,7 +438,6 @@ mod tests {
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
                 let physicsconf = PhysicsConfig {
                     adiabatic_index: 0.5,
-                    c_sound_0: 1.0,
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
@@ -409,7 +451,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-12);
             }
         }
     }
@@ -426,7 +468,6 @@ mod tests {
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0, p2 in -100_000.0f64..100_000.0) {
                 let physicsconf = PhysicsConfig {
                     adiabatic_index: 0.5,
-                    c_sound_0: 1.0,
                     mode: PHYSICS_MODE,
                     units_mode: crate::units::UnitsMode::SI,
                 };
@@ -442,7 +483,7 @@ mod tests {
                 // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-12);
             }
         }
     }

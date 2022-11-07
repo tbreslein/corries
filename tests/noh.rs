@@ -3,6 +3,7 @@
 // License: MIT
 
 use color_eyre::eyre::Context;
+use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
 use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
@@ -12,11 +13,8 @@ use corries::physics::Physics;
 use corries::units::UnitsMode;
 use corries::{config, get_n_equations};
 use corries::{init_sim, run_loop};
-use criterion::{criterion_group, criterion_main, Criterion};
 
-const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
-const EQ: usize = get_n_equations(PHYSICS_MODE);
-const SIZE: usize = 200;
+const SIZE: usize = 100;
 
 fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     let boundary_conditions_west = match mode {
@@ -59,11 +57,23 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             PhysicsMode::Euler1DIsot => "euler1d_isot",
             PhysicsMode::Euler2DIsot => "euler2d_isot",
         };
-    let folder_name = "results/integrationtests/noh_".to_owned() + &file_name;
-
-    let t_end = match mode {
-        PhysicsMode::Euler1DAdiabatic => 1.25,
-        PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => 0.5,
+    let folder_name = "results/integrationtests/".to_owned() + &file_name;
+    let data_names_vector = match mode {
+        PhysicsMode::Euler1DAdiabatic => vec![
+            DataName::XiCent,
+            DataName::T,
+            DataName::Prim(0),
+            DataName::Prim(1),
+            DataName::Prim(2),
+        ],
+        PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
+        PhysicsMode::Euler2DIsot => vec![
+            DataName::XiCent,
+            DataName::T,
+            DataName::Prim(0),
+            DataName::Prim(1),
+            DataName::Prim(2),
+        ],
     };
 
     return config::CorriesConfig {
@@ -77,7 +87,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         physicsconfig: PhysicsConfig {
             mode,
             units_mode: UnitsMode::SI,
-            adiabatic_index: 1.4,
+            adiabatic_index: 5.0 / 3.0,
         },
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
@@ -87,12 +97,12 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 rkf_mode: config::numericsconfig::RKFMode::SSPRK5,
                 asc: false,
                 asc_relative_tolerance: 0.001,
-                asc_absolute_tolerance: 0.1,
+                asc_absolute_tolerance: 0.001,
                 asc_timestep_friction: 0.08,
             }),
             iter_max: usize::MAX - 2,
             t0: 0.0,
-            t_end,
+            t_end: 0.5,
             dt_min: 1.0e-12,
             dt_max: f64::MAX,
             dt_cfl_param: 0.4,
@@ -121,7 +131,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
                 precision: 7,
                 should_print_ghostcells: true,
                 should_print_metadata: false,
-                data_names: vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
+                data_names: data_names_vector,
             },
         ],
     };
@@ -140,30 +150,48 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
         u.prim[[u.jxivelocity, i]] = -1.0;
     }
     if u.is_adiabatic {
-        u.prim.row_mut(u.jpressure).fill(1.0e-5)
+        u.prim.row_mut(u.jpressure).fill(1.0E-5)
+    } else {
+        u.c_sound.fill(1.0);
     }
-    u.c_sound.fill(1.0);
     return;
 }
 
-pub fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Benchies");
-
+#[test]
+fn noh_euler1d_adiabatic() -> Result<()> {
+    const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
+    const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
     let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
-        init_sim::<SIZE, EQ>(&get_config(PHYSICS_MODE)).unwrap();
+        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).unwrap();
     init_noh(&mut u);
     u.update_everything_from_prim(&mut rhs.boundary_conditions, &mesh)
-        .context("Calling u.update_everything_from_prim in noh test")
-        .unwrap();
-
-    group.sample_size(1000);
-    group.bench_function("noh test run", |b| {
-        b.iter(|| {
-            run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).unwrap();
-        })
-    });
-    group.finish();
+        .context("Calling u.update_everything_from_prim in noh test")?;
+    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).context("Calling run_loop in noh test")?;
+    return Ok(());
 }
 
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);
+#[test]
+fn noh_euler1d_isot() -> Result<()> {
+    const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DIsot;
+    const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
+    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
+        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).context("Calling init_sim in noh test")?;
+    init_noh(&mut u);
+    u.update_everything_from_prim(&mut rhs.boundary_conditions, &mesh)
+        .context("Calling u.update_everything_from_prim in noh test")?;
+    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).context("Calling run_loop in noh test")?;
+    return Ok(());
+}
+
+#[test]
+fn noh_euler2d_isot() -> Result<()> {
+    const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler2DIsot;
+    const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
+    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
+        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).unwrap();
+    init_noh(&mut u);
+    u.update_everything_from_prim(&mut rhs.boundary_conditions, &mesh)
+        .context("Calling u.update_everything_from_prim in noh test")?;
+    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).context("Calling run_loop in noh test")?;
+    return Ok(());
+}

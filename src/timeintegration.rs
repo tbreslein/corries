@@ -4,6 +4,8 @@
 
 //! Exports the [TimeIntegration] struct, and the [DtKind] enum.
 
+use std::fmt::Display;
+
 use color_eyre::{
     eyre::{bail, Context},
     Result,
@@ -28,6 +30,19 @@ pub enum DtKind {
 
     /// CFL limited
     Cfl,
+
+    /// Used when dumping state because of an error
+    ErrorDump,
+}
+
+impl Display for DtKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return match self {
+            DtKind::Init => write!(f, "init"),
+            DtKind::Cfl => write!(f, "cfl"),
+            DtKind::ErrorDump => write!(f, "err"),
+        };
+    }
 }
 
 /// Trait for objects that solve the time integration step and produce new solutions
@@ -67,13 +82,17 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
     /// # Arguments
     ///
     /// * `config` - a [CorriesConfig] configuration object
-    pub fn new(config: &CorriesConfig) -> Self {
-        return Self {
-            time: TimeStep::new(&config.numericsconfig, config.output_counter_max),
-            solver: Box::new(match &config.numericsconfig.time_integration_config {
-                TimeIntegrationConfig::Rkf(rkfconfig) => RungeKuttaFehlberg::new(rkfconfig, &config.physicsconfig),
-            }),
+    pub fn new(config: &CorriesConfig, u: &Physics<S, EQ>) -> Result<Self> {
+        let solver = match &config.numericsconfig.time_integration_config {
+            TimeIntegrationConfig::Rkf(rkfconfig) => {
+                let s = RungeKuttaFehlberg::new(rkfconfig, config, u).context("Constructing RungeKuttaFehlberg")?;
+                Box::new(s)
+            },
         };
+        return Ok(Self {
+            time: TimeStep::new(&config.numericsconfig, config.output_counter_max),
+            solver,
+        });
     }
 
     /// Calculates the next state for the [Physics] object `u`.

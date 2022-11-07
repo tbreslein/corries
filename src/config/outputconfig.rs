@@ -124,17 +124,36 @@ pub enum DataName {
 
     /// Speed of sound
     CSound,
+
+    // ===============
+    // TimeIntegration
+    // ===============
+    /// Time coordinate
+    T,
+
+    /// Current iteration count
+    Iter,
+
+    /// Last time step width
+    Dt,
+
+    /// What the limiting factor of the last time step width was
+    DtKind,
 }
 
 impl fmt::Display for DataName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match self {
-            DataName::XiCent => write!(f, "XiCent"),
-            DataName::XiWest => write!(f, "XiWest"),
-            DataName::XiEast => write!(f, "XiEast"),
-            DataName::Prim(j) => write!(f, "Prim{}", j),
-            DataName::Cons(j) => write!(f, "Cons{}", j),
-            DataName::CSound => write!(f, "CSound"),
+            DataName::XiCent => write!(f, "xi_cent"),
+            DataName::XiWest => write!(f, "xi_west"),
+            DataName::XiEast => write!(f, "xi_east"),
+            DataName::Prim(j) => write!(f, "prim_{}", j),
+            DataName::Cons(j) => write!(f, "cons_{}", j),
+            DataName::CSound => write!(f, "c_sound"),
+            DataName::T => write!(f, "t"),
+            DataName::Iter => write!(f, "iter"),
+            DataName::Dt => write!(f, "dt"),
+            DataName::DtKind => write!(f, "dt_kind"),
         };
     }
 }
@@ -169,6 +188,9 @@ pub enum StructAssociation {
 
     /// Value is associated with `Physics` objects
     Physics,
+
+    /// Valus is associated with `TimeStep` objects
+    TimeStep,
 }
 
 impl DataName {
@@ -181,6 +203,10 @@ impl DataName {
             Self::Prim(_) => DataType::VectorFloat,
             Self::Cons(_) => DataType::VectorFloat,
             Self::CSound => DataType::VectorFloat,
+            Self::Iter => DataType::Usize,
+            Self::T => DataType::Float,
+            Self::Dt => DataType::Float,
+            Self::DtKind => DataType::String,
         };
     }
 
@@ -193,6 +219,10 @@ impl DataName {
             Self::Prim(_) => StructAssociation::Physics,
             Self::Cons(_) => StructAssociation::Physics,
             Self::CSound => StructAssociation::Physics,
+            Self::Iter => StructAssociation::TimeStep,
+            Self::T => StructAssociation::TimeStep,
+            Self::Dt => StructAssociation::TimeStep,
+            Self::DtKind => StructAssociation::TimeStep,
         };
     }
 }

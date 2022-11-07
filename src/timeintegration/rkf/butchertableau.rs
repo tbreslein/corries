@@ -58,9 +58,11 @@ impl ButcherTableau {
                     order,
                     vec![0.0]
                 ).unwrap(),
-                asc: {
-                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                asc: if asc {
+                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", rkfconfig.rkf_mode);
                     false
+                } else {
+                    asc
                 }
             },
             RKFMode::RK2 => Self {
@@ -82,9 +84,11 @@ impl ButcherTableau {
                     order,
                     vec![0.0, 0.5]
                 ).unwrap(),
-                asc: {
-                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                asc: if asc {
+                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", rkfconfig.rkf_mode);
                     false
+                } else {
+                    asc
                 }
             },
             RKFMode::RK3 => Self {
@@ -130,9 +134,11 @@ impl ButcherTableau {
                     order,
                     vec![0.0, 0.5, 0.5, 1.0]
                 ).unwrap(),
-                asc: {
-                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
+                asc: if asc {
+                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", rkfconfig.rkf_mode);
                     false
+                } else {
+                    asc
                 }
             },
             RKFMode::Heun2 => Self {
@@ -154,10 +160,7 @@ impl ButcherTableau {
                     order,
                     vec![0.0, 1.0]
                 ).unwrap(),
-                asc: {
-                    println!("WARNING: You turned on automated step control (asc) for {}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", asc);
-                    false
-                }
+                asc,
             },
             RKFMode::RKF12 => Self {
                 order,

@@ -43,7 +43,7 @@ pub fn init_numflux<const S: usize, const EQ: usize>(numericsconf: &NumericsConf
 /// * `flux_num` - numerical flux
 /// * `mesh` - [Mesh] object
 fn calc_dflux_xi_generic<const S: usize>(dflux_dxi: &mut Array2<f64>, flux_num: &Array2<f64>, mesh: &Mesh<S>) {
-    for j in 0..dflux_dxi.ncols() {
+    for j in 0..dflux_dxi.nrows() {
         let s = s![mesh.ixi_in..=mesh.ixi_out];
         let s_m1 = s![mesh.ixi_in - 1..=mesh.ixi_out - 1];
         dflux_dxi

@@ -135,7 +135,6 @@ impl CorriesConfig {
         s += &format!("#     mode: {:?}\n", self.physicsconfig.mode);
         s += &format!("#     units_mode: {:?}\n", self.physicsconfig.units_mode);
         s += &format!("#     adiabatic_index: {}\n", self.physicsconfig.adiabatic_index);
-        s += &format!("#     c_sound_0: {}\n", self.physicsconfig.c_sound_0);
 
         s += "# numericsconf:\n";
         s += &format!("#     numflux_mode: {:?}\n", self.numericsconfig.numflux_mode);

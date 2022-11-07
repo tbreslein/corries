@@ -13,6 +13,7 @@ use color_eyre::{
 use ndarray::Array1;
 
 use crate::physics::Physics;
+use crate::timeintegration::TimeIntegration;
 use crate::{
     config::{
         outputconfig::{
@@ -180,11 +181,17 @@ impl Output {
         &mut self,
         mesh: &Mesh<S>,
         u: &Physics<S, EQ>,
+        timeintegration: &TimeIntegration<S, EQ>,
     ) -> Result<()> {
         for (i, name) in self.data_names.iter().enumerate() {
             match name.association() {
                 StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
                 StructAssociation::Physics => u.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
+                StructAssociation::TimeStep => {
+                    timeintegration
+                        .time
+                        .collect_data(name, &mut self.data_matrix[i], self.mesh_offset)
+                },
             }?;
         }
         return Ok(());
@@ -222,7 +229,9 @@ impl Output {
 
     /// Transforms `self.data_matrix` into `self.stream_strings`.
     fn data_matrix_to_stream_strings(&mut self) -> Result<()> {
-        self.stream_strings.iter_mut().for_each(|line| line.clear());
+        self.stream_strings.iter_mut().for_each(|line| {
+            *line = " ".to_string();
+        });
         match self.string_conversion_mode {
             ToStringConversionMode::Scalar => {
                 for value in self.data_matrix.iter() {
@@ -230,7 +239,7 @@ impl Output {
                         DataValue::Int(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::Usize(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::Float(x) => {
-                            self.stream_strings[0] += &format!("{:>width$.*}", self.precision, x, width = self.width)
+                            self.stream_strings[0] += &format!("{:>width$.*e}", self.precision, x, width = self.width)
                         },
                         DataValue::String(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
                         DataValue::VectorFloat(_) => {
@@ -252,14 +261,14 @@ impl Output {
                             },
                             DataValue::Float(x) => {
                                 self.stream_strings[i] +=
-                                    &format!("{:>width$.*}", self.precision, x, width = self.width)
+                                    &format!("{:>width$.*e}", self.precision, x, width = self.width)
                             },
                             DataValue::String(x) => {
                                 self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
                             },
                             DataValue::VectorFloat(v) => {
                                 self.stream_strings[i] +=
-                                    &format!("{:>width$.*}", self.precision, v[i], width = self.width)
+                                    &format!("{:>width$.*e}", self.precision, v[i], width = self.width)
                             },
                         };
                         self.stream_strings[i].push(self.delimiter);

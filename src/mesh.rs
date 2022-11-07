@@ -449,7 +449,7 @@ impl<const S: usize> CorriesWrite for Mesh<S> {
             (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west.view(), value, mesh_offset),
             (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east.view(), value, mesh_offset),
             (StructAssociation::Mesh, _) => bail!("Tried associating {:?} with Mesh!", name),
-            (StructAssociation::Physics, _) => {
+            (StructAssociation::Physics, _) | (StructAssociation::TimeStep, _) => {
                 bail!("name.association() for {:?} returned {:?}", name, name.association())
             },
         }?;
@@ -481,8 +481,8 @@ mod tests {
                 prop_assume!(mesh.is_ok());
                 let mesh = mesh.unwrap();
                 prop_assume!(mesh.xi_in < mesh.xi_out);
-                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], max_relative = 10.0f64.powi(-12));
-                assert_relative_eq!(mesh.xi_out, mesh.xi_east[mesh.ixi_out], max_relative = 10.0f64.powi(-12));
+                assert_relative_eq!(mesh.xi_in, mesh.xi_west[mesh.ixi_in], max_relative = 1.0e-12);
+                assert_relative_eq!(mesh.xi_out, mesh.xi_east[mesh.ixi_out], max_relative = 1.0e-12);
             }
         }
     }
