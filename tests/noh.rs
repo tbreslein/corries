@@ -82,7 +82,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         numericsconfig: NumericsConfig {
             numflux_mode: NumFluxMode::Hll,
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
-                rkf_mode: config::numericsconfig::RKFMode::RK1,
+                rkf_mode: config::numericsconfig::RKFMode::SSPRK5,
                 asc: false,
                 asc_relative_tolerance: 0.001,
                 asc_absolute_tolerance: 0.1,
