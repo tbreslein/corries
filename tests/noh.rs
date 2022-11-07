@@ -76,11 +76,6 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         ],
     };
 
-    let t_end = match mode {
-        PhysicsMode::Euler1DAdiabatic => 0.5,
-        PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => 0.5,
-    };
-
     return config::CorriesConfig {
         print_banner: false,
         meshconfig: MeshConfig {
@@ -107,7 +102,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             }),
             iter_max: usize::MAX - 2,
             t0: 0.0,
-            t_end,
+            t_end: 0.5,
             dt_min: 1.0e-12,
             dt_max: f64::MAX,
             dt_cfl_param: 0.4,
