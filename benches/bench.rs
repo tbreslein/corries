@@ -159,8 +159,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     group.sample_size(1000);
     group.bench_function("noh test run", |b| {
         b.iter(|| {
-            run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer)
-                .unwrap();
+            run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).unwrap();
         })
     });
     group.finish();
