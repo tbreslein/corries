@@ -16,7 +16,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
 const EQ: usize = get_n_equations(PHYSICS_MODE);
-const SIZE: usize = 100_000;
+const SIZE: usize = 200;
 
 fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     let boundary_conditions_west = match mode {
@@ -146,21 +146,8 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
     return;
 }
 
-#[test]
-fn noh_euler2d_isot() -> Result<()> {
-    const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler2DIsot;
-    const N_EQUATIONS: usize = get_n_equations(PHYSICS_MODE);
-    let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
-        init_sim::<SIZE, N_EQUATIONS>(&get_config(PHYSICS_MODE)).unwrap();
-    init_noh(&mut u);
-    u.update_everything_from_prim(&mut rhs.boundary_conditions, &mesh)
-        .context("Calling u.update_everything_from_prim in noh test")?;
-    run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).context("Calling run_loop in noh test")?;
-    return Ok(());
-}
-
 pub fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Physics implementations");
+    let mut group = c.benchmark_group("Benchies");
 
     let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
         init_sim::<SIZE, EQ>(&get_config(PHYSICS_MODE)).unwrap();
@@ -170,10 +157,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         .unwrap();
 
     group.sample_size(1000);
-    group.bench_function("update", |b| {
+    group.bench_function("noh test run", |b| {
         b.iter(|| {
             run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer)
-                .context("Calling run_loop in noh test")
                 .unwrap();
         })
     });
