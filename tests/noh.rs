@@ -61,6 +61,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     let data_names_vector = match mode {
         PhysicsMode::Euler1DAdiabatic => vec![
             DataName::XiCent,
+            DataName::T,
             DataName::Prim(0),
             DataName::Prim(1),
             DataName::Prim(2),
@@ -76,7 +77,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     };
 
     let t_end = match mode {
-        PhysicsMode::Euler1DAdiabatic => 0.25,
+        PhysicsMode::Euler1DAdiabatic => 1.0,
         PhysicsMode::Euler1DIsot | PhysicsMode::Euler2DIsot => 0.5,
     };
 
@@ -154,7 +155,7 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
         u.prim[[u.jxivelocity, i]] = -1.0;
     }
     if u.is_adiabatic {
-        u.prim.row_mut(u.jpressure).fill(1.0e-5)
+        u.prim.row_mut(u.jpressure).fill(1.0E-5)
     } else {
         u.c_sound.fill(1.0);
     }
