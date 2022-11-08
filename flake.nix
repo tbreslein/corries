@@ -87,6 +87,7 @@
             {
               inherit buildInputs nativeBuildInputs;
               RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+              RUSTFLAGS = "-C target-cpu=native";
             } // buildEnvVars;
         }
       );
