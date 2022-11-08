@@ -6,6 +6,7 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
 ### Small things
 
+- [ ] add `prelude.rs` to define common API exports
 - [ ] can I macro metadata_dump?
 
 ### Big Steps
