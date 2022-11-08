@@ -13,12 +13,12 @@
 
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
+use errorhandling::Validation;
 use mesh::Mesh;
 use physics::Physics;
+use rhs::Rhs;
 use timeintegration::{DtKind, TimeIntegration};
 use writer::Writer;
-
-use crate::{errorhandling::Validation, rhs::Rhs};
 
 mod boundaryconditions;
 pub mod config;
@@ -84,13 +84,9 @@ pub fn run_loop<const S: usize, const EQ: usize>(
             && timeintegration.time.t <= timeintegration.time.t_end
         {
             timeintegration.time.t_next_output += timeintegration.time.dt_output;
-
-            // acquire the lock
             writer
                 .update_data_matrices(mesh, u, timeintegration)
                 .context("Calling writer.update_data_matrices in run_sim")?;
-
-            // thread this call and unlock the mutex when it finishes
             writer
                 .write_output()
                 .context("Calling wirter.write_output in run_sim")?;
@@ -99,7 +95,6 @@ pub fn run_loop<const S: usize, const EQ: usize>(
             break;
         }
 
-        // TODO: next solution
         if let err @ Err(_) = timeintegration.next_solution(u, rhs, mesh) {
             timeintegration.time.dt_kind = DtKind::ErrorDump;
             writer
