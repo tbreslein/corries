@@ -6,7 +6,7 @@
 
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
-use ndarray::{s, Array1, Array2};
+use ndarray::{par_azip, s, Array1, Array2};
 
 use crate::errorhandling::Validation;
 use crate::{mesh::Mesh, physics::Physics};
@@ -52,41 +52,48 @@ impl<const S: usize, const EQ: usize> Hll<S, EQ> {
 impl<const S: usize, const EQ: usize> NumFlux<S, EQ> for Hll<S, EQ> {
     fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         // NOTE: Assumes that u.eigen_vals are already up to date
+        // NOTE: This function was benchmarked using many different combinations of raw loops,
+        // azips, par_azips, and Zip::par_for_each. This ended up being the most performant
+        // version. The lession we can take from this is that, that the BLAS parallelisation used
+        // in the .assign method is already good enough, and that parallelisation over the
+        // equations creates to much overhead. This function in particular ran about 7.5% slower in
+        // my notebook when replacing the for j loop with a Zip::par_for_each.
+        // My guess is that the for loop probably got fully unrolled, since the compiler knows the
+        // length of the loop at compile time, and that lead to a far greater performance boost
+        // compared to what the Zip::par_for_each had to offer.
+        // The assignments for sl, sr, inv_sr_minus_sl, and sr_times_sl on the other hand performed
+        // just well in both version: simple .assign calls and par_azip calls. I chose to stick
+        // with the par_azip version because I think it's easier to read, and might(!) scale
+        // better.
         u.calc_physical_flux(&mut self.flux_phys);
-        let slice = s![mesh.ixi_in - 1..=mesh.ixi_out];
-        let slice_p1 = s![mesh.ixi_in..=mesh.ixi_out + 1];
+        let s = s![(mesh.ixi_in - 1)..=mesh.ixi_out];
+        let sp1 = s![mesh.ixi_in..=(mesh.ixi_out + 1)];
 
-        for i in mesh.ixi_in - 1..=mesh.ixi_out {
-            self.sl[i] = 0.0f64.min(u.eigen_vals[[0, i]].min(u.eigen_vals[[0, i + 1]]));
-            self.sr[i] = 0.0f64.max(u.eigen_vals[[EQ - 1, i]].max(u.eigen_vals[[EQ - 1, i + 1]]));
-        }
+        par_azip!((sl in &mut self.sl.slice_mut(s), &ev1 in &u.eigen_vals.row(0).slice(s), &ev2 in &u.eigen_vals.row(0).slice(sp1))
+            *sl = 0.0f64.min(ev1.min(ev2))
+        );
+        par_azip!((sr in &mut self.sr.slice_mut(s), &ev1 in &u.eigen_vals.row(EQ-1).slice(s), &ev2 in &u.eigen_vals.row(EQ-1).slice(sp1))
+            *sr = 0.0f64.max(ev1.max(ev2))
+        );
+        par_azip!((a in &mut self.inv_sr_minus_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
+            *a = 1.0 / (sr - sl)
+        );
+        par_azip!((b in &mut self.sr_times_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
+            *b = sr * sl
+        );
 
-        // TODO: Benchmark this version against azip, Zip and raw for loops
-        self.inv_sr_minus_sl
-            .slice_mut(slice)
-            .assign(&(1.0 / (&self.sr.slice(slice) - &self.sl.slice(slice))));
-        self.sr_times_sl
-            .slice_mut(slice)
-            .assign(&(&self.sr.slice(slice) * &self.sl.slice(slice)));
-
-        // TODO: Benchmark this version against azip, Zip and raw for loops
         for j in 0..EQ {
-            // TODO: Benchmark whether these explicit views create overhead
             let mut flux_num_j = self.flux_num.row_mut(j);
             let flux_phys_j = self.flux_phys.row(j);
             let uc_j = u.cons.row(j);
-            let a = self.inv_sr_minus_sl.slice(slice);
-            let b = self.sr_times_sl.slice(slice);
-            let sl = self.sl.slice(slice);
-            let sr = self.sr.slice(slice);
-
-            flux_num_j.slice_mut(slice).assign(
-                &(&a * (&sr * &flux_phys_j.slice(slice) - &sl * &flux_phys_j.slice(slice_p1)
-                    + &b * (&uc_j.slice(slice_p1) - &uc_j.slice(slice)))),
+            flux_num_j.slice_mut(s).assign(
+                &(&self.inv_sr_minus_sl.slice(s)
+                    * (&self.sr.slice(s) * &flux_phys_j.slice(s) - &self.sl.slice(s) * &flux_phys_j.slice(sp1)
+                        + &self.sr_times_sl.slice(s) * (&uc_j.slice(sp1) - &uc_j.slice(s)))),
             );
         }
-        calc_dflux_xi_generic(dflux_dxi, &self.flux_num, mesh);
 
+        calc_dflux_xi_generic::<S, EQ>(dflux_dxi, &self.flux_num, mesh);
         self.validate()
             .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
         return Ok(());

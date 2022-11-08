@@ -206,11 +206,9 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
                 for j in 0..EQ {
                     for i in 2..S - 2 {
                         err_max = err_max.max(
-                            (self.utilde.cons[[j, i]]
-                                - self.u_cons_low[[j, i]]
-                                    / (self.asc_relative_tolerance
-                                        * (self.utilde.cons[[j, i]] + self.asc_absolute_tolerance).abs()))
-                            .abs(),
+                            (self.utilde.cons[[j, i]] - self.u_cons_low[[j, i]]).abs()
+                                / (self.asc_relative_tolerance
+                                    * (self.utilde.cons[[j, i]] + self.asc_absolute_tolerance).abs()),
                         );
                     }
                 }

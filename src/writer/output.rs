@@ -98,16 +98,17 @@ impl Output {
         } else {
             mesh.ixi_in
         };
-        let mut data_matrix = vec![];
-        for name in outputconfig.data_names.iter() {
-            match name.datatype() {
-                DataType::Int => data_matrix.push(DataValue::Int(0)),
-                DataType::Usize => data_matrix.push(DataValue::Usize(0)),
-                DataType::Float => data_matrix.push(DataValue::Float(0.0)),
-                DataType::String => data_matrix.push(DataValue::String("".to_string())),
-                DataType::VectorFloat => data_matrix.push(DataValue::VectorFloat(Array1::zeros([S - 2 * mesh_offset]))),
-            };
-        }
+        let data_matrix = outputconfig
+            .data_names
+            .iter()
+            .map(|name| match name.datatype() {
+                DataType::Int => DataValue::Int(0),
+                DataType::Usize => DataValue::Usize(0),
+                DataType::Float => DataValue::Float(0.0),
+                DataType::String => DataValue::String("".to_string()),
+                DataType::VectorFloat => DataValue::VectorFloat(Array1::zeros([S - 2 * mesh_offset])),
+            })
+            .collect();
 
         let file_name = if outputconfig.folder_name.ends_with('/') {
             outputconfig.folder_name.clone() + &outputconfig.file_name.clone()
@@ -183,8 +184,10 @@ impl Output {
         u: &Physics<S, EQ>,
         timeintegration: &TimeIntegration<S, EQ>,
     ) -> Result<()> {
-        for (i, name) in self.data_names.iter().enumerate() {
-            match name.association() {
+        self.data_names
+            .iter()
+            .enumerate()
+            .map(|(i, name)| match name.association() {
                 StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
                 StructAssociation::Physics => u.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
                 StructAssociation::TimeStep => {
@@ -192,8 +195,8 @@ impl Output {
                         .time
                         .collect_data(name, &mut self.data_matrix[i], self.mesh_offset)
                 },
-            }?;
-        }
+            })
+            .collect::<Result<()>>()?;
         return Ok(());
     }
 
@@ -234,46 +237,61 @@ impl Output {
         });
         match self.string_conversion_mode {
             ToStringConversionMode::Scalar => {
-                for value in self.data_matrix.iter() {
-                    match value {
-                        DataValue::Int(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
-                        DataValue::Usize(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
-                        DataValue::Float(x) => {
-                            self.stream_strings[0] += &format!("{:>width$.*e}", self.precision, x, width = self.width)
-                        },
-                        DataValue::String(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
-                        DataValue::VectorFloat(_) => {
-                            bail!("Tried writing a vector into a scalar output!")
-                        },
-                    };
-                    self.stream_strings[0].push(self.delimiter);
-                }
-            },
-            ToStringConversionMode::Vector => {
-                for value in self.data_matrix.iter() {
-                    for i in 0..self.stream_strings.len() {
+                self.data_matrix
+                    .iter()
+                    .map(|value| {
                         match value {
                             DataValue::Int(x) => {
-                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                                self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
                             },
                             DataValue::Usize(x) => {
-                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                                self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
                             },
                             DataValue::Float(x) => {
-                                self.stream_strings[i] +=
+                                self.stream_strings[0] +=
                                     &format!("{:>width$.*e}", self.precision, x, width = self.width)
                             },
                             DataValue::String(x) => {
-                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                                self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
                             },
-                            DataValue::VectorFloat(v) => {
-                                self.stream_strings[i] +=
-                                    &format!("{:>width$.*e}", self.precision, v[i], width = self.width)
+                            DataValue::VectorFloat(_) => {
+                                bail!("Tried writing a vector into a scalar output!")
                             },
                         };
-                        self.stream_strings[i].push(self.delimiter);
-                    }
-                }
+                        self.stream_strings[0].push(self.delimiter);
+                        Ok(())
+                    })
+                    .collect::<Result<()>>()?;
+            },
+            ToStringConversionMode::Vector => {
+                self.data_matrix
+                    .iter()
+                    .map(|value| {
+                        for i in 0..self.stream_strings.len() {
+                            match value {
+                                DataValue::Int(x) => {
+                                    self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                                },
+                                DataValue::Usize(x) => {
+                                    self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                                },
+                                DataValue::Float(x) => {
+                                    self.stream_strings[i] +=
+                                        &format!("{:>width$.*e}", self.precision, x, width = self.width)
+                                },
+                                DataValue::String(x) => {
+                                    self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
+                                },
+                                DataValue::VectorFloat(v) => {
+                                    self.stream_strings[i] +=
+                                        &format!("{:>width$.*e}", self.precision, v[i], width = self.width)
+                                },
+                            };
+                            self.stream_strings[i].push(self.delimiter);
+                        }
+                        Ok(())
+                    })
+                    .collect::<Result<()>>()?;
             },
         }
         self.stream_strings.iter_mut().for_each(|line| {
@@ -337,12 +355,14 @@ impl Output {
 
     /// Returns the header for writing output.
     fn get_header(&self) -> String {
-        let mut s = self.leading_comment_symbol.clone();
-        for name in self.data_names.iter() {
-            let name_string = format!("{}", name);
-            s += &format!("{:>width$}", name_string, width = self.width);
-            s.push(self.delimiter);
-        }
+        let mut s = self
+            .data_names
+            .iter()
+            .fold(self.leading_comment_symbol.clone(), |mut acc, name| {
+                acc += &format!("{:>width$}", format!("{}", name), width = self.width);
+                acc.push(self.delimiter);
+                return acc;
+            });
         s.pop();
         s.push('\n');
         return s;

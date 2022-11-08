@@ -1,4 +1,4 @@
-use ndarray::{azip, Array2};
+use ndarray::{Array2, Zip};
 
 use super::super::Physics;
 
@@ -20,25 +20,25 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Calculates and updates the energy in [self.cons].
     #[inline(always)]
     pub fn update_energy_euler1d(&mut self) {
-        self.cons.row_mut(self.jenergy).assign(
-            &(&self.prim.row(self.jpressure) * (self.adiabatic_index - 1.0).recip()
-                + 0.5
-                    * &self.prim.row(self.jdensity)
-                    * &self.prim.row(self.jxivelocity)
-                    * &self.prim.row(self.jxivelocity)),
-        );
+        Zip::from(self.cons.row_mut(self.jenergy))
+            .and(self.prim.row(self.jpressure))
+            .and(self.prim.row(self.jdensity))
+            .and(self.prim.row(self.jxivelocity))
+            .for_each(|energy, &pressure, &density, &velocity| {
+                *energy = pressure * (self.adiabatic_index - 1.0).recip() + 0.5 * density * velocity * velocity
+            });
     }
 
     /// Calculates and updates the pressure in [self.prim].
     #[inline(always)]
     pub fn update_pressure_euler1d(&mut self) {
-        self.prim.row_mut(self.jpressure).assign(
-            &((self.adiabatic_index - 1.0)
-                * (&self.cons.row(self.jenergy)
-                    - 0.5 / &self.cons.row(self.jdensity)
-                        * &self.cons.row(self.jximomentum)
-                        * &self.cons.row(self.jximomentum))),
-        );
+        Zip::from(self.prim.row_mut(self.jpressure))
+            .and(self.cons.row(self.jenergy))
+            .and(self.cons.row(self.jdensity))
+            .and(self.cons.row(self.jximomentum))
+            .for_each(|pressure, &energy, &density, &momentum| {
+                *pressure = (self.adiabatic_index - 1.0) * (energy - 0.5 / density * momentum * momentum)
+            });
     }
 
     /// Updates the speed of sound vector; no-op for isothermal physics
@@ -61,26 +61,22 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     /// Calculates the xi momentum flux for adiabatic 1D Euler
     #[inline(always)]
     pub fn calc_xi_momentum_flux_euler1d_adiabatic(&self, flux: &mut Array2<f64>) {
-        azip!(
-            (
-                ximom_flux in flux.row_mut(self.jximomentum),
-                &xivel in self.prim.row(self.jxivelocity),
-                &ximom in self.cons.row(self.jximomentum),
-                &p in self.prim.row(self.jpressure)
-            )
-            *ximom_flux = xivel * ximom + p);
+        Zip::from(flux.row_mut(self.jximomentum))
+            .and(self.prim.row(self.jxivelocity))
+            .and(self.cons.row(self.jximomentum))
+            .and(self.prim.row(self.jpressure))
+            .for_each(|xi_momentum_flux, &xi_velocity, &xi_momentum, &pressure| {
+                *xi_momentum_flux = xi_velocity * xi_momentum + pressure
+            });
     }
 
     /// Calculates the energy flux for adiabatic 1D Euler
     #[inline(always)]
     pub fn calc_energy_flux_euler1d_isot(&self, flux: &mut Array2<f64>) {
-        azip!(
-            (
-                energy_flux in flux.row_mut(self.jenergy),
-                &e in self.cons.row(self.jenergy),
-                &p in self.prim.row(self.jpressure),
-                &xivel in self.prim.row(self.jxivelocity)
-            )
-            *energy_flux = (e + p) * xivel);
+        Zip::from(flux.row_mut(self.jenergy))
+            .and(self.cons.row(self.jenergy))
+            .and(self.prim.row(self.jpressure))
+            .and(self.prim.row(self.jxivelocity))
+            .for_each(|energy_flux, &energy, &pressure, &xi_velocity| *energy_flux = (energy + pressure) * xi_velocity);
     }
 }

@@ -6,17 +6,6 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
 ### Threads
 
-Deps:
-
-- Add rayon for parallel iterators ++ rayon feature for ndarray
-- Add crossbeam for scoped threads
-
-Things I can probably parallelise:
-
-- The different outputs running their pipelines starting with converting data_matrix to stream_strings
-- computing numflux and sources in parallel (and those sources in parallel to one another)
-- computations that iterate over the set of equations
-
 Things to read:
 
 - [rust-lang-nursery](https://rust-lang-nursery.github.io/rust-cookbook/concurrency/threads.html)
@@ -27,14 +16,10 @@ Things to read:
 
 ### Small things
 
-- [ ] Fix Mesh unit tests
-- [ ] more linting?
 - [ ] can I macro metadata_dump?
 
 ### Big Steps
 
-- [ ] Implement TimeInteg and RKF
-- [ ] Add general initial conditions structure + Noh integration test
 - [ ] Add Sod test
 - [ ] Add KT solver
 - [ ] Add Euler2DAdiabatic

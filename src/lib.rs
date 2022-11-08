@@ -24,7 +24,7 @@ mod boundaryconditions;
 pub mod config;
 #[macro_use]
 mod errorhandling;
-mod mesh;
+pub mod mesh;
 pub mod physics;
 mod rhs;
 mod timeintegration;
@@ -80,18 +80,22 @@ pub fn run_loop<const S: usize, const EQ: usize>(
     writer: &mut Writer,
 ) -> Result<()> {
     loop {
-        if timeintegration.time.t >= timeintegration.time.t_next_output {
+        if timeintegration.time.t_next_output <= timeintegration.time.t
+            && timeintegration.time.t <= timeintegration.time.t_end
+        {
             timeintegration.time.t_next_output += timeintegration.time.dt_output;
 
+            // acquire the lock
             writer
                 .update_data_matrices(mesh, u, timeintegration)
                 .context("Calling writer.update_data_matrices in run_sim")?;
-            // thread this call?
+
+            // thread this call and unlock the mutex when it finishes
             writer
                 .write_output()
                 .context("Calling wirter.write_output in run_sim")?;
         }
-        if timeintegration.time.t >= timeintegration.time.t_end {
+        if timeintegration.time.t + timeintegration.time.dt_min * 0.01 >= timeintegration.time.t_end {
             break;
         }
 

@@ -4,6 +4,7 @@
 
 use color_eyre::{eyre::bail, Result};
 use ndarray::{s, Array1, ArrayView1};
+use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
 use self::output::Output;
 use crate::{
@@ -69,19 +70,19 @@ impl Writer {
         u: &Physics<S, EQ>,
         timeintegration: &TimeIntegration<S, EQ>,
     ) -> Result<()> {
-        // TODO: can I safely thread this loop?
-        for output in self.outputs.iter_mut() {
-            output.update_data_matrix(mesh, u, timeintegration)?;
-        }
+        self.outputs
+            .iter_mut()
+            .map(|output| output.update_data_matrix(mesh, u, timeintegration))
+            .collect::<Result<()>>()?;
         return Ok(());
     }
 
     /// Loops through `self.outputs` and calls their `write_output` methods.
     pub fn write_output(&mut self) -> Result<()> {
-        // TODO: can I safely thread this loop?
-        for output in self.outputs.iter_mut() {
-            output.write_output(self.output_counter)?;
-        }
+        self.outputs
+            .par_iter_mut()
+            .map(|output| output.write_output(self.output_counter))
+            .collect::<Result<()>>()?;
         self.output_counter += 1;
         return Ok(());
     }
@@ -89,11 +90,10 @@ impl Writer {
     /// Loops through `self.outputs` and calls their `write_metadata` methods if they are
     /// configured to do so.
     pub fn write_metadata<const S: usize>(&mut self, config: &CorriesConfig) -> Result<()> {
-        for output in self.outputs.iter_mut() {
-            if output.should_print_metadata {
-                output.write_metadata::<S>(config)?;
-            };
-        }
+        self.outputs
+            .par_iter_mut()
+            .map(|output| output.write_metadata::<S>(config))
+            .collect::<Result<()>>()?;
         return Ok(());
     }
 }
