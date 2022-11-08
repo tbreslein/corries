@@ -16,7 +16,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 const PHYSICS_MODE: PhysicsMode = PhysicsMode::Euler1DAdiabatic;
 const EQ: usize = get_n_equations(PHYSICS_MODE);
-const SIZE: usize = 200;
+const SIZE: usize = 500;
 
 fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
     let boundary_conditions_west = match mode {
@@ -97,7 +97,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             dt_max: f64::MAX,
             dt_cfl_param: 0.4,
         },
-        output_counter_max: 1,
+        output_counter_max: 10,
         writerconfig: vec![
             OutputConfig {
                 stream_mode: StreamMode::Stdout,
