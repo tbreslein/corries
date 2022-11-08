@@ -146,8 +146,8 @@ fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
     return;
 }
 
-pub fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Benchies");
+pub fn noh_run(c: &mut Criterion) {
+    let mut group = c.benchmark_group("noh_run");
 
     let (mut u, mut rhs, mut timeintegration, mesh, mut writer) =
         init_sim::<SIZE, EQ>(&get_config(PHYSICS_MODE)).unwrap();
@@ -156,7 +156,6 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         .context("Calling u.update_everything_from_prim in noh test")
         .unwrap();
 
-    group.sample_size(1000);
     group.bench_function("noh test run", |b| {
         b.iter(|| {
             run_loop(&mut u, &mut rhs, &mut timeintegration, &mesh, &mut writer).unwrap();
@@ -165,5 +164,20 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, criterion_benchmark);
+pub fn physics_conversions(c: &mut Criterion) {
+    let mut group = c.benchmark_group("physics_conversions");
+
+    let (mut u, _, _, _, _) = init_sim::<SIZE, EQ>(&get_config(PHYSICS_MODE)).unwrap();
+    init_noh(&mut u);
+
+    group.bench_function("from prim to cons and back", |b| {
+        b.iter(|| {
+            u.update_cons();
+            u.update_prim();
+        })
+    });
+    group.finish();
+}
+
+criterion_group!(benches, physics_conversions, noh_run);
 criterion_main!(benches);

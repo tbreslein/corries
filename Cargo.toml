@@ -32,9 +32,10 @@ harness = false
 
 [dependencies]
 color-eyre = { version = "0.6", default-features = false }
-ndarray = { version = "0.15", features = ["blas", "approx-0_5"] }
+ndarray = { version = "0.15", features = ["blas", "approx-0_5", "rayon"] }
 blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
+rayon = "1.5.3"
 
 [dev-dependencies]
 proptest = { version = "1" }

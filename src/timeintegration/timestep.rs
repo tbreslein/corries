@@ -36,7 +36,7 @@ pub struct TimeStep {
     pub dt: f64,
 
     /// Minimum value for `dt`; the simulation will error out if `dt` dips below this value
-    dt_min: f64,
+    pub dt_min: f64,
 
     /// Maximum value for `dt`; simply a safety measure if a good value for `dt_cfl_param` is not
     /// known yet for this simulation
