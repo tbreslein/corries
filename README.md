@@ -2,16 +2,6 @@
 
 CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
-## Ideas
-
-### Threads
-
-Things to read:
-
-- [rust-lang-nursery](https://rust-lang-nursery.github.io/rust-cookbook/concurrency/threads.html)
-- [rayon](https://docs.rs/rayon/latest/rayon/)
-- [crossbeam](https://docs.rs/crossbeam/latest/crossbeam/)
-
 ## TODO
 
 ### Small things
