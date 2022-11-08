@@ -85,10 +85,12 @@ pub fn run_loop<const S: usize, const EQ: usize>(
         {
             timeintegration.time.t_next_output += timeintegration.time.dt_output;
 
+            // acquire the lock
             writer
                 .update_data_matrices(mesh, u, timeintegration)
                 .context("Calling writer.update_data_matrices in run_sim")?;
-            // thread this call?
+
+            // thread this call and unlock the mutex when it finishes
             writer
                 .write_output()
                 .context("Calling wirter.write_output in run_sim")?;
