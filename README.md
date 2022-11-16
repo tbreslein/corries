@@ -11,6 +11,11 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
 ### Big Steps
 
+- [ ] fix doc string for Output::width
+- [ ] turn the vectors in writer and output into arrays
+- [ ] turn Physics into a trait and make the functions generic
+- [ ] same with Numflux
+- [ ] same with TimeSolver
 - [ ] Add Sod test
 - [ ] Add KT solver
 - [ ] Add Euler2DAdiabatic
