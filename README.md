@@ -12,7 +12,7 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 ### Big Steps
 
 - [ ] fix doc string for Output::width
-- [ ] turn the vectors in writer and output into arrays
+- [ ] Can I zip over data_names and data_matrix in Output::update_data_matrix?
 - [ ] turn Physics into a trait and make the functions generic
 - [ ] same with Numflux
 - [ ] same with TimeSolver
