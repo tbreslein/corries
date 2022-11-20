@@ -85,8 +85,6 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
             self.u_prim_old.assign(&u.prim);
             self.solution_accepted = false;
             self.dt_temp = time.dt;
-        } else {
-            self.solution_accepted = true;
         }
 
         while !self.solution_accepted {
@@ -144,7 +142,7 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             asc_relative_tolerance: rkfconfig.asc_relative_tolerance,
             asc_absolute_tolerance: rkfconfig.asc_absolute_tolerance,
             asc_timestep_friction: rkfconfig.asc_timestep_friction,
-            solution_accepted: false,
+            solution_accepted: true,
             u_cons_low: Array2::zeros((EQ, S)),
             u_prim_old: Array2::zeros((EQ, S)),
             utilde,
