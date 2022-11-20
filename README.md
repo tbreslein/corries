@@ -16,6 +16,8 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 - [ ] turn Physics into a trait and make the functions generic
 - [ ] same with Numflux
 - [ ] same with TimeSolver
+- [ ] turn calc_dt_expl into an external generic function and make it return `(double, DtKind)`
+- [ ] find more opportunities to use `ensure!`, like in calc_dt_expl
 - [ ] Add Sod test
 - [ ] Add KT solver
 - [ ] Add Euler2DAdiabatic
