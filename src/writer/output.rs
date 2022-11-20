@@ -187,7 +187,7 @@ impl Output {
         self.data_names
             .iter()
             .enumerate()
-            .map(|(i, name)| match name.association() {
+            .try_for_each(|(i, name)| match name.association() {
                 StructAssociation::Mesh => mesh.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
                 StructAssociation::Physics => u.collect_data(name, &mut self.data_matrix[i], self.mesh_offset),
                 StructAssociation::TimeStep => {
@@ -195,8 +195,7 @@ impl Output {
                         .time
                         .collect_data(name, &mut self.data_matrix[i], self.mesh_offset)
                 },
-            })
-            .collect::<Result<()>>()?;
+            })?;
         return Ok(());
     }
 
@@ -237,61 +236,48 @@ impl Output {
         });
         match self.string_conversion_mode {
             ToStringConversionMode::Scalar => {
-                self.data_matrix
-                    .iter()
-                    .map(|value| {
+                self.data_matrix.iter().try_for_each(|value| {
+                    match value {
+                        DataValue::Int(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
+                        DataValue::Usize(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
+                        DataValue::Float(x) => {
+                            self.stream_strings[0] += &format!("{:>width$.*e}", self.precision, x, width = self.width)
+                        },
+                        DataValue::String(x) => self.stream_strings[0] += &format!("{:>width$}", x, width = self.width),
+                        DataValue::VectorFloat(_) => {
+                            bail!("Tried writing a vector into a scalar output!")
+                        },
+                    };
+                    self.stream_strings[0].push(self.delimiter);
+                    Ok(())
+                })?;
+            },
+            ToStringConversionMode::Vector => {
+                self.data_matrix.iter().try_for_each(|value| {
+                    for i in 0..self.stream_strings.len() {
                         match value {
                             DataValue::Int(x) => {
-                                self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
+                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
                             },
                             DataValue::Usize(x) => {
-                                self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
+                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
                             },
                             DataValue::Float(x) => {
-                                self.stream_strings[0] +=
+                                self.stream_strings[i] +=
                                     &format!("{:>width$.*e}", self.precision, x, width = self.width)
                             },
                             DataValue::String(x) => {
-                                self.stream_strings[0] += &format!("{:>width$}", x, width = self.width)
+                                self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
                             },
-                            DataValue::VectorFloat(_) => {
-                                bail!("Tried writing a vector into a scalar output!")
+                            DataValue::VectorFloat(v) => {
+                                self.stream_strings[i] +=
+                                    &format!("{:>width$.*e}", self.precision, v[i], width = self.width)
                             },
                         };
-                        self.stream_strings[0].push(self.delimiter);
-                        Ok(())
-                    })
-                    .collect::<Result<()>>()?;
-            },
-            ToStringConversionMode::Vector => {
-                self.data_matrix
-                    .iter()
-                    .map(|value| {
-                        for i in 0..self.stream_strings.len() {
-                            match value {
-                                DataValue::Int(x) => {
-                                    self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
-                                },
-                                DataValue::Usize(x) => {
-                                    self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
-                                },
-                                DataValue::Float(x) => {
-                                    self.stream_strings[i] +=
-                                        &format!("{:>width$.*e}", self.precision, x, width = self.width)
-                                },
-                                DataValue::String(x) => {
-                                    self.stream_strings[i] += &format!("{:>width$}", x, width = self.width)
-                                },
-                                DataValue::VectorFloat(v) => {
-                                    self.stream_strings[i] +=
-                                        &format!("{:>width$.*e}", self.precision, v[i], width = self.width)
-                                },
-                            };
-                            self.stream_strings[i].push(self.delimiter);
-                        }
-                        Ok(())
-                    })
-                    .collect::<Result<()>>()?;
+                        self.stream_strings[i].push(self.delimiter);
+                    }
+                    Ok::<(), color_eyre::eyre::Report>(())
+                })?;
             },
         }
         self.stream_strings.iter_mut().for_each(|line| {

@@ -72,8 +72,7 @@ impl Writer {
     ) -> Result<()> {
         self.outputs
             .iter_mut()
-            .map(|output| output.update_data_matrix(mesh, u, timeintegration))
-            .collect::<Result<()>>()?;
+            .try_for_each(|output| output.update_data_matrix(mesh, u, timeintegration))?;
         return Ok(());
     }
 
