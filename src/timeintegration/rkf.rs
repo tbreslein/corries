@@ -195,7 +195,7 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             for q in 0..self.bt.order {
                 self.utilde
                     .cons
-                    .assign(&(&self.u_cons_low - dt_out * &self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)));
+                    .assign(&(&self.u_cons_low - dt_out * &self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)));
             }
 
             // calc err_new
