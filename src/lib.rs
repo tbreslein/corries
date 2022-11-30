@@ -28,7 +28,7 @@ pub mod physics;
 // pub mod physicstest;
 // pub mod rhs;
 // mod timeintegration;
-// pub mod units;
+pub mod units;
 // pub mod writer;
 
 // /// Initialises and returns the objects needed for running a corries simulation.
@@ -107,15 +107,15 @@ pub mod physics;
 //     return Ok(());
 // }
 
-/// Compile time function to return the number of equations according to the [PhysicsMode]
-/// argument.
-pub const fn get_n_equations(physics_mode: PhysicsMode) -> usize {
-    return match physics_mode {
-        PhysicsMode::Euler1DAdiabatic => 3,
-        PhysicsMode::Euler1DIsot => 2,
-        PhysicsMode::Euler2DIsot => 3,
-    };
-}
+// /// Compile time function to return the number of equations according to the [PhysicsMode]
+// /// argument.
+// pub const fn get_n_equations(physics_mode: PhysicsMode) -> usize {
+//     return match physics_mode {
+//         PhysicsMode::Euler1DAdiabatic => 3,
+//         PhysicsMode::Euler1DIsot => 2,
+//         PhysicsMode::Euler2DIsot => 3,
+//     };
+// }
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 fn print_banner() {
