@@ -8,8 +8,7 @@
 //!
 //! Library to run 1D-hydrodynamics simulations solved with Riemann solvers.
 //!
-//! Provides the [run_sim] and [get_n_equations] functions, as well as the [config::CorriesConfig] struct.
-//! The [run_sim] function is used to start a simulation configured through its input arguments.
+//! Provides the [init_sim], [run_loop] and [get_n_equations] functions, as well as the [config::CorriesConfig] struct.
 
 use color_eyre::{eyre::Context, Result};
 use config::{physicsconfig::PhysicsMode, CorriesConfig};
@@ -26,7 +25,7 @@ pub mod config;
 mod errorhandling;
 pub mod mesh;
 pub mod physics;
-mod rhs;
+pub mod rhs;
 mod timeintegration;
 pub mod units;
 pub mod writer;
