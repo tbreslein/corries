@@ -9,14 +9,14 @@ use color_eyre::Result;
 use serde::Serialize;
 
 use self::meshconfig::MeshConfig;
-use self::numericsconfig::NumericsConfig;
-use self::outputconfig::OutputConfig;
+// use self::numericsconfig::NumericsConfig;
+// use self::outputconfig::OutputConfig;
 use self::physicsconfig::PhysicsConfig;
 use crate::errorhandling::Validation;
 
 pub mod meshconfig;
-pub mod numericsconfig;
-pub mod outputconfig;
+// pub mod numericsconfig;
+// pub mod outputconfig;
 pub mod physicsconfig;
 
 /// Enumerates the different boundary conditions
@@ -91,29 +91,27 @@ pub struct CorriesConfig {
     /// boundary condition on the east border of the computational area
     pub boundary_condition_east: BoundaryMode,
 
-    /// Config for everything related to numerics
-    pub numericsconfig: NumericsConfig,
-
+    // /// Config for everything related to numerics
+    // pub numericsconfig: NumericsConfig,
     /// The number of outputs to write during the simulation, not counting output for the initial
     /// state
     pub output_counter_max: usize,
-
-    /// Config for Writer objects
-    pub writerconfig: Vec<OutputConfig>,
+    // /// Config for Writer objects
+    // pub writerconfig: Vec<OutputConfig>,
 }
 
-impl Validation for CorriesConfig {
-    fn validate(&self) -> Result<()> {
-        self.meshconfig.validate().context("Validating config.meshconfig")?;
-        self.physicsconfig
-            .validate()
-            .context("Validating config.physicsconfig")?;
-        self.numericsconfig
-            .validate()
-            .context("Validating config.numericsconfig")?;
-        for outputconf in self.writerconfig.iter() {
-            outputconf.validate().context("Validating config.writerconf")?;
-        }
-        return Ok(());
-    }
-}
+// impl Validation for CorriesConfig {
+//     fn validate(&self) -> Result<()> {
+//         self.meshconfig.validate().context("Validating config.meshconfig")?;
+//         self.physicsconfig
+//             .validate()
+//             .context("Validating config.physicsconfig")?;
+//         self.numericsconfig
+//             .validate()
+//             .context("Validating config.numericsconfig")?;
+//         for outputconf in self.writerconfig.iter() {
+//             outputconf.validate().context("Validating config.writerconf")?;
+//         }
+//         return Ok(());
+//     }
+// }
