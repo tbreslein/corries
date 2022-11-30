@@ -11,8 +11,6 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
 ### Big Steps
 
-- [ ] fix doc string for Output::width
-- [ ] Redo Writer
 - [ ] Get rid of the BoundaryConditionsContainer and just store 2 BoundaryCond instances
 - [ ] turn Physics into a trait and make the functions generic
 - [ ] same with Numflux

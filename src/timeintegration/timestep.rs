@@ -7,13 +7,13 @@
 use color_eyre::{eyre::bail, Result};
 
 use crate::{
-    config::{
-        numericsconfig::NumericsConfig,
-        outputconfig::{DataName, StructAssociation},
-    },
+    config::numericsconfig::NumericsConfig,
     mesh::Mesh,
     physics::Physics,
-    writer::{CorriesWrite, DataValue},
+    writer::{
+        data::{Data, DataName, StructAssociation},
+        Collectable, DataValue,
+    },
 };
 
 use super::DtKind;
@@ -114,16 +114,18 @@ impl TimeStep {
     }
 }
 
-impl CorriesWrite for TimeStep {
-    fn collect_data(&self, name: &DataName, value: &mut DataValue, _: usize) -> Result<()> {
-        match (name.association(), name) {
-            (StructAssociation::TimeStep, DataName::Iter) => *value = DataValue::Usize(self.iter),
-            (StructAssociation::TimeStep, DataName::T) => *value = DataValue::Float(self.t),
-            (StructAssociation::TimeStep, DataName::Dt) => *value = DataValue::Float(self.dt),
-            (StructAssociation::TimeStep, DataName::DtKind) => *value = DataValue::String(format!("{}", self.dt_kind)),
-            (StructAssociation::TimeStep, _) => bail!("Tried associating {:?} with Time!", name),
-            (StructAssociation::Mesh, _) | (StructAssociation::Physics, _) => {
-                bail!("name.association() for {:?} returned {:?}", name, name.association())
+impl Collectable for TimeStep {
+    fn collect_data(&self, data: &mut Data, _: usize) -> Result<()> {
+        match (data.association, data.name) {
+            (StructAssociation::TimeStep, DataName::Iter) => data.payload = DataValue::Usize(self.iter),
+            (StructAssociation::TimeStep, DataName::T) => data.payload = DataValue::Float(self.t),
+            (StructAssociation::TimeStep, DataName::Dt) => data.payload = DataValue::Float(self.dt),
+            (StructAssociation::TimeStep, DataName::DtKind) => {
+                data.payload = DataValue::String(format!("{}", self.dt_kind))
+            },
+            (StructAssociation::TimeStep, x) => bail!("Tried associating {:?} with Time!", x),
+            (StructAssociation::Mesh, x) | (StructAssociation::Physics, x) => {
+                bail!("name.association() for {:?} returned {:?}", x, data.association)
             },
         };
         return Ok(());

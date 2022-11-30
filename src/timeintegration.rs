@@ -70,7 +70,7 @@ trait TimeSolver<const S: usize, const EQ: usize> {
 /// a `Box<dyn TimeSolver>` for calculating new solutions.
 pub struct TimeIntegration<const S: usize, const EQ: usize> {
     /// Keeps track of the time coordinate and related data
-    pub time: TimeStep,
+    pub timestep: TimeStep,
 
     /// Calculates solutions for the [Physics] state
     solver: Box<dyn TimeSolver<S, EQ>>,
@@ -90,7 +90,7 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
             },
         };
         return Ok(Self {
-            time: TimeStep::new(&config.numericsconfig, config.output_counter_max),
+            timestep: TimeStep::new(&config.numericsconfig, config.output_counter_max),
             solver,
         });
     }
@@ -104,13 +104,13 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
     /// * `mesh` - Information about spatial properties
     pub fn next_solution(&mut self, u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
         self.solver
-            .next_solution(&mut self.time, u, rhs, mesh)
+            .next_solution(&mut self.timestep, u, rhs, mesh)
             .context("Calling TimeIntegration::solver.next_solution in TimeIntegration::next_solution")?;
-        if self.time.iter >= self.time.iter_max {
+        if self.timestep.iter >= self.timestep.iter_max {
             bail!(
                 "time.iter reached time.iter_max! time.iter = {}, time.iter_max = {}",
-                self.time.iter,
-                self.time.iter_max
+                self.timestep.iter,
+                self.timestep.iter_max
             );
         }
         return Ok(());

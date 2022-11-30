@@ -6,11 +6,12 @@ use color_eyre::eyre::Context;
 use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
-use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
+use corries::config::outputconfig::{FormattingMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
 use corries::physics::Physics;
 use corries::units::UnitsMode;
+use corries::writer::data::DataName;
 use corries::{config, get_n_equations};
 use corries::{init_sim, run_loop};
 
@@ -66,7 +67,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             DataName::Prim(1),
             DataName::Prim(2),
         ],
-        PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
+        PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::T, DataName::Prim(0), DataName::Prim(1)],
         PhysicsMode::Euler2DIsot => vec![
             DataName::XiCent,
             DataName::T,
@@ -111,7 +112,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
         writerconfig: vec![
             OutputConfig {
                 stream_mode: StreamMode::Stdout,
-                formatter_mode: FormatterMode::TSV,
+                formatting_mode: FormattingMode::TSV,
                 string_conversion_mode: ToStringConversionMode::Scalar,
                 folder_name: "".to_string(),
                 should_clear_out_folder: false,
@@ -123,7 +124,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             },
             OutputConfig {
                 stream_mode: StreamMode::File,
-                formatter_mode: FormatterMode::CSV,
+                formatting_mode: FormattingMode::CSV,
                 string_conversion_mode: ToStringConversionMode::Vector,
                 folder_name,
                 should_clear_out_folder: true,

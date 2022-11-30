@@ -5,10 +5,11 @@
 use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
-use corries::config::outputconfig::{DataName, FormatterMode, OutputConfig, StreamMode, ToStringConversionMode};
+use corries::config::outputconfig::{FormattingMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
 use corries::units::UnitsMode;
+use corries::writer::data::DataName;
 use corries::{config, get_n_equations};
 use corries::{init_sim, run_loop};
 
@@ -58,7 +59,7 @@ fn main() -> Result<()> {
             writerconfig: vec![
                 OutputConfig {
                     stream_mode: StreamMode::Stdout,
-                    formatter_mode: FormatterMode::TSV,
+                    formatting_mode: FormattingMode::TSV,
                     string_conversion_mode: ToStringConversionMode::Scalar,
                     folder_name: "".to_string(),
                     should_clear_out_folder: false,
@@ -70,7 +71,7 @@ fn main() -> Result<()> {
                 },
                 OutputConfig {
                     stream_mode: StreamMode::File,
-                    formatter_mode: FormatterMode::TSV,
+                    formatting_mode: FormattingMode::TSV,
                     string_conversion_mode: ToStringConversionMode::Vector,
                     folder_name: "results/accretiondisk".to_string(),
                     should_clear_out_folder: true,

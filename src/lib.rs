@@ -29,7 +29,7 @@ pub mod physics;
 mod rhs;
 mod timeintegration;
 pub mod units;
-mod writer;
+pub mod writer;
 
 /// Initialises and returns the objects needed for running a corries simulation.
 ///
@@ -58,7 +58,7 @@ pub fn init_sim<const S: usize, const EQ: usize>(
         print_banner();
     }
     writer
-        .write_metadata::<S>(config)
+        .write_metadata::<S>()
         .context("Calling writer.write_metadata in run_sim")?;
     return Ok((u, rhs, timeintegration, mesh, writer));
 }
@@ -75,30 +75,28 @@ pub fn init_sim<const S: usize, const EQ: usize>(
 pub fn run_loop<const S: usize, const EQ: usize>(
     u: &mut Physics<S, EQ>,
     rhs: &mut Rhs<S, EQ>,
-    timeintegration: &mut TimeIntegration<S, EQ>,
+    time: &mut TimeIntegration<S, EQ>,
     mesh: &Mesh<S>,
     writer: &mut Writer,
 ) -> Result<()> {
     loop {
-        if timeintegration.time.t_next_output <= timeintegration.time.t
-            && timeintegration.time.t <= timeintegration.time.t_end
-        {
-            timeintegration.time.t_next_output += timeintegration.time.dt_output;
+        if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
+            time.timestep.t_next_output += time.timestep.dt_output;
             writer
-                .update_data_matrices(mesh, u, timeintegration)
+                .update_data(u, time, mesh)
                 .context("Calling writer.update_data_matrices in run_sim")?;
             writer
                 .write_output()
                 .context("Calling wirter.write_output in run_sim")?;
         }
-        if timeintegration.time.t + timeintegration.time.dt_min * 0.01 >= timeintegration.time.t_end {
+        if time.timestep.t + time.timestep.dt_min * 0.01 >= time.timestep.t_end {
             break;
         }
 
-        if let err @ Err(_) = timeintegration.next_solution(u, rhs, mesh) {
-            timeintegration.time.dt_kind = DtKind::ErrorDump;
+        if let err @ Err(_) = time.next_solution(u, rhs, mesh) {
+            time.timestep.dt_kind = DtKind::ErrorDump;
             writer
-                .update_data_matrices(mesh, u, timeintegration)
+                .update_data(u, time, mesh)
                 .context("Calling writer.update_data_matrices during the error dump in run_sim")?;
             writer
                 .write_output()

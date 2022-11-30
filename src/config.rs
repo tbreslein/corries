@@ -120,7 +120,7 @@ impl Validation for CorriesConfig {
 impl CorriesConfig {
     /// Writes metadata, mostly just the contents of this struct and its nested structs, into a
     /// `String`.
-    pub fn metadata_dump<const MESH_COMP_SIZE: usize>(&self) -> String {
+    pub fn meta_data<const MESH_COMP_SIZE: usize>(&self) -> String {
         let mut s = "".to_string();
         s += "### Corries Configuration\n";
 
@@ -143,7 +143,7 @@ impl CorriesConfig {
         for (i, outputconf) in self.writerconfig.iter().enumerate() {
             s += &format!("#   outputconf[{}]\n", i);
             s += &format!("#     stream_mode: {:?}\n", outputconf.stream_mode);
-            s += &format!("#     formatter_mode: {:?}\n", outputconf.formatter_mode);
+            s += &format!("#     formatter_mode: {:?}\n", outputconf.formatting_mode);
             s += &format!(
                 "#     string_conversion_mode: {:?}\n",
                 outputconf.string_conversion_mode
