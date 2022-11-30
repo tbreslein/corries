@@ -234,7 +234,7 @@ impl Output {
             // Write the first piece of data by itself, so that afterwards we can always print the delimiter as
             // preceding to the next piece of data.
             self.format_data_to_buffer(buffer, &self.data[0], j)?;
-            for data in &self.data {
+            for data in self.data.iter().skip(1) {
                 write!(buffer, "{}", self.delimiter)?;
                 self.format_data_to_buffer(buffer, data, j)?;
             }
