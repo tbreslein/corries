@@ -6,14 +6,10 @@ use color_eyre::{eyre::bail, Result};
 use ndarray::{s, Array1, ArrayView1};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
-use self::output::Output;
-use crate::{
-    config::{outputconfig::DataName, CorriesConfig},
-    mesh::Mesh,
-    physics::Physics,
-    timeintegration::TimeIntegration,
-};
+use self::{data::Data, output::Output};
+use crate::{config::CorriesConfig, mesh::Mesh, physics::Physics, timeintegration::TimeIntegration};
 
+pub mod data;
 mod output;
 
 /// Wrapper for `Vec<Output>` that facilitates writing output into streams.
@@ -50,7 +46,6 @@ impl Writer {
     ///
     /// * `config` - Configuration for a corries simulation
     /// * `mesh` - The mesh for this simulation
-    /// * `outputer_count_max` - How many output steps this simulation should be going through
     pub fn new<const S: usize>(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
         let mut outputs = vec![];
         for outputconf in config.writerconfig.iter() {
@@ -70,6 +65,8 @@ impl Writer {
     ///
     /// # Arguments
     ///
+    /// * `u` - Provides data for the state of the simulation
+    /// * `time` - Provides data on the time coordinates
     /// * `mesh` - Provides mesh data
     pub fn update_data<const S: usize, const EQ: usize>(
         &mut self,
@@ -114,18 +111,18 @@ pub trait Collectable {
     /// * `value` - Where to write the data to
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
-    fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()>;
+    fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()>;
 
     /// Writes a vector-like `field` to a `value`.
     ///
     /// # Arguments
     ///
     /// * `field` - The vector-like piece of data
-    /// * `value` - Where to write the data to
+    /// * `data` - Container to write the piece to
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
-    fn write_vector(&self, field: &ArrayView1<f64>, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
-        return match value {
+    fn write_vector(&self, field: &ArrayView1<f64>, data: &mut Data, mesh_offset: usize) -> Result<()> {
+        return match &mut data.payload {
             DataValue::VectorFloat(v) => {
                 if mesh_offset == 0 {
                     v.assign(field);
@@ -138,7 +135,7 @@ pub trait Collectable {
             _ => bail!(
                 "Tried assigning vector field to non-vector DataValue!\nfield: {}\nvalue: {:?}",
                 field,
-                value
+                data
             ),
         };
     }

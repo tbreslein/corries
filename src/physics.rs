@@ -13,14 +13,16 @@ use ndarray::{Array1, Array2, Zip};
 use crate::{
     boundaryconditions::BoundaryConditionContainer,
     config::{
-        outputconfig::{DataName, StructAssociation},
         physicsconfig::{PhysicsConfig, PhysicsMode},
         PhysicsVariable,
     },
     errorhandling::Validation,
     mesh::Mesh,
     units::Units,
-    writer::{Collectable, DataValue},
+    writer::{
+        data::{Data, DataName, StructAssociation},
+        Collectable,
+    },
 };
 
 mod systems;
@@ -319,20 +321,16 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
 }
 
 impl<const S: usize, const EQ: usize> Collectable for Physics<S, EQ> {
-    fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
-        match (name.association(), name) {
-            (StructAssociation::Physics, DataName::Prim(j)) => {
-                self.write_vector(&self.prim.row(*j), value, mesh_offset)
-            },
-            (StructAssociation::Physics, DataName::Cons(j)) => {
-                self.write_vector(&self.cons.row(*j), value, mesh_offset)
-            },
+    fn collect_data(&self, data: &mut Data, mesh_offset: usize) -> Result<()> {
+        match (data.association, data.name) {
+            (StructAssociation::Physics, DataName::Prim(j)) => self.write_vector(&self.prim.row(j), data, mesh_offset),
+            (StructAssociation::Physics, DataName::Cons(j)) => self.write_vector(&self.cons.row(j), data, mesh_offset),
             (StructAssociation::Physics, DataName::CSound) => {
-                self.write_vector(&self.c_sound.view(), value, mesh_offset)
+                self.write_vector(&self.c_sound.view(), data, mesh_offset)
             },
-            (StructAssociation::Physics, _) => bail!("Tried associating {:?} with Physics!", name),
-            (StructAssociation::Mesh, _) | (StructAssociation::TimeStep, _) => {
-                bail!("name.association() for {:?} returned {:?}", name, name.association())
+            (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
+            (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
+                bail!("name.association() for {:?} returned {:?}", x, data.association)
             },
         }?;
         return Ok(());

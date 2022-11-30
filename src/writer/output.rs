@@ -6,31 +6,22 @@ use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::Write;
 use std::path::Path;
 
-use color_eyre::{
-    eyre::WrapErr,
-    Result,
-};
-use ndarray::Array1;
+use color_eyre::{eyre::WrapErr, Result};
 
-use crate::config::outputconfig::DataName;
 use crate::physics::Physics;
 use crate::timeintegration::TimeIntegration;
 use crate::{
-    config:: outputconfig::{
-        DataType, FormattingMode, OutputConfig, StreamMode, StructAssociation, ToStringConversionMode,
-    },
+    config::outputconfig::{FormattingMode, OutputConfig, StreamMode, ToStringConversionMode},
     mesh::Mesh,
 };
 
+use super::data::{Data, StructAssociation};
 use super::{Collectable, DataValue};
 
 /// Struct that handles writing to output into a file or stdout
 pub struct Output {
     /// Matrix of raw, unformatted data, still retaining their original data types
-    pub data: Vec<DataValue>,
-
-    /// TODO: Combine DataName and DataValue into a type Data
-    data_names: Vec<DataName>,
+    pub data: Vec<Data>,
 
     /// Whether this is this `Output`'s first output in this run
     first_output: bool,
@@ -104,14 +95,8 @@ impl Output {
             data: outputconfig
                 .data_names
                 .iter()
-                .map(|name| match name.datatype() {
-                    DataType::Usize => DataValue::Usize(0),
-                    DataType::Float => DataValue::Float(0.0),
-                    DataType::String => DataValue::String("".to_string()),
-                    DataType::VectorFloat => DataValue::VectorFloat(Array1::zeros([S - 2 * mesh_offset])),
-                })
+                .map(|name| Data::new::<S>(name, mesh_offset))
                 .collect(),
-            data_names: outputconfig.data_names.clone(),
             first_output: true,
             rows: match outputconfig.string_conversion_mode {
                 ToStringConversionMode::Scalar => 1,
@@ -172,32 +157,25 @@ impl Output {
     ///
     /// # Arguments
     ///
-    /// * `mesh` - `Mesh` object to pull data from
+    /// * `u` - Provides data for the state of the simulation
+    /// * `time` - Provides data on the time coordinates
+    /// * `mesh` - Provides mesh data
     pub fn update_data<const S: usize, const EQ: usize>(
         &mut self,
         u: &Physics<S, EQ>,
         time: &TimeIntegration<S, EQ>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
-        self.data_names
-            .iter()
-            .enumerate()
-            .try_for_each(|(i, name)| match name.association() {
-                StructAssociation::Mesh => mesh.collect_data(name, &mut self.data[i], self.mesh_offset),
-                StructAssociation::Physics => u.collect_data(name, &mut self.data[i], self.mesh_offset),
-                StructAssociation::TimeStep => {
-                    time
-                        .timestep
-                        .collect_data(name, &mut self.data[i], self.mesh_offset)
-                },
-            })?;
+        self.data.iter_mut().try_for_each(|data| match data.association {
+            StructAssociation::Mesh => mesh.collect_data(data, self.mesh_offset),
+            StructAssociation::Physics => u.collect_data(data, self.mesh_offset),
+            StructAssociation::TimeStep => time.timestep.collect_data(data, self.mesh_offset),
+        })?;
         return Ok(());
     }
 
     /// Makes this `Output` object write data in `self.data_matrix` into a stream.
     pub fn write_output(&mut self, output_counter: usize) -> Result<()> {
-        // self.data_matrix_to_stream_strings()?;
-        // self.stream(output_counter)?;
         match self.stream_mode {
             StreamMode::File => {
                 match self.string_conversion_mode {
@@ -214,8 +192,9 @@ impl Output {
                         self.write_into_stream(&mut file)?;
                     },
                     ToStringConversionMode::Vector => {
-                        let full_path_string =
-                            self.file_name.clone() + &format!("{:0w$}", output_counter, w = self.output_counter_width) + &self.file_name_ending;
+                        let full_path_string = self.file_name.clone()
+                            + &format!("{:0w$}", output_counter, w = self.output_counter_width)
+                            + &self.file_name_ending;
                         let path = Path::new(&full_path_string);
                         let mut file = File::options()
                             .write(true)
@@ -228,21 +207,27 @@ impl Output {
                     },
                 };
             },
-            StreamMode::Stdout => {self.write_into_stream(&mut std::io::stdout())?;},
+            StreamMode::Stdout => {
+                self.write_into_stream(&mut std::io::stdout())?;
+            },
         };
         self.first_output = false;
         return Ok(());
     }
 
+    /// Take a buffer, and write this object's data into it
     fn write_into_stream<T: std::io::Write>(&self, buffer: &mut T) -> Result<()> {
-        if (self.string_conversion_mode == ToStringConversionMode::Scalar && self.first_output) ||
-            self.string_conversion_mode == ToStringConversionMode::Vector {
-                buffer.write(self.get_header().as_bytes())?;
+        if (self.string_conversion_mode == ToStringConversionMode::Scalar && self.first_output)
+            || self.string_conversion_mode == ToStringConversionMode::Vector
+        {
+            buffer.write(self.get_header().as_bytes())?;
         }
         for j in 0..self.rows {
             match self.formatting_mode {
                 // TSV output needs on space of padding to align with the # at the beginning of the header
-                FormattingMode::TSV => {write!(buffer, " ")?;},
+                FormattingMode::TSV => {
+                    write!(buffer, " ")?;
+                },
                 FormattingMode::CSV => {},
             };
 
@@ -258,16 +243,23 @@ impl Output {
         return Ok(());
     }
 
-    fn format_data_to_buffer<T: std::io::Write>(&self, buffer: &mut T, data: &DataValue, j: usize) -> Result<()> {
-        return match data {
-            DataValue::String(x) => {write!(buffer, "{:>width$}", x, width = self.width).wrap_err("Unable to write to buffer!")},
-            DataValue::Usize(x) => {write!(buffer, "{:>width$}", x, width = self.width).wrap_err("Unable to write to buffer!")},
-            DataValue::Float(x) => {write!(buffer, "{:>width$.*e}", self.precision, x, width = self.width).wrap_err("Unable to write to buffer!")},
-            DataValue::VectorFloat(x) => {write!(buffer, "{:>width$.*e}", self.precision, x[j], width = self.width).wrap_err("Unable to write to buffer!")},
+    /// Format a piece of data (at index j, if it is indexable) and write it into the buffer
+    fn format_data_to_buffer<T: std::io::Write>(&self, buffer: &mut T, data: &Data, j: usize) -> Result<()> {
+        return match &data.payload {
+            DataValue::String(x) => {
+                write!(buffer, "{:>width$}", x, width = self.width).wrap_err("Unable to write to buffer!")
+            },
+            DataValue::Usize(x) => {
+                write!(buffer, "{:>width$}", x, width = self.width).wrap_err("Unable to write to buffer!")
+            },
+            DataValue::Float(x) => write!(buffer, "{:>width$.*e}", self.precision, x, width = self.width)
+                .wrap_err("Unable to write to buffer!"),
+            DataValue::VectorFloat(x) => write!(buffer, "{:>width$.*e}", self.precision, x[j], width = self.width)
+                .wrap_err("Unable to write to buffer!"),
         };
     }
 
-    /// Makes this `Output` object write meta data in `self.data_matrix` into a stream.
+    /// Makes this `Output` object write meta_data into a stream.
     pub fn write_metadata<const S: usize>(&self, meta_data: &str) -> Result<()> {
         if self.should_print_metadata {
             match self.stream_mode {
@@ -285,7 +277,7 @@ impl Output {
                         .wrap_err_with(|| format!("Failed to open file: {}!", path.display()))?;
                     file.write_all(meta_data.as_bytes())
                         .wrap_err_with(|| format!("Failed to write to file: {}!", path.display()))?;
-                    },
+                },
             }
         }
         return Ok(());
@@ -294,7 +286,7 @@ impl Output {
     /// Returns the header for writing output.
     fn get_header(&self) -> String {
         let mut s = self
-            .data_names
+            .data
             .iter()
             .fold(self.leading_comment_symbol.clone(), |mut acc, name| {
                 acc += &format!("{:>width$}", format!("{}", name), width = self.width);
