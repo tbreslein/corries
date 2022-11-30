@@ -6,7 +6,7 @@ use color_eyre::eyre::Context;
 use color_eyre::Result;
 use corries::config::meshconfig::{MeshConfig, MeshMode};
 use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
-use corries::config::outputconfig::{OutputConfig, StreamMode, ToStringConversionMode, FormattingMode};
+use corries::config::outputconfig::{FormattingMode, OutputConfig, StreamMode, ToStringConversionMode};
 use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
 use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
 use corries::physics::Physics;
