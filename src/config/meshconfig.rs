@@ -6,18 +6,19 @@
 
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
+use serde::Serialize;
 
 use crate::errorhandling::Validation;
 
 /// Enum for the different kinds of Meshes available
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Serialize, Copy, Clone)]
 pub enum MeshMode {
     /// Cartesian mesh
     Cartesian,
 }
 
 /// Carries information about how the mesh should shaped
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct MeshConfig {
     /// The type of Mesh that should constructed
     pub mode: MeshMode,

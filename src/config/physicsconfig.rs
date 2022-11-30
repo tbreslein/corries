@@ -6,12 +6,13 @@
 
 use color_eyre::eyre::ensure;
 use color_eyre::Result;
+use serde::Serialize;
 
 use crate::errorhandling::Validation;
 use crate::units::UnitsMode;
 
 /// Enum for the different kinds of Physics available
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Copy, Clone, PartialEq, Eq)]
 pub enum PhysicsMode {
     /// 1D isothermal Euler equations
     Euler1DIsot,
@@ -27,7 +28,7 @@ pub enum PhysicsMode {
 }
 
 /// Carries information about how the mesh should shaped
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct PhysicsConfig {
     /// The type of Mesh that should constructed
     pub mode: PhysicsMode,

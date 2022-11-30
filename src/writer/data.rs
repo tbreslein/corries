@@ -7,6 +7,7 @@
 use std::fmt;
 
 use ndarray::Array1;
+use serde::Serialize;
 
 use super::DataValue;
 
@@ -66,7 +67,7 @@ impl fmt::Display for Data {
 }
 
 /// Enumerates the different pieces of data that can be written to output
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Serialize, Clone, Copy)]
 pub enum DataName {
     // ====
     // Mesh

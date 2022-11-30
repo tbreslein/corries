@@ -8,18 +8,19 @@ use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
+use serde::Serialize;
 
 use crate::errorhandling::Validation;
 
 /// Enum for the different kinds of numerical flux schemes available
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Serialize, Copy, Clone)]
 pub enum NumFluxMode {
     /// HLL scheme
     Hll,
 }
 
 /// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Serialize, Copy, Clone)]
 pub enum RKFMode {
     /// Runge-Kutta 1
     RK1,
@@ -50,7 +51,7 @@ pub enum RKFMode {
 }
 
 /// Enumerates the different types of configuration for time integration schemes
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum TimeIntegrationConfig {
     /// Runge-Kutta-Fehlberg
     Rkf(RkfConfig),
@@ -65,7 +66,7 @@ impl Validation for TimeIntegrationConfig {
 }
 
 /// Configures the Runge-Kutta-Fehlberg scheme
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct RkfConfig {
     /// Type of RKF scheme to use
     pub rkf_mode: RKFMode,
@@ -84,7 +85,7 @@ pub struct RkfConfig {
 }
 
 /// Carries information about how the mesh should shaped
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct NumericsConfig {
     /// The type of numerical flux scheme to use
     pub numflux_mode: NumFluxMode,
