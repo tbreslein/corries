@@ -62,7 +62,24 @@
 
           # Configuration for the non-Rust dependencies
           buildInputs = with pkgs; [ openssl.dev ];
-          nativeBuildInputs = with pkgs; [ rustc bacon cargo pkgconfig nixpkgs-fmt rust-analyzer nodePackages.prettier openblas ];
+          nativeBuildInputs = with pkgs; [
+            # build tools
+            cargo
+            rustc
+            pkgconfig
+
+            # external deps
+            openblas
+
+            # dev tools
+            bacon
+            nixpkgs-fmt
+            rust-analyzer
+            nodePackages.prettier
+            cargo-make # https://github.com/sagiegurari/cargo-make
+            cargo-nextest # https://nexte.st/
+            cargo-criterion # https://github.com/bheisler/cargo-criterion
+          ];
           buildEnvVars = {
             PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
           };
