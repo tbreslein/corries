@@ -80,7 +80,7 @@ pub fn run_loop<const S: usize, const EQ: usize>(
     writer: &mut Writer,
 ) -> Result<()> {
     loop {
-        if time.timestep.t_next_output <= time.timestep.t && time.timestep.t <= time.timestep.t_end {
+        if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
             time.timestep.t_next_output += time.timestep.dt_output;
             writer
                 .update_data(u, time, mesh)
