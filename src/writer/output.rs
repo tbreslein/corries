@@ -267,7 +267,7 @@ impl Output {
                     println!("{}", meta_data);
                 },
                 StreamMode::File => {
-                    let full_path_string = self.file_name.clone() + "_metadata.dat";
+                    let full_path_string = self.file_name.clone() + "_metadata.json";
                     let path = Path::new(&full_path_string);
                     let mut file = File::options()
                         .write(true)

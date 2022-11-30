@@ -4,6 +4,8 @@
 
 //! Exports the [UnitsMode] and [Units] structs for configuring and using unit systems.
 
+use serde::Serialize;
+
 /// Length scale in CGS units
 const LENGTH_CGS: f64 = 0.01;
 
@@ -11,7 +13,7 @@ const LENGTH_CGS: f64 = 0.01;
 const MASS_CGS: f64 = 0.001;
 
 /// Enum for the different kinds of unit systems available
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Serialize, Copy, Clone)]
 pub enum UnitsMode {
     /// Use SI units
     SI,

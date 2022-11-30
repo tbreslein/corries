@@ -5,6 +5,7 @@
 //! Exports [OutputConfig] for configuring the objects that write output.
 
 use color_eyre::eyre::ensure;
+use serde::Serialize;
 
 use crate::{
     errorhandling::Validation,
@@ -12,7 +13,7 @@ use crate::{
 };
 
 /// Carries information about how an `Output` is built
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct OutputConfig {
     /// Type of stream the `Output` writes to
     pub stream_mode: StreamMode,
@@ -71,7 +72,7 @@ impl Validation for OutputConfig {
 }
 
 /// Enumerates the different streams an `Output` may write to
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum StreamMode {
     /// Streams to stdout
     Stdout,
@@ -81,7 +82,7 @@ pub enum StreamMode {
 }
 
 /// Enumerates whether an `Output` writes scalar or vector values
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum ToStringConversionMode {
     /// Writes scalars
     Scalar,
@@ -91,7 +92,7 @@ pub enum ToStringConversionMode {
 }
 
 /// Enumerates how an `Output` formats its output
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Serialize, Clone, Copy)]
 pub enum FormattingMode {
     /// Comma seperated output
     CSV,

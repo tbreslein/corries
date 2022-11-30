@@ -65,7 +65,7 @@ impl Writer {
             outputs,
             output_counter: 0,
             should_perform_output: true,
-            meta_data: config.meta_data::<S>(),
+            meta_data: serde_json::to_string_pretty(config)?,
             print_banner: config.print_banner,
         });
     }
