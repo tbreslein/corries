@@ -6,7 +6,7 @@
 
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
-mod systems;
+pub mod systems;
 
 /// Trait for Physics objects
 pub trait Physics {

@@ -4,7 +4,7 @@
 
 //! TODO
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Zip, ArrayViewMut2};
 
 use crate::physics::Physics;
 
@@ -37,37 +37,82 @@ impl<const S: usize> Euler1DIsot<S> {
 }
 
 impl<const S: usize> Physics for Euler1DIsot<S> {
+    #[inline(always)]
     fn prim_entry(&self, j: usize, i: usize) -> f64 {
         return self.prim[[j, i]];
     }
+
+    #[inline(always)]
     fn prim_row(&self, j: usize) -> ArrayView1<f64> {
         return self.prim.row(j);
     }
+
+    #[inline(always)]
     fn prim(&self) -> ArrayView2<f64> {
         return self.prim.view();
     }
+
+    #[inline(always)]
     fn assign_prim(&mut self, rhs: &Array2<f64>) {
         self.prim.assign(rhs);
     }
+
+    #[inline(always)]
     fn cons_entry(&self, j: usize, i: usize) -> f64 {
         return self.cons[[j, i]];
     }
+
+    #[inline(always)]
     fn cons_row(&self, j: usize) -> ArrayView1<f64> {
         return self.cons.row(j);
     }
+
+    #[inline(always)]
     fn cons(&self) -> ArrayView2<f64> {
         return self.cons.view();
     }
+
+    #[inline(always)]
     fn assign_cons(&mut self, rhs: &Array2<f64>) {
         self.cons.assign(rhs);
     }
 
     fn update_prim(&mut self) {
-        self.prim.row_mut(0).assign(&self.cons.row(0));
-        self.prim.row_mut(1).assign(&(&self.cons.row(1) / &self.cons.row(0)));
+        cons_to_prim(self.prim.view_mut(), self.cons.view());
     }
     fn update_cons(&mut self) {
-        self.cons.row_mut(0).assign(&self.prim.row(0));
-        self.cons.row_mut(1).assign(&(&self.prim.row(1) * &self.prim.row(0)));
+        prim_to_cons(self.cons.view_mut(), self.prim.view());
     }
+}
+
+#[inline(always)]
+pub fn cons_to_prim(mut prim: ArrayViewMut2<f64>, cons: ArrayView2<f64>) {
+        Zip::from(prim.row_mut(0))
+            .and(cons.row(0))
+            .for_each(|rho_prim, &rho_cons| {
+                *rho_prim = rho_cons;
+            });
+
+        Zip::from(prim.row_mut(1))
+            .and(cons.row(0))
+            .and(cons.row(1))
+            .for_each(|xi_vel, &xi_mom, &rho_cons| {
+                *xi_vel = xi_mom / rho_cons;
+            });
+}
+
+#[inline(always)]
+pub fn prim_to_cons(mut cons: ArrayViewMut2<f64>, prim: ArrayView2<f64>) {
+        Zip::from(cons.row_mut(0))
+            .and(prim.row(0))
+            .for_each(|rho_cons, &rho_prim| {
+                *rho_cons = rho_prim;
+            });
+
+        Zip::from(cons.row_mut(1))
+            .and(prim.row(0))
+            .and(prim.row(1))
+            .for_each(|xi_mom, &xi_vel, &rho_cons| {
+                *xi_mom = xi_vel / rho_cons;
+            });
 }
