@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports the [Data] struct and associated enums
+
 use std::fmt;
 
 use ndarray::Array1;

@@ -29,7 +29,7 @@ pub mod physics;
 mod rhs;
 mod timeintegration;
 pub mod units;
-mod writer;
+pub mod writer;
 
 /// Initialises and returns the objects needed for running a corries simulation.
 ///

@@ -2,6 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Exports the [Writer] struct that deals with writing data to multiple different output streams
+
 use color_eyre::{eyre::bail, Result};
 use ndarray::{s, Array1, ArrayView1};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
@@ -33,9 +35,16 @@ pub struct Writer {
 /// Wrapper enum around the different datatypes that can be written into an output stream.
 #[derive(Debug)]
 pub enum DataValue {
+    /// Carries a `usize`
     Usize(usize),
+
+    /// Carries an `f64`
     Float(f64),
+
+    /// Carries an `Array1<f64>`
     VectorFloat(Array1<f64>),
+
+    /// Carries a `String`
     String(String),
 }
 
