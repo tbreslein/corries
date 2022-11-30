@@ -220,7 +220,7 @@ impl Output {
         if (self.string_conversion_mode == ToStringConversionMode::Scalar && self.first_output)
             || self.string_conversion_mode == ToStringConversionMode::Vector
         {
-            buffer.write(self.get_header().as_bytes())?;
+            write!(buffer, "{}", self.get_header())?;
         }
         for j in 0..self.rows {
             match self.formatting_mode {
@@ -236,9 +236,9 @@ impl Output {
             self.format_data_to_buffer(buffer, &self.data[0], j)?;
             for data in &self.data {
                 write!(buffer, "{}", self.delimiter)?;
-                self.format_data_to_buffer(buffer, &data, j)?;
+                self.format_data_to_buffer(buffer, data, j)?;
             }
-            writeln!(buffer, "")?;
+            writeln!(buffer)?;
         }
         return Ok(());
     }

@@ -35,7 +35,7 @@ impl Data {
     /// * `mesh_offset` - The possible offset for vector-like values
     pub fn new<const S: usize>(name: &DataName, mesh_offset: usize) -> Self {
         return Self {
-            name: name.clone(),
+            name: *name,
             payload: match name.data_type() {
                 DataType::Usize => DataValue::Usize(0),
                 DataType::Float => DataValue::Float(0.0),
