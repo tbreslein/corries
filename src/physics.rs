@@ -8,7 +8,7 @@ use color_eyre::{
     eyre::{bail, ensure, Context},
     Result,
 };
-use ndarray::{Array1, Array2, Zip};
+use ndarray::{Array1, Array2, Zip, ArrayView1, ArrayView2};
 
 use crate::{
     boundaryconditions::BoundaryConditionContainer,
@@ -26,6 +26,83 @@ use crate::{
 };
 
 mod systems;
+
+/// Trait for Physics objects
+pub trait PhysicsTrait {
+    /// Return copy of the primitive variable in equation j at index i
+    fn prim_entry(&self, j: usize, i: usize) -> f64;
+
+    /// Return a view of the equation j of the primitive variables
+    fn prim_row(&self, j: usize) -> ArrayView1<f64>;
+
+    /// Return a view of primitive variables
+    fn prim(&self) -> ArrayView2<f64>;
+
+    /// Assign rhs to primitive variables
+    fn assign_prim(&mut self, rhs: &ArrayView2<f64>);
+
+    /// Return copy of the conservative variable in equation j at index i
+    fn cons_entry(&self, j: usize, i: usize) -> f64;
+
+    /// Return a view of the equation j of the conservative variables
+    fn cons_row(&self, j: usize) -> ArrayView1<f64>;
+
+    /// Return a view of conservative variables
+    fn cons(&self) -> ArrayView2<f64>;
+
+    /// Assign rhs to conservative variables
+    fn assign_cons(&mut self, rhs: &ArrayView2<f64>);
+
+    /// Update primitive variables
+    fn update_prim(&mut self);
+
+    /// Update conservative variables
+    fn update_cons(&mut self);
+}
+
+/// Test struct for using a trait for Physics
+pub struct EulerTest<const S: usize> {
+    /// Primitive variables
+    pub prim: Array2<f64>,
+
+    /// Conservative variables
+    pub cons: Array2<f64>,
+}
+
+impl<const S: usize> PhysicsTrait for EulerTest<S> {
+    fn prim_entry(&self, j: usize, i: usize) -> f64 {
+        return self.prim[[j, i]];
+    }
+    fn prim_row(&self, j: usize) -> ArrayView1<f64> {
+        return self.prim.row(j);
+    }
+    fn prim(&self) -> ArrayView2<f64> {
+        return self.prim.view();
+    }
+    fn assign_prim(&mut self, rhs: &ArrayView2<f64>) {
+        self.prim.assign(rhs);
+    }
+    fn cons_entry(&self, j: usize, i: usize) -> f64 {
+        return self.cons[[j, i]];
+    }
+    fn cons_row(&self, j: usize) -> ArrayView1<f64> {
+        return self.cons.row(j);
+    }
+    fn cons(&self) -> ArrayView2<f64> {
+        return self.cons.view();
+    }
+    fn assign_cons(&mut self, rhs: &ArrayView2<f64>) {
+        self.cons.assign(rhs);
+    }
+    fn update_prim(&mut self) {
+        self.prim.row_mut(0).assign(&self.cons.row(0));
+        self.prim.row_mut(1).assign(&(&self.cons.row(1) / &self.cons.row(0)));
+    }
+    fn update_cons(&mut self) {
+        self.cons.row_mut(0).assign(&self.prim.row(0));
+        self.cons.row_mut(1).assign(&(&self.prim.row(1) * &self.prim.row(0)));
+    }
+}
 
 /// Struct that governs the variables and state for a system of differential equations
 #[derive(Debug)]
