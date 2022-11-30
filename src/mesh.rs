@@ -7,7 +7,7 @@
 use crate::config::meshconfig::{MeshConfig, MeshMode};
 use crate::config::outputconfig::{DataName, StructAssociation};
 use crate::errorhandling::Validation;
-use crate::writer::{CorriesWrite, DataValue};
+use crate::writer::{Collectable, DataValue};
 use color_eyre::eyre::{bail, ensure, Context};
 use color_eyre::Result;
 use ndarray::Array1;
@@ -442,7 +442,7 @@ impl<const S: usize> Validation for Mesh<S> {
     }
 }
 
-impl<const S: usize> CorriesWrite for Mesh<S> {
+impl<const S: usize> Collectable for Mesh<S> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
             (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent.view(), value, mesh_offset),

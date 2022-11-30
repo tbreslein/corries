@@ -22,16 +22,21 @@ pub struct Writer {
     pub outputs: Vec<Output>,
 
     /// Current output counter
-    output_counter: usize,
+    pub output_counter: usize,
 
     /// Whether we should perform an output at this point
     pub should_perform_output: bool,
+
+    /// The stringified simulation config
+    pub meta_data: String,
+
+    /// Whether to print the banner
+    pub print_banner: bool,
 }
 
 /// Wrapper enum around the different datatypes that can be written into an output stream.
 #[derive(Debug)]
 pub enum DataValue {
-    Int(i32),
     Usize(usize),
     Float(f64),
     VectorFloat(Array1<f64>),
@@ -56,6 +61,8 @@ impl Writer {
             outputs,
             output_counter: 0,
             should_perform_output: true,
+            meta_data: config.meta_data::<S>(),
+            print_banner: config.print_banner,
         });
     }
 
@@ -64,15 +71,15 @@ impl Writer {
     /// # Arguments
     ///
     /// * `mesh` - Provides mesh data
-    pub fn update_data_matrices<const S: usize, const EQ: usize>(
+    pub fn update_data<const S: usize, const EQ: usize>(
         &mut self,
-        mesh: &Mesh<S>,
         u: &Physics<S, EQ>,
-        timeintegration: &TimeIntegration<S, EQ>,
+        time: &TimeIntegration<S, EQ>,
+        mesh: &Mesh<S>,
     ) -> Result<()> {
         self.outputs
             .iter_mut()
-            .try_for_each(|output| output.update_data_matrix(mesh, u, timeintegration))?;
+            .try_for_each(|output| output.update_data(u, time, mesh))?;
         return Ok(());
     }
 
@@ -88,17 +95,17 @@ impl Writer {
 
     /// Loops through `self.outputs` and calls their `write_metadata` methods if they are
     /// configured to do so.
-    pub fn write_metadata<const S: usize>(&mut self, config: &CorriesConfig) -> Result<()> {
+    pub fn write_metadata<const S: usize>(&mut self) -> Result<()> {
         self.outputs
             .par_iter_mut()
-            .map(|output| output.write_metadata::<S>(config))
+            .map(|output| output.write_metadata::<S>(&self.meta_data))
             .collect::<Result<()>>()?;
         return Ok(());
     }
 }
 
-/// Describes objects can write to an `Output`
-pub trait CorriesWrite {
+/// Describes objects whose data can be collected and be written to an `Output`
+pub trait Collectable {
     /// Collects the `value` corresponding to the `name`.
     ///
     /// # Arguments

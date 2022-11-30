@@ -58,7 +58,7 @@ fn main() -> Result<()> {
             writerconfig: vec![
                 OutputConfig {
                     stream_mode: StreamMode::Stdout,
-                    formatter_mode: FormatterMode::TSV,
+                    formatting_mode: FormattingMode::TSV,
                     string_conversion_mode: ToStringConversionMode::Scalar,
                     folder_name: "".to_string(),
                     should_clear_out_folder: false,
@@ -70,7 +70,7 @@ fn main() -> Result<()> {
                 },
                 OutputConfig {
                     stream_mode: StreamMode::File,
-                    formatter_mode: FormatterMode::TSV,
+                    formatting_mode: FormattingMode::TSV,
                     string_conversion_mode: ToStringConversionMode::Vector,
                     folder_name: "results/accretiondisk".to_string(),
                     should_clear_out_folder: true,

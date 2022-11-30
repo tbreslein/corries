@@ -13,7 +13,7 @@ use crate::{
     },
     mesh::Mesh,
     physics::Physics,
-    writer::{CorriesWrite, DataValue},
+    writer::{Collectable, DataValue},
 };
 
 use super::DtKind;
@@ -114,7 +114,7 @@ impl TimeStep {
     }
 }
 
-impl CorriesWrite for TimeStep {
+impl Collectable for TimeStep {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, _: usize) -> Result<()> {
         match (name.association(), name) {
             (StructAssociation::TimeStep, DataName::Iter) => *value = DataValue::Usize(self.iter),

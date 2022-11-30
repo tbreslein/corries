@@ -20,7 +20,7 @@ use crate::{
     errorhandling::Validation,
     mesh::Mesh,
     units::Units,
-    writer::{CorriesWrite, DataValue},
+    writer::{Collectable, DataValue},
 };
 
 mod systems;
@@ -318,7 +318,7 @@ impl<const S: usize, const EQ: usize> Physics<S, EQ> {
     }
 }
 
-impl<const S: usize, const EQ: usize> CorriesWrite for Physics<S, EQ> {
+impl<const S: usize, const EQ: usize> Collectable for Physics<S, EQ> {
     fn collect_data(&self, name: &DataName, value: &mut DataValue, mesh_offset: usize) -> Result<()> {
         match (name.association(), name) {
             (StructAssociation::Physics, DataName::Prim(j)) => {

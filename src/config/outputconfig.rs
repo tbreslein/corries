@@ -17,7 +17,7 @@ pub struct OutputConfig {
     pub stream_mode: StreamMode,
 
     /// How the `Output` formats its data
-    pub formatter_mode: FormatterMode,
+    pub formatting_mode: FormattingMode,
 
     /// Whether the `Output` converts its incoming data to a single `String` or a `Vec<String>`
     pub string_conversion_mode: ToStringConversionMode,
@@ -91,7 +91,7 @@ pub enum ToStringConversionMode {
 
 /// Enumerates how an `Output` formats its output
 #[derive(Debug, Clone, Copy)]
-pub enum FormatterMode {
+pub enum FormattingMode {
     /// Comma seperated output
     CSV,
 
@@ -100,7 +100,7 @@ pub enum FormatterMode {
 }
 
 /// Enumerates the different pieces of data that can be written to output
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum DataName {
     // ====
     // Mesh
@@ -164,9 +164,6 @@ impl fmt::Display for DataName {
 /// implement DataName::datatype().
 #[derive(Debug, PartialEq, Eq)]
 pub enum DataType {
-    /// Value is an `i32`
-    Int,
-
     /// Value is a `usize`
     Usize,
 

@@ -47,3 +47,8 @@ fulltests: runlints reltest
 
 .PHONY: fullbuild
 fullbuild: runlints build doc
+
+.PHONY: update
+update:
+	nix flake update
+	cargo update
