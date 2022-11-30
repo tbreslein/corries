@@ -67,7 +67,7 @@ fn get_config(mode: PhysicsMode) -> config::CorriesConfig {
             DataName::Prim(1),
             DataName::Prim(2),
         ],
-        PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::Prim(0), DataName::Prim(1)],
+        PhysicsMode::Euler1DIsot => vec![DataName::XiCent, DataName::T, DataName::Prim(0), DataName::Prim(1)],
         PhysicsMode::Euler2DIsot => vec![
             DataName::XiCent,
             DataName::T,
