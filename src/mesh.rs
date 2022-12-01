@@ -6,9 +6,7 @@
 
 use crate::config::meshconfig::{MeshConfig, MeshMode};
 use crate::errorhandling::Validation;
-// use crate::writer::data::{Data, DataName, StructAssociation};
-// use crate::writer::Collectable;
-use color_eyre::eyre::{bail, ensure, Context};
+use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
 use ndarray::Array1;
 

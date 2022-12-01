@@ -6,10 +6,17 @@
 
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
+use crate::config::physicsconfig::PhysicsConfig;
+
 pub mod systems;
+
+pub use systems::*;
 
 /// Trait for Physics objects
 pub trait Physics {
+    /// construct a new trait object
+    fn new(physics_config: &PhysicsConfig) -> Self;
+
     /// Return copy of the primitive variable in row j at column i
     fn prim_entry(&self, j: usize, i: usize) -> f64;
 
@@ -77,6 +84,7 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
     const S: usize = 10;
+    const PHYSICS_CONFIG: PhysicsConfig = PhysicsConfig { adiabatic_index: 1.4 };
 
     mod euler1disot {
         use crate::physics::systems::euler1disot::Euler1DIsot;
@@ -86,10 +94,10 @@ mod tests {
         proptest! {
             #[test]
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
-                let mut u0 = Euler1DIsot::<S>::new();
+                let mut u0 = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
                 u0.prim.row_mut(0).fill(p0);
                 u0.prim.row_mut(1).fill(p1);
-                let mut u = Euler1DIsot::<S>::new();
+                let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
                 u.prim.row_mut(0).fill(p0);
                 u.prim.row_mut(1).fill(p1);
 
