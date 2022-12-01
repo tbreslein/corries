@@ -25,6 +25,7 @@ const CONFIG: CorriesConfig = CorriesConfig {
 
 fn main() -> Result<()> {
     let mesh: Mesh<S> = Mesh::new(&CONFIG.mesh_config).context("Constructing Mesh")?;
-    let u: P = P::new(&CONFIG.physics_config);
+    let mut u: P = P::new(&CONFIG.physics_config);
+    run_corries(&mut u, &mesh)?;
     return Ok(());
 }

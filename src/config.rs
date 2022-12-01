@@ -16,7 +16,7 @@ pub use physicsconfig::*;
 #[derive(Debug, Serialize)]
 pub enum BoundaryMode {
     /// Set of custom boundary conditions applied to each variable
-    Custom(Vec<(PhysicsVariable, CustomBoundaryMode)>),
+    Custom(Vec<(usize, CustomBoundaryMode)>),
 }
 
 /// Enumerates the possible custom boundary conditions
@@ -45,22 +45,6 @@ pub enum CustomBoundaryMode {
 
     /// Like NoGradients, but switches the sign of the values in the ghost cells
     Reflecting,
-}
-
-/// Enumerates the different variables held by `Physics` objects
-#[derive(Debug, Serialize, Clone, Copy)]
-pub enum PhysicsVariable {
-    /// Mass density
-    Density,
-
-    /// Velocity along the xi direction
-    XiVelocity,
-
-    /// Velocity along the eta direction
-    EtaVelocity,
-
-    /// Pressure, duh...
-    Pressure,
 }
 
 /// Struct that carries the full configuration info for a simulation.
