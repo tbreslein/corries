@@ -183,8 +183,8 @@ pub fn cons_to_prim(prim: &mut ArrayViewMut2<f64>, cons: &ArrayView2<f64>) {
         .for_each(|rho_prim, &rho_cons| *rho_prim = rho_cons);
 
     Zip::from(prim.row_mut(1))
-        .and(cons.row(0))
         .and(cons.row(1))
+        .and(cons.row(0))
         .for_each(|xi_vel, &xi_mom, &rho_cons| *xi_vel = xi_mom / rho_cons);
 }
 
@@ -196,7 +196,7 @@ pub fn prim_to_cons(cons: &mut ArrayViewMut2<f64>, prim: &ArrayView2<f64>) {
         .for_each(|rho_cons, &rho_prim| *rho_cons = rho_prim);
 
     Zip::from(cons.row_mut(1))
-        .and(prim.row(0))
         .and(prim.row(1))
-        .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel / rho_cons);
+        .and(prim.row(0))
+        .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel * rho_cons);
 }

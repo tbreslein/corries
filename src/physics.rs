@@ -83,7 +83,7 @@ pub trait Physics {
 mod tests {
     use super::*;
     use proptest::prelude::*;
-    const S: usize = 10;
+    const S: usize = 2;
     const PHYSICS_CONFIG: PhysicsConfig = PhysicsConfig { adiabatic_index: 1.4 };
 
     mod euler1dadiabatic {
@@ -101,8 +101,17 @@ mod tests {
                 u.prim.row_mut(0).fill(p0);
                 u.prim.row_mut(1).fill(p1);
                 u.prim.row_mut(2).fill(p2);
+                println!("before:");
+                dbg!(&u.prim);
+                dbg!(&u.cons);
                 u.update_cons();
+                println!("after update_cons:");
+                dbg!(&u.prim);
+                dbg!(&u.cons);
                 u.update_prim();
+                println!("after update_prim:");
+                dbg!(&u.prim);
+                dbg!(&u.cons);
                 assert_relative_eq!(u.prim.row(0), u0.prim.row(0), max_relative = 1.0e-12);
                 assert_relative_eq!(u.prim.row(1), u0.prim.row(1), max_relative = 1.0e-12);
                 assert_relative_eq!(u.prim.row(2), u0.prim.row(2), max_relative = 1.0e-8);
