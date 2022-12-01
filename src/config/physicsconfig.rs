@@ -9,33 +9,10 @@ use color_eyre::Result;
 use serde::Serialize;
 
 use crate::errorhandling::Validation;
-use crate::units::UnitsMode;
-
-/// Enum for the different kinds of Physics available
-#[derive(Debug, Serialize, Copy, Clone, PartialEq, Eq)]
-pub enum PhysicsMode {
-    /// 1D isothermal Euler equations
-    Euler1DIsot,
-
-    /// 2D isothermal Euler equations
-    Euler2DIsot,
-
-    /// 1D adiabatic Euler equations
-    Euler1DAdiabatic,
-    // Euler2DAdiabatic,
-    // NavStoIsot,
-    // NavStoAdiabatic,
-}
 
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize)]
 pub struct PhysicsConfig {
-    /// The type of Mesh that should constructed
-    pub mode: PhysicsMode,
-
-    /// The number of cells in the computational area
-    pub units_mode: UnitsMode,
-
     /// Ratio of specific heats
     pub adiabatic_index: f64,
 }

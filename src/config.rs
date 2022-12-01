@@ -4,20 +4,13 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
-use color_eyre::eyre::Context;
-use color_eyre::Result;
+pub mod meshconfig;
+pub mod physicsconfig;
+
 use serde::Serialize;
 
-use self::meshconfig::MeshConfig;
-// use self::numericsconfig::NumericsConfig;
-// use self::outputconfig::OutputConfig;
-use self::physicsconfig::PhysicsConfig;
-use crate::errorhandling::Validation;
-
-pub mod meshconfig;
-// pub mod numericsconfig;
-// pub mod outputconfig;
-pub mod physicsconfig;
+pub use meshconfig::*;
+pub use physicsconfig::*;
 
 /// Enumerates the different boundary conditions
 #[derive(Debug, Serialize)]
@@ -80,24 +73,25 @@ pub struct CorriesConfig {
     pub print_banner: bool,
 
     /// Config for Mesh objects
-    pub meshconfig: MeshConfig,
+    pub mesh_config: MeshConfig,
 
     /// Config for Physics objects
-    pub physicsconfig: PhysicsConfig,
-
-    /// boundary condition on the west border of the computational area
-    pub boundary_condition_west: BoundaryMode,
-
-    /// boundary condition on the east border of the computational area
-    pub boundary_condition_east: BoundaryMode,
+    pub physics_config: PhysicsConfig,
+    // /// boundary condition on the west border of the computational area
+    // pub boundary_condition_west: BoundaryMode,
+    //
+    // /// boundary condition on the east border of the computational area
+    // pub boundary_condition_east: BoundaryMode,
 
     // /// Config for everything related to numerics
-    // pub numericsconfig: NumericsConfig,
-    /// The number of outputs to write during the simulation, not counting output for the initial
-    /// state
-    pub output_counter_max: usize,
+    // pub numerics_config: NumericsConfig,
+    //
+    // /// The number of outputs to write during the simulation, not counting output for the initial
+    // /// state
+    // pub output_counter_max: usize,
+    //
     // /// Config for Writer objects
-    // pub writerconfig: Vec<OutputConfig>,
+    // pub writer_config: Vec<OutputConfig>,
 }
 
 // impl Validation for CorriesConfig {
