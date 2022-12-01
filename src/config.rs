@@ -61,12 +61,12 @@ pub struct CorriesConfig {
 
     /// Config for Physics objects
     pub physics_config: PhysicsConfig,
-    // /// boundary condition on the west border of the computational area
-    // pub boundary_condition_west: BoundaryMode,
-    //
-    // /// boundary condition on the east border of the computational area
-    // pub boundary_condition_east: BoundaryMode,
 
+    /// boundary condition on the west border of the computational area
+    pub boundary_condition_west: BoundaryMode,
+
+    /// boundary condition on the east border of the computational area
+    pub boundary_condition_east: BoundaryMode,
     // /// Config for everything related to numerics
     // pub numerics_config: NumericsConfig,
     //

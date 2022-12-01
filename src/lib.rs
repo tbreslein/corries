@@ -20,7 +20,7 @@ mod errorhandling;
 pub mod macros;
 pub mod mesh;
 pub mod physics;
-// pub mod rhs;
+pub mod rhs;
 // mod timeintegration;
 // mod units;
 // pub mod writer;
@@ -28,16 +28,17 @@ pub mod physics;
 /// TODO
 pub mod prelude {
     pub use crate::config::*;
-    pub use crate::physics::*;
     pub use crate::mesh::*;
-    pub use crate::set_Physics_and_E;
+    pub use crate::physics::*;
+    pub use crate::rhs::*;
     pub use crate::run_corries;
+    pub use crate::set_Physics_and_E;
 }
 
 pub use prelude::*;
 
 /// TODO
-pub fn run_corries<const S: usize>(_u: &mut impl Physics, _mesh: &Mesh<S>) -> Result<()> {
+pub fn run_corries<P: Physics, const S: usize>(_u: &mut P, _rhs: &mut Rhs<P, S>, _mesh: &Mesh<S>) -> Result<()> {
     print_banner();
     return Ok(());
 }
