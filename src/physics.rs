@@ -6,7 +6,7 @@
 
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
-use crate::config::physicsconfig::PhysicsConfig;
+use crate::{boundaryconditions::BoundaryCondition, config::physicsconfig::PhysicsConfig, Mesh};
 
 pub mod systems;
 
@@ -77,6 +77,30 @@ pub trait Physics {
 
     /// Assign rhs to conservative variables
     fn assign_cons(&mut self, rhs: &Array2<f64>);
+}
+
+/// Update everything assuming that the conservative variables are up-to-date
+pub fn update_everything_from_cons<P: Physics, const S: usize>(
+    u: &mut P,
+    boundary_west: &mut Box<dyn BoundaryCondition<P, S>>,
+    boundary_east: &mut Box<dyn BoundaryCondition<P, S>>,
+    mesh: &Mesh<S>,
+) {
+    u.update_prim();
+    update_everything_from_prim(u, boundary_west, boundary_east, mesh);
+}
+
+/// Update everything assuming that the primitive variables are up-to-date
+pub fn update_everything_from_prim<P: Physics, const S: usize>(
+    u: &mut P,
+    boundary_west: &mut Box<dyn BoundaryCondition<P, S>>,
+    boundary_east: &mut Box<dyn BoundaryCondition<P, S>>,
+    mesh: &Mesh<S>,
+) {
+    boundary_west.apply(u, mesh);
+    boundary_east.apply(u, mesh);
+    u.update_cons();
+    u.update_derived_values();
 }
 
 #[cfg(test)]
