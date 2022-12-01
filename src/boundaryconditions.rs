@@ -33,10 +33,10 @@ pub fn init_boundary_condition<P: Physics, const S: usize>(
 ) -> impl BoundaryCondition<P, S> {
     return match direction {
         Direction::West => match &config.boundary_condition_west {
-            BoundaryMode::Custom(v) => CustomBoundaryConditions::new(direction, &v),
+            BoundaryMode::Custom(v) => CustomBoundaryConditions::new(direction, v),
         },
         Direction::East => match &config.boundary_condition_east {
-            BoundaryMode::Custom(v) => CustomBoundaryConditions::new(direction, &v),
+            BoundaryMode::Custom(v) => CustomBoundaryConditions::new(direction, v),
         },
     };
 }

@@ -11,8 +11,8 @@ pub mod physicsconfig;
 use serde::Serialize;
 
 pub use meshconfig::*;
-pub use physicsconfig::*;
 pub use numericsconfig::*;
+pub use physicsconfig::*;
 
 /// Enumerates the different boundary conditions
 #[derive(Debug, Serialize)]

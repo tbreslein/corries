@@ -8,12 +8,7 @@
 use color_eyre::Result;
 use ndarray::{s, Array2};
 
-use crate::{
-    config::numericsconfig::NumericsConfig,
-    mesh::Mesh,
-    physics::Physics,
-};
-
+use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics};
 
 pub mod hll;
 pub use self::hll::Hll;
@@ -24,12 +19,17 @@ pub trait NumFlux {
     fn new<const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> Self;
 
     /// Calculates the numerical derivative along the xi direction
-    fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut P, mesh: &Mesh<S>) -> Result<()>;
+    fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(
+        &mut self,
+        dflux_dxi: &mut Array2<f64>,
+        u: &mut P,
+        mesh: &Mesh<S>,
+    ) -> Result<()>;
 }
 
 /// Constructs an `impl Numflux<S, EQ>`.
 pub fn init_numflux<N: NumFlux, const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> N {
-    return N::new::<E,S>(numerics_config);
+    return N::new::<E, S>(numerics_config);
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.

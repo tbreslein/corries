@@ -38,7 +38,11 @@ pub mod prelude {
 pub use prelude::*;
 
 /// TODO
-pub fn run_corries<P: Physics, N: NumFlux, const S: usize>(_u: &mut P, _rhs: &mut Rhs<P, N, S>, _mesh: &Mesh<S>) -> Result<()> {
+pub fn run_corries<P: Physics, N: NumFlux, const S: usize>(
+    _u: &mut P,
+    _rhs: &mut Rhs<P, N, S>,
+    _mesh: &Mesh<S>,
+) -> Result<()> {
     print_banner();
     return Ok(());
 }
