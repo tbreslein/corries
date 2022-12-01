@@ -8,11 +8,11 @@
 //!
 //! Library to run 1D-hydrodynamics simulations solved with Riemann solvers.
 //!
-//! Provides the [init_sim], [run_loop] and [get_n_equations] functions, as well as the [config::CorriesConfig] struct.
+//! TODO
 
 use color_eyre::Result;
 
-// mod boundaryconditions;
+mod boundaryconditions;
 pub mod config;
 #[macro_use]
 mod errorhandling;
@@ -25,6 +25,7 @@ pub mod physics;
 // mod units;
 // pub mod writer;
 
+/// TODO
 pub mod prelude {
     pub use crate::config::*;
     pub use crate::physics::*;
@@ -35,18 +36,20 @@ pub mod prelude {
 
 pub use prelude::*;
 
-pub fn run_corries() -> Result<()> {
+/// TODO
+pub fn run_corries<const S: usize>(_u: &mut impl Physics, _mesh: &Mesh<S>) -> Result<()> {
+    print_banner();
     return Ok(());
 }
 
-// const VERSION: &str = env!("CARGO_PKG_VERSION");
-// fn print_banner() {
-//     println!("# ********************************************");
-//     println!("# *** Corries - corrosive Riemann solver ");
-//     println!("# *** ");
-//     println!("# *** Version: {}", VERSION);
-//     println!("# *** Copyright (c) 2022");
-//     println!("# *** Author: tbreslein <github.com/tbreslein>");
-//     println!("# *** License: MIT");
-//     println!("# ********************************************");
-// }
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+fn print_banner() {
+    println!("# ****************************************");
+    println!("# Corries - corrosive Riemann solver ");
+    println!("# ");
+    println!("# Version: {}", VERSION);
+    println!("# Copyright (c) 2022");
+    println!("# Author: tbreslein <github.com/tbreslein>");
+    println!("# License: MIT");
+    println!("# ****************************************");
+}

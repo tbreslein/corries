@@ -67,13 +67,13 @@ pub trait Physics {
     fn update_derived_values(&mut self);
 
     /// Assign rhs to primitive variables at row j and column i
-    fn assign_prim_entry(&mut self, rhs: f64, j: usize, i: usize);
+    fn assign_prim_entry(&mut self, j: usize, i: usize, rhs: f64);
 
     /// Assign rhs to primitive variables
     fn assign_prim(&mut self, rhs: &Array2<f64>);
 
     /// Assign rhs to primitive variables at row j and column i
-    fn assign_cons_entry(&mut self, rhs: f64, j: usize, i: usize);
+    fn assign_cons_entry(&mut self, j: usize, i: usize, rhs: f64);
 
     /// Assign rhs to conservative variables
     fn assign_cons(&mut self, rhs: &Array2<f64>);
@@ -86,22 +86,42 @@ mod tests {
     const S: usize = 10;
     const PHYSICS_CONFIG: PhysicsConfig = PhysicsConfig { adiabatic_index: 1.4 };
 
+    mod euler1dadiabatic {
+        use super::*;
+        use approx::assert_relative_eq;
+        proptest! {
+            #[test]
+            fn conversion(p0 in 0.1f64..10.0, p1 in -10.0f64..10.0, p2 in 0.1f64..10.0) {
+                // converting to cons and back to prim should be idempotent
+                let mut u0 = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
+                u0.prim.row_mut(0).fill(p0);
+                u0.prim.row_mut(1).fill(p1);
+                u0.prim.row_mut(2).fill(p2);
+                let mut u = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
+                u.prim.row_mut(0).fill(p0);
+                u.prim.row_mut(1).fill(p1);
+                u.prim.row_mut(2).fill(p2);
+                u.update_cons();
+                u.update_prim();
+                assert_relative_eq!(u.prim.row(0), u0.prim.row(0), max_relative = 1.0e-12);
+                assert_relative_eq!(u.prim.row(1), u0.prim.row(1), max_relative = 1.0e-12);
+                assert_relative_eq!(u.prim.row(2), u0.prim.row(2), max_relative = 1.0e-8);
+            }
+        }
+    }
     mod euler1disot {
-        use crate::physics::systems::euler1disot::Euler1DIsot;
-
         use super::*;
         use approx::assert_relative_eq;
         proptest! {
             #[test]
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
+                // converting to cons and back to prim should be idempotent
                 let mut u0 = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
                 u0.prim.row_mut(0).fill(p0);
                 u0.prim.row_mut(1).fill(p1);
                 let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
                 u.prim.row_mut(0).fill(p0);
                 u.prim.row_mut(1).fill(p1);
-
-                // converting to cons and back to prim should be idempotent
                 u.update_cons();
                 u.update_prim();
                 assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-12);
