@@ -5,12 +5,14 @@
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
 pub mod meshconfig;
+pub mod numericsconfig;
 pub mod physicsconfig;
 
 use serde::Serialize;
 
 pub use meshconfig::*;
 pub use physicsconfig::*;
+pub use numericsconfig::*;
 
 /// Enumerates the different boundary conditions
 #[derive(Debug, Serialize)]
@@ -67,13 +69,12 @@ pub struct CorriesConfig {
 
     /// boundary condition on the east border of the computational area
     pub boundary_condition_east: BoundaryMode,
-    // /// Config for everything related to numerics
-    // pub numerics_config: NumericsConfig,
-    //
-    // /// The number of outputs to write during the simulation, not counting output for the initial
-    // /// state
-    // pub output_counter_max: usize,
-    //
+    /// Config for everything related to numerics
+    pub numerics_config: NumericsConfig,
+
+    /// The number of outputs to write during the simulation, not counting output for the initial
+    /// state
+    pub output_counter_max: usize,
     // /// Config for Writer objects
     // pub writer_config: Vec<OutputConfig>,
 }

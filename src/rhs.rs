@@ -11,19 +11,22 @@ use color_eyre::{
 };
 use ndarray::Array2;
 
-use crate::{config::CorriesConfig, errorhandling::Validation, mesh::Mesh, physics::Physics, boundaryconditions::{BoundaryCondition, init_boundary_condition, Direction}, update_everything_from_cons};
+use crate::errorhandling::Validation;
+use crate::{
+    boundaryconditions::{init_boundary_condition, BoundaryCondition, Direction},
+    prelude::*,
+};
 
-// use self::numflux::{init_numflux, NumFlux};
-
-// pub mod numflux;
+pub mod numflux;
+pub use self::numflux::{hll::Hll, init_numflux, NumFlux};
 
 /// Carries objects and methods for solving the right-hand side of a set of equations.
-pub struct Rhs<P: Physics, const S: usize> {
+pub struct Rhs<P: Physics, N: NumFlux, const S: usize> {
     /// Full summed up rhs
     pub full_rhs: Array2<f64>,
 
     /// Calculates the numerical flux
-    // numflux: Box<dyn NumFlux<S, EQ>>,
+    numflux: N,
 
     /// Stores the numerical flux derivative along xi
     dflux_dxi: Array2<f64>,
@@ -35,7 +38,7 @@ pub struct Rhs<P: Physics, const S: usize> {
     pub boundary_east: Box<dyn BoundaryCondition<P, S>>,
 }
 
-impl<P: Physics + 'static, const S: usize> Rhs<P, S> {
+impl<P: Physics + 'static, N: NumFlux, const S: usize> Rhs<P, N, S> {
     /// Constructs a new [Rhs] object.
     ///
     /// # Arguments
@@ -46,7 +49,7 @@ impl<P: Physics + 'static, const S: usize> Rhs<P, S> {
     pub fn new<const E: usize>(config: &CorriesConfig) -> Self {
         return Rhs {
             full_rhs: Array2::zeros((E, S)),
-            // numflux: Box::new(init_numflux(&config.numericsconfig)),
+            numflux: init_numflux::<N, E, S>(&config.numerics_config),
             dflux_dxi: Array2::zeros((E, S)),
             boundary_west: Box::new(init_boundary_condition::<P, S>(Direction::West, &config)),
             boundary_east: Box::new(init_boundary_condition::<P, S>(Direction::East, &config)),
@@ -59,8 +62,8 @@ impl<P: Physics + 'static, const S: usize> Rhs<P, S> {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    pub fn update(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
-        self.update_dflux_dxi(u, mesh)
+    pub fn update<const E: usize>(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
+        self.update_dflux_dxi::<E>(u, mesh)
             .context("Calling Rhs::update_dflux_dxi in Rhs::update")?;
         self.full_rhs.assign(&self.dflux_dxi);
         return Ok(());
@@ -72,17 +75,17 @@ impl<P: Physics + 'static, const S: usize> Rhs<P, S> {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    fn update_dflux_dxi(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
+    fn update_dflux_dxi<const E: usize>(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date
         update_everything_from_cons(u, &mut self.boundary_west, &mut self.boundary_east, mesh);
-        // self.numflux
-        //     .calc_dflux_dxi(&mut self.dflux_dxi, u, mesh)
-        //     .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
+        self.numflux
+            .calc_dflux_dxi::<P,E,S>(&mut self.dflux_dxi, u, mesh)
+            .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
         return Ok(());
     }
 }
 
-impl<P: Physics, const S: usize> Validation for Rhs<P, S> {
+impl<P: Physics, N: NumFlux, const S: usize> Validation for Rhs<P, N, S> {
     fn validate(&self) -> Result<()> {
         ensure!(
             self.dflux_dxi.fold(true, |acc, x| acc && x.is_finite()),

@@ -9,26 +9,27 @@ use color_eyre::Result;
 use ndarray::{s, Array2};
 
 use crate::{
-    config::numericsconfig::{NumFluxMode, NumericsConfig},
+    config::numericsconfig::NumericsConfig,
     mesh::Mesh,
     physics::Physics,
 };
 
-use self::hll::Hll;
 
-mod hll;
+pub mod hll;
+pub use self::hll::Hll;
 
 /// Trait for structs that can calculate numerical flux
-pub trait NumFlux<const S: usize, const EQ: usize> {
+pub trait NumFlux {
+    /// construct a new trait object
+    fn new<const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> Self;
+
     /// Calculates the numerical derivative along the xi direction
-    fn calc_dflux_dxi(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut Physics<S, EQ>, mesh: &Mesh<S>) -> Result<()>;
+    fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(&mut self, dflux_dxi: &mut Array2<f64>, u: &mut P, mesh: &Mesh<S>) -> Result<()>;
 }
 
 /// Constructs an `impl Numflux<S, EQ>`.
-pub fn init_numflux<const S: usize, const EQ: usize>(numericsconf: &NumericsConfig) -> impl NumFlux<S, EQ> {
-    return match numericsconf.numflux_mode {
-        NumFluxMode::Hll => Hll::new(),
-    };
+pub fn init_numflux<N: NumFlux, const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> N {
+    return N::new::<E,S>(numerics_config);
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.
@@ -42,7 +43,7 @@ pub fn init_numflux<const S: usize, const EQ: usize>(numericsconf: &NumericsConf
 /// * `dflux_dxi` - numerical flux derivative
 /// * `flux_num` - numerical flux
 /// * `mesh` - [Mesh] object
-fn calc_dflux_xi_generic<const S: usize, const EQ: usize>(
+fn calc_dflux_xi_generic<const E: usize, const S: usize>(
     dflux_dxi: &mut Array2<f64>,
     flux_num: &Array2<f64>,
     mesh: &Mesh<S>,
@@ -51,7 +52,7 @@ fn calc_dflux_xi_generic<const S: usize, const EQ: usize>(
     // performance differences were negligable.
     let s = s![mesh.ixi_in..=mesh.ixi_out];
     let sm1 = s![mesh.ixi_in - 1..=mesh.ixi_out - 1];
-    for j in 0..EQ {
+    for j in 0..E {
         dflux_dxi
             .row_mut(j)
             .slice_mut(s)

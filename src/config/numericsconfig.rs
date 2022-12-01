@@ -12,13 +12,6 @@ use serde::Serialize;
 
 use crate::errorhandling::Validation;
 
-/// Enum for the different kinds of numerical flux schemes available
-#[derive(Debug, Serialize, Copy, Clone)]
-pub enum NumFluxMode {
-    /// HLL scheme
-    Hll,
-}
-
 /// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
 #[derive(Debug, Serialize, Copy, Clone)]
 pub enum RKFMode {
@@ -87,9 +80,6 @@ pub struct RkfConfig {
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize)]
 pub struct NumericsConfig {
-    /// The type of numerical flux scheme to use
-    pub numflux_mode: NumFluxMode,
-
     /// The type of time integration scheme to use
     pub time_integration_config: TimeIntegrationConfig,
 
