@@ -51,8 +51,8 @@ impl<P: Physics + 'static, N: NumFlux, const S: usize> Rhs<P, N, S> {
             full_rhs: Array2::zeros((E, S)),
             numflux: init_numflux::<N, E, S>(&config.numerics_config),
             dflux_dxi: Array2::zeros((E, S)),
-            boundary_west: Box::new(init_boundary_condition::<P, S>(Direction::West, &config)),
-            boundary_east: Box::new(init_boundary_condition::<P, S>(Direction::East, &config)),
+            boundary_west: Box::new(init_boundary_condition::<P, S>(Direction::West, config)),
+            boundary_east: Box::new(init_boundary_condition::<P, S>(Direction::East, config)),
         };
     }
 
@@ -79,7 +79,7 @@ impl<P: Physics + 'static, N: NumFlux, const S: usize> Rhs<P, N, S> {
         // this assumes that u.cons is up-to-date
         update_everything_from_cons(u, &mut self.boundary_west, &mut self.boundary_east, mesh);
         self.numflux
-            .calc_dflux_dxi::<P,E,S>(&mut self.dflux_dxi, u, mesh)
+            .calc_dflux_dxi::<P, E, S>(&mut self.dflux_dxi, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
         return Ok(());
     }
