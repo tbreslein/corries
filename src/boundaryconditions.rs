@@ -2,8 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports the [BoundaryConditionContainer] that applies boundary conditions to a `Physics`
-//! object.
+//! Exports the [BoundaryCondition] trait and [init_boundary_condition] function.
 
 use crate::{mesh::Mesh, BoundaryMode, CorriesConfig, Physics};
 

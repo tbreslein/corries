@@ -8,7 +8,7 @@
 //!
 //! Library to run 1D-hydrodynamics simulations solved with Riemann solvers.
 //!
-//! TODO
+//! Most importantly exports the module [prelude].
 
 use color_eyre::{eyre::Context, Result};
 
@@ -25,7 +25,17 @@ pub mod time;
 pub mod units;
 pub mod writer;
 
-/// TODO
+/// Exports everything you need to run a corries simulation. This includes the following modules
+///
+/// - [config]
+/// - [mesh]
+/// - [physics]
+/// - [rhs]
+/// - [time]
+/// - [units]
+/// - [writer]
+///
+/// as well as the [set_Physics_and_E] macro, and the [run_corries] function
 pub mod prelude {
     pub use crate::config::*;
     pub use crate::mesh::*;
@@ -40,7 +50,21 @@ pub mod prelude {
 
 pub use prelude::*;
 
-/// TODO
+/// Runs a corries simulation.
+///
+/// This assumes that you already set your initial conditions in `u` and that it is fully
+/// up-to-date.
+/// During the run, [writer] will be writing output according to your specifications when you wrote
+/// the [CorriesConfig] struct to configure everthing.
+///
+/// # Arguments
+///
+/// * `u` - Carries with the state of the physical simulation
+/// * `rhs - Solves the right-hand side of the equations
+/// * `time - Solves the time integration step and carries information about the time coordinate
+/// and the time step
+/// * `mesh` - The mesh the simulation runs on
+/// * `writer` - Deals with writing output
 pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const E: usize, const S: usize>(
     u: &mut P,
     rhs: &mut Rhs<P, N, S>,
@@ -53,16 +77,16 @@ pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const
     }
     writer
         .write_metadata::<S>()
-        .context("Calling writer.write_metadata in run_sim")?;
+        .context("Calling writer.write_metadata in run_corries")?;
     loop {
         if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
             time.timestep.t_next_output += time.timestep.dt_output;
             writer
                 .update_data(u, time, mesh)
-                .context("Calling writer.update_data_matrices in run_sim")?;
+                .context("Calling writer.update_data_matrices in run_corries")?;
             writer
                 .write_output()
-                .context("Calling wirter.write_output in run_sim")?;
+                .context("Calling wirter.write_output in run_corries")?;
         }
         if time.timestep.t + time.timestep.dt_min * 0.01 >= time.timestep.t_end {
             break;
@@ -72,10 +96,10 @@ pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const
             time.timestep.dt_kind = DtKind::ErrorDump;
             writer
                 .update_data(u, time, mesh)
-                .context("Calling writer.update_data_matrices during the error dump in run_sim")?;
+                .context("Calling writer.update_data_matrices during the error dump in run_corries")?;
             writer
                 .write_output()
-                .context("Calling writer.write_output during the error dump in run_sim")?;
+                .context("Calling writer.write_output during the error dump in run_corries")?;
             return err;
         }
     }

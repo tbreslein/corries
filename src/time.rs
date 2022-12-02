@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports the [TimeIntegration] struct, and the [DtKind] enum.
+//! Exports the [TimeSolver] trait, the [Time] struct, and the [DtKind] enum.
 
 use std::fmt::Display;
 use std::marker::PhantomData;
@@ -85,7 +85,7 @@ pub struct Time<P: Physics, T: TimeSolver<P>> {
 }
 
 impl<P: Physics, T: TimeSolver<P>> Time<P, T> {
-    /// Constructs a new [TimeIntegration] struct.
+    /// Constructs a new [Time] struct.
     ///
     /// # Arguments
     ///

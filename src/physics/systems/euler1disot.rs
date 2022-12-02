@@ -4,10 +4,10 @@
 
 //! TODO
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::ensure};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
-use crate::{config::physicsconfig::PhysicsConfig, data::Data, physics::Physics, Collectable};
+use crate::{config::physicsconfig::PhysicsConfig, data::Data, physics::Physics, Collectable, errorhandling::Validation};
 
 const E: usize = 2;
 const JRHO: usize = 0;
@@ -253,4 +253,22 @@ impl<const S: usize> Collectable for Euler1DIsot<S> {
     fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()> {
         return super::super::collect_data(self, name, mesh_offset);
     }
+}
+
+impl<const S: usize> Validation for Euler1DIsot<S> {
+    fn validate(&self) -> Result<()> {
+        super::super::validate(self)?;
+        validate(self, JRHO)?;
+        return Ok(());
+    }
+}
+
+#[inline(always)]
+pub fn validate<P: Physics>(u: &P, j_rho: usize) -> Result<()> {
+    ensure!(
+        u.prim_row(j_rho).fold(true, |acc, x| acc && x > &0.0),
+        "Mass density must be positive! Got: {}",
+        u.prim_row(j_rho)
+    );
+    return Ok(());
 }

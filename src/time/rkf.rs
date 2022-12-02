@@ -4,11 +4,15 @@
 
 //! Exports the [RungeKuttaFehlberg] struct
 
-use color_eyre::{eyre::Context, Result};
+use color_eyre::{
+    eyre::{ensure, Context},
+    Result,
+};
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
     config::CorriesConfig,
+    errorhandling::Validation,
     // errorhandling::Validation,
     mesh::Mesh,
     physics::Physics,
@@ -25,7 +29,7 @@ use super::{timestep::TimeStep, TimeSolver};
 mod butchertableau;
 
 /// Struct for solving the time integration step using Runge-Kutta-Fehlberg methods.
-pub struct RungeKuttaFehlberg<P: Physics> {
+pub struct RungeKuttaFehlberg<P: Physics + Validation> {
     /// Butcher Tableau for the Runge-Kutta method
     bt: ButcherTableau,
 
@@ -67,7 +71,7 @@ pub struct RungeKuttaFehlberg<P: Physics> {
     dt_temp: f64,
 }
 
-impl<P: Physics + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
+impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
     /// Constructs a new [RungeKuttaFehlberg] object
     ///
     /// # Arguments
@@ -157,7 +161,7 @@ impl<P: Physics + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
     }
 }
 
-impl<P: Physics + 'static> RungeKuttaFehlberg<P> {
+impl<P: Physics + Validation + 'static> RungeKuttaFehlberg<P> {
     /// Calculates a single solution with an RKF method.
     ///
     /// # Arguments
@@ -269,26 +273,25 @@ impl<P: Physics + 'static> RungeKuttaFehlberg<P> {
             // self.u_cons_low.fill(0.0);
         }
 
-        // self.validate()
-        //     .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        self.validate()
+            .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         u.assign_cons(&self.utilde.cons());
         update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
-        // TODO: validate u
-        // .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        u.validate().context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         return Ok(dt_out);
     }
 }
 
-// impl<P: Physics> Validation for RungeKuttaFehlberg<P> {
-//     fn validate(&self) -> Result<()> {
-//         ensure!(
-//             self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),
-//             "RungeKuttaFehlberg::u_cons_low must be finite! Got: {}",
-//             self.u_cons_low
-//         );
-//         self.utilde
-//             .validate()
-//             .context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;
-//         return Ok(());
-//     }
-// }
+impl<P: Physics + Validation> Validation for RungeKuttaFehlberg<P> {
+    fn validate(&self) -> Result<()> {
+        ensure!(
+            self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),
+            "RungeKuttaFehlberg::u_cons_low must be finite! Got: {}",
+            self.u_cons_low
+        );
+        self.utilde
+            .validate()
+            .context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;
+        return Ok(());
+    }
+}

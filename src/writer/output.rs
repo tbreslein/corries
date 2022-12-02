@@ -81,7 +81,6 @@ impl Output {
             }
         }
         let mesh_offset = if outputconfig.should_print_ghostcells {
-            // TODO: turn these into global constants!
             mesh.imin
         } else {
             mesh.ixi_in
