@@ -4,9 +4,10 @@
 
 //! TODO
 
+use color_eyre::Result;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut1, ArrayViewMut2, Zip};
 
-use crate::{config::physicsconfig::PhysicsConfig, physics::Physics};
+use crate::{config::physicsconfig::PhysicsConfig, physics::Physics, Collectable, Data};
 
 const E: usize = 3;
 const JRHO: usize = 0;
@@ -269,4 +270,10 @@ pub fn prim_to_cons(
         .for_each(|energy, &pressure, &rho_prim, &xi_vel| {
             *energy = pressure * (gamma - 1.0).recip() + 0.5 * rho_prim * xi_vel * xi_vel
         });
+}
+
+impl<const S: usize> Collectable for Euler1DAdiabatic<S> {
+    fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()> {
+        return super::super::collect_data(self, name, mesh_offset);
+    }
 }
