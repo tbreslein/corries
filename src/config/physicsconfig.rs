@@ -9,12 +9,16 @@ use color_eyre::Result;
 use serde::Serialize;
 
 use crate::errorhandling::Validation;
+use crate::UnitsMode;
 
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize)]
 pub struct PhysicsConfig {
     /// Ratio of specific heats
     pub adiabatic_index: f64,
+
+    /// The units system
+    pub units_mode: UnitsMode,
 }
 
 impl Validation for PhysicsConfig {
