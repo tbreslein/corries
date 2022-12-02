@@ -8,6 +8,12 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
 use crate::{config::physicsconfig::PhysicsConfig, physics::Physics};
 
+const E: usize = 2;
+const JRHO: usize = 0;
+const JXI: usize = 1;
+const J_EIGENMIN: usize = 0;
+const J_EIGENMAX: usize = 1;
+
 /// Test struct for using a trait for Physics
 #[derive(Debug)]
 pub struct Euler1DIsot<const S: usize> {
@@ -30,11 +36,11 @@ pub struct Euler1DIsot<const S: usize> {
 impl<const S: usize> Physics for Euler1DIsot<S> {
     fn new(_: &PhysicsConfig) -> Self {
         return Self {
-            prim: Array2::zeros((2, S)),
-            cons: Array2::zeros((2, S)),
+            prim: Array2::zeros((E, S)),
+            cons: Array2::zeros((E, S)),
             c_sound: Array1::zeros(S),
-            eigen_vals: Array2::zeros((2, S)),
-            flux: Array2::zeros((2, S)),
+            eigen_vals: Array2::zeros((E, S)),
+            flux: Array2::zeros((E, S)),
         };
     }
 
@@ -75,12 +81,12 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
 
     #[inline(always)]
     fn eigen_min(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(0);
+        return self.eigen_vals.row(J_EIGENMIN);
     }
 
     #[inline(always)]
     fn eigen_max(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(1);
+        return self.eigen_vals.row(J_EIGENMAX);
     }
 
     #[inline(always)]
@@ -104,19 +110,21 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
     }
 
     fn update_prim(&mut self) {
-        cons_to_prim(&mut self.prim.view_mut(), &self.cons.view());
+        cons_to_prim(&mut self.prim.view_mut(), JRHO, JXI, &self.cons.view(), JRHO, JXI);
     }
 
     fn update_cons(&mut self) {
-        prim_to_cons(&mut self.cons.view_mut(), &self.prim.view());
+        prim_to_cons(&mut self.cons.view_mut(), JRHO, JXI, &self.prim.view(), JRHO, JXI);
     }
 
     fn update_derived_values(&mut self) {
-        update_eigen_vals(self.eigen_vals.view_mut(), self.prim.row(1), self.c_sound.view());
+        update_eigen_vals(self.eigen_vals.view_mut(),J_EIGENMIN, J_EIGENMAX, self.prim.row(JXI), self.c_sound.view());
         update_flux(
             self.flux.view_mut(),
             self.prim.view(),
             self.cons.view(),
+            JRHO,
+            JXI,
             self.c_sound.view(),
         );
     }
@@ -144,13 +152,17 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
 
 /// Updates eigen values
 #[inline(always)]
-pub fn update_eigen_vals(mut eigen_vals: ArrayViewMut2<f64>, xi_vel: ArrayView1<f64>, c_sound: ArrayView1<f64>) {
-    Zip::from(eigen_vals.row_mut(0))
+pub fn update_eigen_vals(mut eigen_vals: ArrayViewMut2<f64>, j_eigen_min: usize, j_eigen_max: usize, xi_vel: ArrayView1<f64>, c_sound: ArrayView1<f64>) {
+    Zip::from(eigen_vals.row_mut(j_eigen_min))
         .and(xi_vel)
         .and(c_sound)
         .for_each(|e, &v, &cs| *e = v - cs);
 
-    Zip::from(eigen_vals.row_mut(1))
+    for j in j_eigen_min..j_eigen_max {
+        eigen_vals.row_mut(j).assign(&xi_vel);
+    }
+
+    Zip::from(eigen_vals.row_mut(j_eigen_max))
         .and(xi_vel)
         .and(c_sound)
         .for_each(|e, &v, &cs| *e = v + cs);
@@ -162,41 +174,41 @@ pub fn update_flux(
     mut flux: ArrayViewMut2<f64>,
     prim: ArrayView2<f64>,
     cons: ArrayView2<f64>,
+    j_rho: usize,
+    j_xi: usize,
     c_sound: ArrayView1<f64>,
 ) {
-    Zip::from(flux.row_mut(0))
-        .and(cons.row(1))
+    Zip::from(flux.row_mut(j_rho))
+        .and(cons.row(j_xi))
         .for_each(|f, &xi_mom| *f = xi_mom);
 
-    Zip::from(flux.row_mut(1))
-        .and(cons.row(0))
-        .and(prim.row(1))
+    Zip::from(flux.row_mut(j_xi))
+        .and(cons.row(j_rho))
+        .and(prim.row(j_xi))
         .and(c_sound)
         .for_each(|f, &rho, &xi_vel, &cs| *f = rho * (xi_vel * xi_vel + cs * cs));
 }
 
 /// Converts conservative to primitive variables
 #[inline(always)]
-pub fn cons_to_prim(prim: &mut ArrayViewMut2<f64>, cons: &ArrayView2<f64>) {
-    Zip::from(prim.row_mut(0))
-        .and(cons.row(0))
+pub fn cons_to_prim(prim: &mut ArrayViewMut2<f64>, j_rho_prim: usize, j_xi_vel: usize, cons: &ArrayView2<f64>, j_rho_cons: usize, j_xi_mom: usize) {
+    Zip::from(prim.row_mut(j_rho_prim))
+        .and(cons.row(j_rho_cons))
         .for_each(|rho_prim, &rho_cons| *rho_prim = rho_cons);
-
-    Zip::from(prim.row_mut(1))
-        .and(cons.row(1))
-        .and(cons.row(0))
+    Zip::from(prim.row_mut(j_xi_vel))
+        .and(cons.row(j_xi_mom))
+        .and(cons.row(j_rho_cons))
         .for_each(|xi_vel, &xi_mom, &rho_cons| *xi_vel = xi_mom / rho_cons);
 }
 
 /// Converts primitive to conservative variables
 #[inline(always)]
-pub fn prim_to_cons(cons: &mut ArrayViewMut2<f64>, prim: &ArrayView2<f64>) {
-    Zip::from(cons.row_mut(0))
-        .and(prim.row(0))
+pub fn prim_to_cons(cons: &mut ArrayViewMut2<f64>, j_rho_cons: usize, j_xi_mom: usize, prim: &ArrayView2<f64>, j_rho_prim: usize, j_xi_vel: usize) {
+    Zip::from(cons.row_mut(j_rho_cons))
+        .and(prim.row(j_rho_prim))
         .for_each(|rho_cons, &rho_prim| *rho_cons = rho_prim);
-
-    Zip::from(cons.row_mut(1))
-        .and(prim.row(1))
-        .and(prim.row(0))
+    Zip::from(cons.row_mut(j_xi_mom))
+        .and(prim.row(j_xi_vel))
+        .and(prim.row(j_rho_prim))
         .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel * rho_cons);
 }
