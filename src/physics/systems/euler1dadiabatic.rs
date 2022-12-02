@@ -170,13 +170,18 @@ impl<const S: usize> Physics for Euler1DAdiabatic<S> {
     }
 
     #[inline(always)]
-    fn assign_prim(&mut self, rhs: &Array2<f64>) {
+    fn assign_prim(&mut self, rhs: &ArrayView2<f64>) {
         self.prim.assign(rhs);
     }
 
     #[inline(always)]
-    fn assign_cons(&mut self, rhs: &Array2<f64>) {
+    fn assign_cons(&mut self, rhs: &ArrayView2<f64>) {
         self.cons.assign(rhs);
+    }
+
+    #[inline(always)]
+    fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>) {
+        self.c_sound.assign(rhs);
     }
 }
 

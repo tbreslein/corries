@@ -5,17 +5,18 @@
 //! Exports the [RungeKuttaFehlberg] struct
 
 use color_eyre::{
-    eyre::{ensure, Context},
+    eyre::{/*ensure,*/ Context},
     Result,
 };
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
-    config::{numericsconfig::RkfConfig, CorriesConfig},
-    errorhandling::Validation,
+    config::CorriesConfig,
+    // errorhandling::Validation,
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
+    NumFlux, update_everything_from_cons, TimeIntegrationConfig,
 };
 
 use self::butchertableau::ButcherTableau;
@@ -25,7 +26,7 @@ use super::{timestep::TimeStep, TimeSolver};
 mod butchertableau;
 
 /// Struct for solving the time integration step using Runge-Kutta-Fehlberg methods.
-pub struct RungeKuttaFehlberg<const S: usize, const EQ: usize> {
+pub struct RungeKuttaFehlberg<P: Physics> {
     /// Butcher Tableau for the Runge-Kutta method
     bt: ButcherTableau,
 
@@ -61,18 +62,51 @@ pub struct RungeKuttaFehlberg<const S: usize, const EQ: usize> {
     u_prim_old: Array2<f64>,
 
     /// Stores the full intermediate solution
-    utilde: Physics<S, EQ>,
+    utilde: P,
 
     /// Temporary holder for dt, needed for embedded methods
     dt_temp: f64,
 }
 
-impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S, EQ> {
-    fn next_solution(
+impl<P: Physics + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
+    /// Constructs a new [RungeKuttaFehlberg] object
+    ///
+    /// # Arguments
+    ///
+    /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
+    /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
+    fn new<const E: usize, const S: usize>(config: &CorriesConfig, u: &P) -> Result<Self> {
+        let (bt, asc_relative_tolerance, asc_absolute_tolerance, asc_timestep_friction) = match &config.numerics_config.time_integration_config {
+            TimeIntegrationConfig::Rkf(rkf_config) => {
+                (ButcherTableau::new(&rkf_config), rkf_config.asc_relative_tolerance, rkf_config.asc_absolute_tolerance, rkf_config.asc_timestep_friction)
+            }
+            // _ => bail!("HOW DID THIS HAPPEN?!")
+        };
+        let order = bt.order;
+        let mut utilde = P::new(&config.physics_config);
+        utilde.assign(u);
+        return Ok(Self {
+            bt,
+            k_bundle: Array3::zeros([order, E, S]),
+            err_new: 0.0,
+            err_old: 0.0,
+            n_asc: 0,
+            asc_relative_tolerance,
+            asc_absolute_tolerance,
+            asc_timestep_friction,
+            solution_accepted: true,
+            u_cons_low: Array2::zeros((E, S)),
+            u_prim_old: Array2::zeros((E, S)),
+            utilde,
+            dt_temp: 0.0,
+        });
+    }
+
+    fn next_solution<N: NumFlux, const E: usize, const S: usize>(
         &mut self,
         time: &mut TimeStep,
-        u: &mut Physics<S, EQ>,
-        rhs: &mut Rhs<S, EQ>,
+        u: &mut P,
+        rhs: &mut Rhs<P, N, S>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         time.iter += 1;
@@ -82,13 +116,13 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
         time.cap_dt();
 
         if self.bt.asc {
-            self.u_prim_old.assign(&u.prim);
+            self.u_prim_old.assign(&u.prim());
             self.solution_accepted = false;
             self.dt_temp = time.dt;
         }
 
         while !self.solution_accepted {
-            self.dt_temp = self.calc_rkf_solution(time.dt, u, rhs, mesh).context(
+            self.dt_temp = self.calc_rkf_solution::<N,E,S>(time.dt, u, rhs, mesh).context(
                 "RungeKuttaFehlberg::calc_rkf_solution in the while loop in RungeKuttaFehlberg::next_solution",
             )?;
             if self.err_new < 1.0 {
@@ -99,9 +133,9 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
 
             // reset before calculating the final rkf solution or trying again depending on
             // solution_accepted
-            u.prim.assign(&self.u_prim_old);
+            u.assign_prim(&self.u_prim_old.view());
             u.update_cons();
-            u.update_derived_variables();
+            u.update_derived_values();
             self.n_asc += 1;
         }
 
@@ -114,42 +148,14 @@ impl<const S: usize, const EQ: usize> TimeSolver<S, EQ> for RungeKuttaFehlberg<S
         // Idea: I could put the while loop into the `if self.bt.asc` block up top, and this single
         // call into the associated else block
         let _ = self
-            .calc_rkf_solution(time.dt, u, rhs, mesh)
+            .calc_rkf_solution::<N,E,S>(time.dt, u, rhs, mesh)
             .context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
         time.t += time.dt;
         return Ok(());
     }
 }
 
-impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
-    /// Constructs a new [RungeKuttaFehlberg] object
-    ///
-    /// # Arguments
-    ///
-    /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
-    /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    pub fn new(rkfconfig: &RkfConfig, config: &CorriesConfig, u: &Physics<S, EQ>) -> Result<Self> {
-        let bt = ButcherTableau::new(rkfconfig);
-        let order = bt.order;
-        let mut utilde: Physics<S, EQ> = Physics::new(&config.physicsconfig);
-        utilde.assign(u);
-        return Ok(Self {
-            bt,
-            k_bundle: Array3::zeros([order, EQ, S]),
-            err_new: 0.0,
-            err_old: 0.0,
-            n_asc: 0,
-            asc_relative_tolerance: rkfconfig.asc_relative_tolerance,
-            asc_absolute_tolerance: rkfconfig.asc_absolute_tolerance,
-            asc_timestep_friction: rkfconfig.asc_timestep_friction,
-            solution_accepted: true,
-            u_cons_low: Array2::zeros((EQ, S)),
-            u_prim_old: Array2::zeros((EQ, S)),
-            utilde,
-            dt_temp: 0.0,
-        });
-    }
-
+impl<P: Physics+ 'static> RungeKuttaFehlberg<P> {
     /// Calculates a single solution with an RKF method.
     ///
     /// # Arguments
@@ -158,11 +164,11 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
     /// * `u` - Input [Physics] state
     /// * `rhs` - Solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    fn calc_rkf_solution(
+    fn calc_rkf_solution<N: NumFlux, const E: usize, const S: usize>(
         &mut self,
         dt_in: f64,
-        u: &mut Physics<S, EQ>,
-        rhs: &mut Rhs<S, EQ>,
+        u: &mut P,
+        rhs: &mut Rhs<P, N, S>,
         mesh: &Mesh<S>,
     ) -> Result<f64> {
         let mut dt_out = dt_in;
@@ -172,41 +178,38 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             self.utilde.assign(u);
             for p in 0..q {
                 self.utilde
-                    .cons
-                    .assign(&(&self.utilde.cons - dt_out * &self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)));
+                    .assign_cons(&(&self.utilde.cons() - dt_out * self.bt.a[[p,q]] * &self.k_bundle.index_axis(Axis(0), p)).view());
             }
-            rhs.update(&mut self.utilde, mesh)
+            rhs.update::<E>(&mut self.utilde, mesh)
                 .context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
             let mut k_bundle_q = self.k_bundle.index_axis_mut(Axis(0), q);
             k_bundle_q.assign(&rhs.full_rhs);
         }
 
         // calculate high order solution
-        self.utilde.cons.assign(&u.cons);
+        self.utilde.assign_cons(&u.cons());
         for q in 0..self.bt.order {
             self.utilde
-                .cons
-                .assign(&(&self.utilde.cons - dt_out * &self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)));
+                .assign_cons(&(&self.utilde.cons() - dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)).view());
         }
 
         if !self.solution_accepted {
             // calculate low order solution
-            self.u_cons_low.assign(&u.cons);
+            self.u_cons_low.assign(&u.cons());
             for q in 0..self.bt.order {
                 self.utilde
-                    .cons
-                    .assign(&(&self.u_cons_low - dt_out * &self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)));
+                    .assign_cons(&(&self.u_cons_low - dt_out * self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)).view());
             }
 
             // calc err_new
             self.err_new = {
                 let mut err_max = 0.0f64;
-                for j in 0..EQ {
+                for j in 0..E {
                     for i in 2..S - 2 {
                         err_max = err_max.max(
-                            ((self.utilde.cons[[j, i]] - self.u_cons_low[[j, i]])
+                            ((self.utilde.cons_entry(j, i) - self.u_cons_low[[j, i]])
                                 / (self.asc_relative_tolerance
-                                    * (self.utilde.cons[[j, i]] + self.asc_absolute_tolerance)))
+                                    * (self.utilde.cons_entry(j, i) + self.asc_absolute_tolerance)))
                                 .abs(),
                         );
                     }
@@ -261,25 +264,26 @@ impl<const S: usize, const EQ: usize> RungeKuttaFehlberg<S, EQ> {
             // self.u_cons_low.fill(0.0);
         }
 
-        self.validate()
-            .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
-        u.cons.assign(&self.utilde.cons);
-        u.update_everything_from_cons(&mut rhs.boundary_conditions, mesh)
-            .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        // self.validate()
+        //     .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        u.assign_cons(&self.utilde.cons());
+        update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
+        // TODO: validate u
+        // .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         return Ok(dt_out);
     }
 }
 
-impl<const S: usize, const EQ: usize> Validation for RungeKuttaFehlberg<S, EQ> {
-    fn validate(&self) -> Result<()> {
-        ensure!(
-            self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),
-            "RungeKuttaFehlberg::u_cons_low must be finite! Got: {}",
-            self.u_cons_low
-        );
-        self.utilde
-            .validate()
-            .context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;
-        return Ok(());
-    }
-}
+// impl<P: Physics> Validation for RungeKuttaFehlberg<P> {
+//     fn validate(&self) -> Result<()> {
+//         ensure!(
+//             self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),
+//             "RungeKuttaFehlberg::u_cons_low must be finite! Got: {}",
+//             self.u_cons_low
+//         );
+//         self.utilde
+//             .validate()
+//             .context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;
+//         return Ok(());
+//     }
+// }
