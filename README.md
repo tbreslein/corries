@@ -14,10 +14,9 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 
 ### Big Steps
 
-- Get rid of the BoundaryConditionsContainer and just store 2 BoundaryCond instances
-- turn Physics into a trait and make the functions generic
-- same with Numflux
-- same with TimeSolver
+- more detailed README
+- add a justfile?
+- streamline rkf solver a tiny bit (like in my doc project)
 - turn calc_dt_expl into an external generic function and make it return `(double, DtKind)`
 - find more opportunities to use `ensure!`, like in calc_dt_expl
 - Add Sod test
