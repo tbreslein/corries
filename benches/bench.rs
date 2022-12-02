@@ -4,7 +4,7 @@
 
 use corries::prelude::*;
 use criterion::{criterion_group, criterion_main, Criterion};
-use ndarray::{Array2, Array1};
+use ndarray::{Array1, Array2};
 
 const S: usize = 500;
 
@@ -165,12 +165,7 @@ pub fn noh_run(c: &mut Criterion) {
     type N = Hll;
     type T = RungeKuttaFehlberg<P>;
 
-    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).unwrap();
-    let mut u: P = P::new(&config.physics_config);
-    let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let mut time: Time<P, T> = Time::new::<E, S>(&config, &u).unwrap();
-    let mut writer = Writer::new::<S>(&config, &mesh).unwrap();
-
+    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
     init_noh::<P, E, S>(&mut u);
     update_everything_from_prim(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 

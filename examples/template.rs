@@ -79,11 +79,8 @@ fn main() -> Result<()> {
         ],
     };
 
-    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
-    let mut u: P = P::new(&config.physics_config);
-    let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
-    let mut writer = Writer::new::<S>(&config, &mesh)?;
+    let (mut u, mut rhs, mut time, mesh, mut writer) =
+        init_corries::<P, N, T, E, S>(&config).context("During initialisation")?;
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)?;
     return Ok(());
 }

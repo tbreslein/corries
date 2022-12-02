@@ -41,6 +41,7 @@ pub mod prelude {
     pub use crate::mesh::*;
     pub use crate::physics::*;
     pub use crate::rhs::*;
+    pub use crate::init_corries;
     pub use crate::run_corries;
     pub use crate::set_Physics_and_E;
     pub use crate::time::*;
@@ -48,7 +49,32 @@ pub mod prelude {
     pub use crate::writer::*;
 }
 
+use errorhandling::Validation;
 pub use prelude::*;
+
+/// Initialises all objects needed to run a corries simulation.
+///
+/// Apart from the `config` argument, the important bits that also help configuring the simulation
+/// are the template Parameters. For example, the type you pass as the first template argument
+/// determines the type of `Physics` used throughout the whole simulation!
+pub fn init_corries<P, N, T, const E: usize, const S: usize>(config: &CorriesConfig) -> Result<(P, Rhs<P,N,S>, Time<P,T>, Mesh<S>, Writer)> where P: Physics + Collectable + 'static, N: NumFlux, T: TimeSolver<P> {
+
+    config.validate()?;
+
+    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
+    let u: P = P::new(&config.physics_config);
+    let rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
+    let time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
+    let mut writer = Writer::new::<S>(&config, &mesh)?;
+
+    if writer.print_banner {
+        print_banner();
+    }
+    writer
+        .write_metadata::<S>()
+        .context("Calling writer.write_metadata in run_corries")?;
+    return Ok((u, rhs, time, mesh, writer));
+}
 
 /// Runs a corries simulation.
 ///
@@ -72,12 +98,6 @@ pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const
     mesh: &Mesh<S>,
     writer: &mut Writer,
 ) -> Result<()> {
-    if writer.print_banner {
-        print_banner();
-    }
-    writer
-        .write_metadata::<S>()
-        .context("Calling writer.write_metadata in run_corries")?;
     loop {
         if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
             time.timestep.t_next_output += time.timestep.dt_output;
