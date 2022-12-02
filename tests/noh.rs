@@ -64,8 +64,8 @@ fn get_config(mode: usize) -> CorriesConfig {
     let file_name = "noh_".to_owned()
         + match mode {
             EULER1D_ADIABATIC => "euler1d_adiabatic",
-            EULER1D_ISOT => "euler1d_adiabatic",
-            EULER2D_ISOT => "euler1d_adiabatic",
+            EULER1D_ISOT => "euler1d_isot",
+            EULER2D_ISOT => "euler2d_isot",
             _ => "",
         };
     let folder_name = "results/integrationtests/".to_owned() + &file_name;
@@ -183,7 +183,8 @@ fn noh_euler1d_adiabatic() -> Result<()> {
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init_noh::<P, E, S>(&mut u);
-    update_everything_from_cons(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    update_everything_from_prim(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
         .context("Calling run_loop in noh test")?;
     return Ok(());
@@ -203,7 +204,8 @@ fn noh_euler1d_isot() -> Result<()> {
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init_noh::<P, E, S>(&mut u);
-    update_everything_from_cons(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    update_everything_from_prim(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
         .context("Calling run_loop in noh test")?;
     return Ok(());
