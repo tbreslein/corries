@@ -6,6 +6,7 @@
 
 pub mod meshconfig;
 pub mod numericsconfig;
+pub mod outputconfig;
 pub mod physicsconfig;
 
 use color_eyre::{eyre::Context, Result};
@@ -13,6 +14,7 @@ use serde::Serialize;
 
 pub use meshconfig::*;
 pub use numericsconfig::*;
+pub use outputconfig::*;
 pub use physicsconfig::*;
 
 use crate::errorhandling::Validation;
@@ -78,8 +80,9 @@ pub struct CorriesConfig {
     /// The number of outputs to write during the simulation, not counting output for the initial
     /// state
     pub output_counter_max: usize,
-    // /// Config for Writer objects
-    // pub writer_config: Vec<OutputConfig>,
+
+    /// Config for Writer objects
+    pub writer_config: Vec<OutputConfig>,
 }
 
 impl Validation for CorriesConfig {
@@ -91,9 +94,9 @@ impl Validation for CorriesConfig {
         self.numerics_config
             .validate()
             .context("Validating config.numericsconfig")?;
-        // for outputconf in self.writerconfig.iter() {
-        //     outputconf.validate().context("Validating config.writerconf")?;
-        // }
+        for outputconf in self.writer_config.iter() {
+            outputconf.validate().context("Validating config.writerconf")?;
+        }
         return Ok(());
     }
 }

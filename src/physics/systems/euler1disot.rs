@@ -4,9 +4,10 @@
 
 //! TODO
 
+use color_eyre::Result;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
-use crate::{config::physicsconfig::PhysicsConfig, physics::Physics};
+use crate::{config::physicsconfig::PhysicsConfig, data::Data, physics::Physics, Collectable};
 
 const E: usize = 2;
 const JRHO: usize = 0;
@@ -242,4 +243,10 @@ pub fn prim_to_cons(
         .and(prim.row(j_xi_vel))
         .and(prim.row(j_rho_prim))
         .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel * rho_cons);
+}
+
+impl<const S: usize> Collectable for Euler1DIsot<S> {
+    fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()> {
+        return super::super::collect_data(self, name, mesh_offset);
+    }
 }

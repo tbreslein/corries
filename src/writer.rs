@@ -4,15 +4,16 @@
 
 //! Exports the [Writer] struct that deals with writing data to multiple different output streams
 
+use crate::prelude::*;
 use color_eyre::{eyre::bail, Result};
 use ndarray::{s, Array1, ArrayView1};
 use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 
-use self::{data::Data, output::Output};
-use crate::{config::CorriesConfig, mesh::Mesh, physics::Physics, timeintegration::TimeIntegration};
-
 pub mod data;
 mod output;
+
+pub use self::data::*;
+use self::output::*;
 
 /// Wrapper for `Vec<Output>` that facilitates writing output into streams.
 pub struct Writer {
@@ -57,7 +58,7 @@ impl Writer {
     /// * `mesh` - The mesh for this simulation
     pub fn new<const S: usize>(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
         let mut outputs = vec![];
-        for outputconf in config.writerconfig.iter() {
+        for outputconf in config.writer_config.iter() {
             let output = Output::new(outputconf, mesh, config.output_counter_max)?;
             outputs.push(output);
         }
@@ -77,10 +78,10 @@ impl Writer {
     /// * `u` - Provides data for the state of the simulation
     /// * `time` - Provides data on the time coordinates
     /// * `mesh` - Provides mesh data
-    pub fn update_data<const S: usize, const EQ: usize>(
+    pub fn update_data<P: Physics + Collectable, T: TimeSolver<P>, const S: usize>(
         &mut self,
-        u: &Physics<S, EQ>,
-        time: &TimeIntegration<S, EQ>,
+        u: &P,
+        time: &Time<P, T>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         self.outputs

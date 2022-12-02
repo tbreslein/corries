@@ -7,7 +7,12 @@
 use color_eyre::{eyre::bail, Result};
 use ndarray::{ArrayView1, ArrayView2, Zip};
 
-use crate::{boundaryconditions::BoundaryCondition, config::physicsconfig::PhysicsConfig, Mesh};
+use crate::{
+    boundaryconditions::BoundaryCondition,
+    config::physicsconfig::PhysicsConfig,
+    data::{Data, DataName, StructAssociation},
+    Collectable, Mesh,
+};
 
 pub mod systems;
 
@@ -125,12 +130,30 @@ pub fn update_everything_from_prim<P: Physics, const S: usize>(
     u.update_derived_values();
 }
 
+pub fn collect_data<P: Physics + Collectable>(u: &P, data: &mut Data, mesh_offset: usize) -> Result<()> {
+    match (data.association, data.name) {
+        (StructAssociation::Physics, DataName::Prim(j)) => u.write_vector(&u.prim_row(j), data, mesh_offset),
+        (StructAssociation::Physics, DataName::Cons(j)) => u.write_vector(&u.cons_row(j), data, mesh_offset),
+        (StructAssociation::Physics, DataName::CSound) => u.write_vector(&u.c_sound(), data, mesh_offset),
+        (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
+        (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
+            bail!("name.association() for {:?} returned {:?}", x, data.association)
+        },
+    }?;
+    return Ok(());
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::UnitsMode;
+
     use super::*;
     use proptest::prelude::*;
     const S: usize = 2;
-    const PHYSICS_CONFIG: PhysicsConfig = PhysicsConfig { adiabatic_index: 1.4 };
+    const PHYSICS_CONFIG: PhysicsConfig = PhysicsConfig {
+        adiabatic_index: 1.4,
+        units_mode: UnitsMode::SI,
+    };
 
     mod euler1dadiabatic {
         use super::*;
