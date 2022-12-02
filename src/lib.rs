@@ -46,6 +46,7 @@ pub fn run_corries<P: Physics, N: NumFlux, T: TimeSolver<P>, const S: usize>(
     _rhs: &mut Rhs<P, N, S>,
     _time: &mut Time<P, T>,
     _mesh: &Mesh<S>,
+    _writer: &mut Writer,
 ) -> Result<()> {
     print_banner();
     return Ok(());

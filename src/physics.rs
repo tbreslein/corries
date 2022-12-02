@@ -23,6 +23,9 @@ pub trait Physics {
     /// construct a new trait object
     fn new(physics_config: &PhysicsConfig) -> Self;
 
+    /// Whether the physics system is adiabatic or not
+    fn is_adiabatic(&self) -> bool;
+
     /// Return copy of the primitive variable in row j at column i
     fn prim_entry(&self, j: usize, i: usize) -> f64;
 

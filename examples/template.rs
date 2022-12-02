@@ -83,6 +83,7 @@ fn main() -> Result<()> {
     let mut u: P = P::new(&config.physics_config);
     let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
     let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
-    run_corries(&mut u, &mut rhs, &mut time, &mesh)?;
+    let mut writer = Writer::new::<S>(&config, &mesh)?;
+    run_corries(&mut u, &mut rhs, &mut time, &mesh, &mut writer)?;
     return Ok(());
 }
