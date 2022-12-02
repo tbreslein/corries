@@ -265,7 +265,7 @@ mod tests {
             meshconfig::{MeshConfig, MeshMode},
             physicsconfig::PhysicsConfig,
         },
-        Euler1DAdiabatic,
+        set_Physics_and_E, Euler1DAdiabatic,
     };
 
     use super::*;
@@ -282,8 +282,7 @@ mod tests {
         adiabatic_index: 1.4,
         units_mode: crate::UnitsMode::SI,
     };
-    type P = Euler1DAdiabatic<S>;
-    const E: usize = 3;
+    set_Physics_and_E!(Euler1DAdiabatic);
 
     #[test]
     fn extrapolation_test() {

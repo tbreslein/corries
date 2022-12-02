@@ -49,6 +49,10 @@ impl<const S: usize> Physics for Euler1DAdiabatic<S> {
         };
     }
 
+    fn is_adiabatic(&self) -> bool {
+        return true;
+    }
+
     #[inline(always)]
     fn prim_entry(&self, j: usize, i: usize) -> f64 {
         return self.prim[[j, i]];
