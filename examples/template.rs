@@ -53,7 +53,7 @@ fn main() -> Result<()> {
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u: P = P::new(&config.physics_config);
     let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let mut time = T::new::<E,S>(&config, &u)?;
+    let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
     run_corries(&mut u, &mut rhs, &mut time, &mesh)?;
     return Ok(());
 }
