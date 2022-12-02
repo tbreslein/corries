@@ -12,14 +12,7 @@ use color_eyre::{
     Result,
 };
 
-use crate::{
-    config::CorriesConfig,
-    mesh::Mesh,
-    physics::Physics,
-    rhs::Rhs,
-    NumFlux,
-};
-
+use crate::{config::CorriesConfig, mesh::Mesh, physics::Physics, rhs::Rhs, NumFlux};
 
 pub mod rkf;
 pub mod timestep;
@@ -56,7 +49,9 @@ pub trait TimeSolver<P: Physics> {
     ///
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    fn new<const E: usize, const S: usize>(config: &CorriesConfig, u: &P) -> Result<Self> where Self: Sized;
+    fn new<const E: usize, const S: usize>(config: &CorriesConfig, u: &P) -> Result<Self>
+    where
+        Self: Sized;
 
     /// Calculates the next solution for the physical state
     ///
@@ -79,7 +74,7 @@ pub trait TimeSolver<P: Physics> {
 ///
 /// Carries a [TimeStep] for keeping track of the time coordinate and data regarding it, as well as
 /// a `Box<dyn TimeSolver>` for calculating new solutions.
-pub struct TimeIntegration<P: Physics, T: TimeSolver<P>> {
+pub struct Time<P: Physics, T: TimeSolver<P>> {
     /// Keeps track of the time coordinate and related data
     pub timestep: TimeStep,
 
@@ -89,7 +84,7 @@ pub struct TimeIntegration<P: Physics, T: TimeSolver<P>> {
     embedded_type: PhantomData<P>,
 }
 
-impl<P: Physics, T: TimeSolver<P>> TimeIntegration<P, T> {
+impl<P: Physics, T: TimeSolver<P>> Time<P, T> {
     /// Constructs a new [TimeIntegration] struct.
     ///
     /// # Arguments
@@ -118,7 +113,7 @@ impl<P: Physics, T: TimeSolver<P>> TimeIntegration<P, T> {
         mesh: &Mesh<S>,
     ) -> Result<()> {
         self.solver
-            .next_solution::<N,E,S>(&mut self.timestep, u, rhs, mesh)
+            .next_solution::<N, E, S>(&mut self.timestep, u, rhs, mesh)
             .context("Calling TimeIntegration::solver.next_solution in TimeIntegration::next_solution")?;
         if self.timestep.iter >= self.timestep.iter_max {
             bail!(
