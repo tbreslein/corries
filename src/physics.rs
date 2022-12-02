@@ -4,7 +4,10 @@
 
 //! TODO
 
-use color_eyre::{eyre::bail, Result};
+use color_eyre::{
+    eyre::{bail, ensure},
+    Result,
+};
 use ndarray::{ArrayView1, ArrayView2, Zip};
 
 use crate::{
@@ -143,6 +146,21 @@ pub fn collect_data<P: Physics + Collectable>(u: &P, data: &mut Data, mesh_offse
             bail!("name.association() for {:?} returned {:?}", x, data.association)
         },
     }?;
+    return Ok(());
+}
+
+#[inline(always)]
+pub fn validate<P: Physics>(u: &P) -> Result<()> {
+    ensure!(
+        u.prim().fold(true, |acc, x| acc && x.is_finite()),
+        "Physics::prim must be finite! Got: {}",
+        u.prim()
+    );
+    ensure!(
+        u.cons().fold(true, |acc, x| acc && x.is_finite()),
+        "Physics::cons must be finite! Got: {}",
+        u.cons()
+    );
     return Ok(());
 }
 

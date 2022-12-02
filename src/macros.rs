@@ -2,9 +2,12 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports useful macros for public use
 
-/// TODO
+/// Expands to a type alias `P` for the type of physics you are using, and a constant `E` that
+/// represents the number of equations in that system.
+/// This macro is used to make sure that E is always set correctly for your type of physics, while
+/// also giving you a useful type alias to make your code look more generic than it actually is.
 #[macro_export]
 macro_rules! set_Physics_and_E {
     (Euler1DAdiabatic) => {
