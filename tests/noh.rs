@@ -2,19 +2,6 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-// use color_eyre::eyre::Context;
-// use color_eyre::Result;
-// use corries::config::meshconfig::{MeshConfig, MeshMode};
-// use corries::config::numericsconfig::{NumFluxMode, NumericsConfig, RkfConfig, TimeIntegrationConfig};
-// use corries::config::outputconfig::{FormattingMode, OutputConfig, StreamMode, ToStringConversionMode};
-// use corries::config::physicsconfig::{PhysicsConfig, PhysicsMode};
-// use corries::config::{BoundaryMode, CustomBoundaryMode, PhysicsVariable};
-// use corries::physics::Physics;
-// use corries::units::UnitsMode;
-// use corries::writer::data::DataName;
-// use corries::{config, get_n_equations};
-// use corries::{init_sim, run_loop};
-
 use color_eyre::{eyre::Context, Result};
 use corries::prelude::*;
 use ndarray::{Array1, Array2};
