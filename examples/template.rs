@@ -84,6 +84,6 @@ fn main() -> Result<()> {
     let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
     let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
-    run_corries(&mut u, &mut rhs, &mut time, &mesh, &mut writer)?;
+    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)?;
     return Ok(());
 }

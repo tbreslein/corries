@@ -10,7 +10,7 @@
 //!
 //! TODO
 
-use color_eyre::Result;
+use color_eyre::{eyre::Context, Result};
 
 mod boundaryconditions;
 pub mod config;
@@ -41,14 +41,44 @@ pub mod prelude {
 pub use prelude::*;
 
 /// TODO
-pub fn run_corries<P: Physics, N: NumFlux, T: TimeSolver<P>, const S: usize>(
-    _u: &mut P,
-    _rhs: &mut Rhs<P, N, S>,
-    _time: &mut Time<P, T>,
-    _mesh: &Mesh<S>,
-    _writer: &mut Writer,
+pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const E: usize, const S: usize>(
+    u: &mut P,
+    rhs: &mut Rhs<P, N, S>,
+    time: &mut Time<P, T>,
+    mesh: &Mesh<S>,
+    writer: &mut Writer,
 ) -> Result<()> {
-    print_banner();
+    if writer.print_banner {
+        print_banner();
+    }
+    writer
+        .write_metadata::<S>()
+        .context("Calling writer.write_metadata in run_sim")?;
+    loop {
+        if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
+            time.timestep.t_next_output += time.timestep.dt_output;
+            writer
+                .update_data(u, time, mesh)
+                .context("Calling writer.update_data_matrices in run_sim")?;
+            writer
+                .write_output()
+                .context("Calling wirter.write_output in run_sim")?;
+        }
+        if time.timestep.t + time.timestep.dt_min * 0.01 >= time.timestep.t_end {
+            break;
+        }
+
+        if let err @ Err(_) = time.next_solution::<N, E, S>(u, rhs, mesh) {
+            time.timestep.dt_kind = DtKind::ErrorDump;
+            writer
+                .update_data(u, time, mesh)
+                .context("Calling writer.update_data_matrices during the error dump in run_sim")?;
+            writer
+                .write_output()
+                .context("Calling writer.write_output during the error dump in run_sim")?;
+            return err;
+        }
+    }
     return Ok(());
 }
 
