@@ -5,8 +5,10 @@
 //! Exports the [Mesh] struct that provides coordinates and geometric information
 
 use crate::config::meshconfig::{MeshConfig, MeshMode};
+use crate::data::{Data, DataName, StructAssociation};
 use crate::errorhandling::Validation;
-use color_eyre::eyre::{ensure, Context};
+use crate::Collectable;
+use color_eyre::eyre::{bail, ensure, Context};
 use color_eyre::Result;
 use ndarray::Array1;
 
@@ -440,20 +442,20 @@ impl<const S: usize> Validation for Mesh<S> {
     }
 }
 
-// impl<const S: usize> Collectable for Mesh<S> {
-//     fn collect_data(&self, data: &mut Data, mesh_offset: usize) -> Result<()> {
-//         match (data.association, data.name) {
-//             (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent.view(), data, mesh_offset),
-//             (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west.view(), data, mesh_offset),
-//             (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east.view(), data, mesh_offset),
-//             (StructAssociation::Mesh, x) => bail!("Tried associating {:?} with Mesh!", x),
-//             (StructAssociation::Physics, x) | (StructAssociation::TimeStep, x) => {
-//                 bail!("name.association() for {:?} returned {:?}", x, data.association)
-//             },
-//         }?;
-//         return Ok(());
-//     }
-// }
+impl<const S: usize> Collectable for Mesh<S> {
+    fn collect_data(&self, data: &mut Data, mesh_offset: usize) -> Result<()> {
+        match (data.association, data.name) {
+            (StructAssociation::Mesh, DataName::XiCent) => self.write_vector(&self.xi_cent.view(), data, mesh_offset),
+            (StructAssociation::Mesh, DataName::XiWest) => self.write_vector(&self.xi_west.view(), data, mesh_offset),
+            (StructAssociation::Mesh, DataName::XiEast) => self.write_vector(&self.xi_east.view(), data, mesh_offset),
+            (StructAssociation::Mesh, x) => bail!("Tried associating {:?} with Mesh!", x),
+            (StructAssociation::Physics, x) | (StructAssociation::TimeStep, x) => {
+                bail!("name.association() for {:?} returned {:?}", x, data.association)
+            },
+        }?;
+        return Ok(());
+    }
+}
 
 #[cfg(test)]
 mod tests {

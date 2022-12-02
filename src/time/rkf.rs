@@ -4,10 +4,7 @@
 
 //! Exports the [RungeKuttaFehlberg] struct
 
-use color_eyre::{
-    eyre::{/*ensure,*/ Context},
-    Result,
-};
+use color_eyre::{eyre::Context, Result};
 use ndarray::{Array2, Array3, Axis};
 
 use crate::{
@@ -16,7 +13,9 @@ use crate::{
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
-    NumFlux, update_everything_from_cons, TimeIntegrationConfig,
+    update_everything_from_cons,
+    NumFlux,
+    TimeIntegrationConfig,
 };
 
 use self::butchertableau::ButcherTableau;
@@ -76,12 +75,15 @@ impl<P: Physics + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
     fn new<const E: usize, const S: usize>(config: &CorriesConfig, u: &P) -> Result<Self> {
-        let (bt, asc_relative_tolerance, asc_absolute_tolerance, asc_timestep_friction) = match &config.numerics_config.time_integration_config {
-            TimeIntegrationConfig::Rkf(rkf_config) => {
-                (ButcherTableau::new(&rkf_config), rkf_config.asc_relative_tolerance, rkf_config.asc_absolute_tolerance, rkf_config.asc_timestep_friction)
-            }
-            // _ => bail!("HOW DID THIS HAPPEN?!")
-        };
+        let (bt, asc_relative_tolerance, asc_absolute_tolerance, asc_timestep_friction) =
+            match &config.numerics_config.time_integration_config {
+                TimeIntegrationConfig::Rkf(rkf_config) => (
+                    ButcherTableau::new(rkf_config),
+                    rkf_config.asc_relative_tolerance,
+                    rkf_config.asc_absolute_tolerance,
+                    rkf_config.asc_timestep_friction,
+                ), // _ => bail!("HOW DID THIS HAPPEN?!")
+            };
         let order = bt.order;
         let mut utilde = P::new(&config.physics_config);
         utilde.assign(u);
@@ -122,7 +124,7 @@ impl<P: Physics + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
         }
 
         while !self.solution_accepted {
-            self.dt_temp = self.calc_rkf_solution::<N,E,S>(time.dt, u, rhs, mesh).context(
+            self.dt_temp = self.calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh).context(
                 "RungeKuttaFehlberg::calc_rkf_solution in the while loop in RungeKuttaFehlberg::next_solution",
             )?;
             if self.err_new < 1.0 {
@@ -148,14 +150,14 @@ impl<P: Physics + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
         // Idea: I could put the while loop into the `if self.bt.asc` block up top, and this single
         // call into the associated else block
         let _ = self
-            .calc_rkf_solution::<N,E,S>(time.dt, u, rhs, mesh)
+            .calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh)
             .context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
         time.t += time.dt;
         return Ok(());
     }
 }
 
-impl<P: Physics+ 'static> RungeKuttaFehlberg<P> {
+impl<P: Physics + 'static> RungeKuttaFehlberg<P> {
     /// Calculates a single solution with an RKF method.
     ///
     /// # Arguments
@@ -177,8 +179,9 @@ impl<P: Physics+ 'static> RungeKuttaFehlberg<P> {
         for q in 0..self.bt.order {
             self.utilde.assign(u);
             for p in 0..q {
-                self.utilde
-                    .assign_cons(&(&self.utilde.cons() - dt_out * self.bt.a[[p,q]] * &self.k_bundle.index_axis(Axis(0), p)).view());
+                self.utilde.assign_cons(
+                    &(&self.utilde.cons() - dt_out * self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)).view(),
+                );
             }
             rhs.update::<E>(&mut self.utilde, mesh)
                 .context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
@@ -189,16 +192,18 @@ impl<P: Physics+ 'static> RungeKuttaFehlberg<P> {
         // calculate high order solution
         self.utilde.assign_cons(&u.cons());
         for q in 0..self.bt.order {
-            self.utilde
-                .assign_cons(&(&self.utilde.cons() - dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)).view());
+            self.utilde.assign_cons(
+                &(&self.utilde.cons() - dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)).view(),
+            );
         }
 
         if !self.solution_accepted {
             // calculate low order solution
             self.u_cons_low.assign(&u.cons());
             for q in 0..self.bt.order {
-                self.utilde
-                    .assign_cons(&(&self.u_cons_low - dt_out * self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)).view());
+                self.utilde.assign_cons(
+                    &(&self.u_cons_low - dt_out * self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)).view(),
+                );
             }
 
             // calc err_new

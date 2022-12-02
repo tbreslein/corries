@@ -8,12 +8,15 @@ use color_eyre::{eyre::bail, Result};
 
 use crate::{
     config::numericsconfig::NumericsConfig,
-    mesh::Mesh,
-    physics::Physics,
+    data::{Data, DataName, StructAssociation},
     // writer::{
     //     data::{Data, DataName, StructAssociation},
     //     Collectable, DataValue,
     // },
+    mesh::Mesh,
+    physics::Physics,
+    Collectable,
+    DataValue,
 };
 
 use super::DtKind;
@@ -113,20 +116,20 @@ impl TimeStep {
     }
 }
 
-// impl Collectable for TimeStep {
-//     fn collect_data(&self, data: &mut Data, _: usize) -> Result<()> {
-//         match (data.association, data.name) {
-//             (StructAssociation::TimeStep, DataName::Iter) => data.payload = DataValue::Usize(self.iter),
-//             (StructAssociation::TimeStep, DataName::T) => data.payload = DataValue::Float(self.t),
-//             (StructAssociation::TimeStep, DataName::Dt) => data.payload = DataValue::Float(self.dt),
-//             (StructAssociation::TimeStep, DataName::DtKind) => {
-//                 data.payload = DataValue::String(format!("{}", self.dt_kind))
-//             },
-//             (StructAssociation::TimeStep, x) => bail!("Tried associating {:?} with Time!", x),
-//             (StructAssociation::Mesh, x) | (StructAssociation::Physics, x) => {
-//                 bail!("name.association() for {:?} returned {:?}", x, data.association)
-//             },
-//         };
-//         return Ok(());
-//     }
-// }
+impl Collectable for TimeStep {
+    fn collect_data(&self, data: &mut Data, _: usize) -> Result<()> {
+        match (data.association, data.name) {
+            (StructAssociation::TimeStep, DataName::Iter) => data.payload = DataValue::Usize(self.iter),
+            (StructAssociation::TimeStep, DataName::T) => data.payload = DataValue::Float(self.t),
+            (StructAssociation::TimeStep, DataName::Dt) => data.payload = DataValue::Float(self.dt),
+            (StructAssociation::TimeStep, DataName::DtKind) => {
+                data.payload = DataValue::String(format!("{}", self.dt_kind))
+            },
+            (StructAssociation::TimeStep, x) => bail!("Tried associating {:?} with Time!", x),
+            (StructAssociation::Mesh, x) | (StructAssociation::Physics, x) => {
+                bail!("name.association() for {:?} returned {:?}", x, data.association)
+            },
+        };
+        return Ok(());
+    }
+}

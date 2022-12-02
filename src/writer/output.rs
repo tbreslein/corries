@@ -8,12 +8,7 @@ use std::path::Path;
 
 use color_eyre::{eyre::WrapErr, Result};
 
-use crate::physics::Physics;
-use crate::timeintegration::TimeIntegration;
-use crate::{
-    config::outputconfig::{FormattingMode, OutputConfig, StreamMode, ToStringConversionMode},
-    mesh::Mesh,
-};
+use crate::prelude::*;
 
 use super::data::{Data, StructAssociation};
 use super::{Collectable, DataValue};
@@ -160,10 +155,10 @@ impl Output {
     /// * `u` - Provides data for the state of the simulation
     /// * `time` - Provides data on the time coordinates
     /// * `mesh` - Provides mesh data
-    pub fn update_data<const S: usize, const EQ: usize>(
+    pub fn update_data<P: Physics + Collectable, T: TimeSolver<P>, const S: usize>(
         &mut self,
-        u: &Physics<S, EQ>,
-        time: &TimeIntegration<S, EQ>,
+        u: &P,
+        time: &Time<P, T>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         self.data.iter_mut().try_for_each(|data| match data.association {

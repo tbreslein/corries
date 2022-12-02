@@ -23,7 +23,10 @@ fn main() -> Result<()> {
             xi_out: 2.0,
             ratio_disk: 1.0,
         },
-        physics_config: PhysicsConfig { adiabatic_index: 1.4, units_mode: UnitsMode::SI },
+        physics_config: PhysicsConfig {
+            adiabatic_index: 1.4,
+            units_mode: UnitsMode::SI,
+        },
         boundary_condition_west: BoundaryMode::Custom(vec![
             (0, CustomBoundaryMode::NoGradients),
             (1, CustomBoundaryMode::NoGradients),
@@ -48,6 +51,32 @@ fn main() -> Result<()> {
             dt_cfl_param: 0.1,
         },
         output_counter_max: 10,
+        writer_config: vec![
+            OutputConfig {
+                stream_mode: StreamMode::Stdout,
+                formatting_mode: FormattingMode::TSV,
+                string_conversion_mode: ToStringConversionMode::Scalar,
+                folder_name: "".to_string(),
+                should_clear_out_folder: false,
+                file_name: "".to_string(),
+                precision: 3,
+                should_print_ghostcells: false,
+                should_print_metadata: true,
+                data_names: vec![DataName::Iter, DataName::T, DataName::Dt, DataName::DtKind],
+            },
+            OutputConfig {
+                stream_mode: StreamMode::File,
+                formatting_mode: FormattingMode::TSV,
+                string_conversion_mode: ToStringConversionMode::Vector,
+                folder_name: "results/accretiondisk".to_string(),
+                should_clear_out_folder: true,
+                file_name: "accretiondisk".to_string(),
+                precision: 7,
+                should_print_ghostcells: true,
+                should_print_metadata: false,
+                data_names: vec![DataName::XiCent],
+            },
+        ],
     };
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;

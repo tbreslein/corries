@@ -23,7 +23,7 @@ pub mod physics;
 pub mod rhs;
 pub mod time;
 pub mod units;
-// pub mod writer;
+pub mod writer;
 
 /// TODO
 pub mod prelude {
@@ -35,6 +35,7 @@ pub mod prelude {
     pub use crate::set_Physics_and_E;
     pub use crate::time::*;
     pub use crate::units::*;
+    pub use crate::writer::*;
 }
 
 pub use prelude::*;
