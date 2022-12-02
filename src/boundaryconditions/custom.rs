@@ -272,15 +272,18 @@ mod tests {
     use approx::assert_relative_eq;
     use ndarray::Array2;
     const S: usize = 6;
-    const EQ: usize = 3;
     const MESHCONFIG: MeshConfig = MeshConfig {
         mode: MeshMode::Cartesian,
         xi_in: 2.0,
         xi_out: 3.0,
         ratio_disk: 1.0,
     };
-    const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig { adiabatic_index: 1.4 };
+    const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig {
+        adiabatic_index: 1.4,
+        units_mode: crate::UnitsMode::SI,
+    };
     type P = Euler1DAdiabatic<S>;
+    const E: usize = 3;
 
     #[test]
     fn extrapolation_test() {
@@ -289,21 +292,22 @@ mod tests {
         let mut u = P::new(&PHYSICSCONFIG);
         u.assign_prim(
             &Array2::from_shape_vec(
-                (EQ, S),
+                (E, S),
                 vec![
                     0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, -2.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 ],
             )
-            .unwrap(),
+            .unwrap()
+            .view(),
         );
         let u_prim_expect = Array2::from_shape_vec(
-            (EQ, S),
+            (E, S),
             vec![
                 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
-        for j in 0..EQ {
+        for j in 0..E {
             extrapolate_west(j, &mut u, &mesh);
             extrapolate_east(j, &mut u, &mesh);
         }
@@ -315,22 +319,23 @@ mod tests {
         let mut u = P::new(&PHYSICSCONFIG);
         u.assign_prim(
             &Array2::from_shape_vec(
-                (EQ, S),
+                (E, S),
                 vec![
                     0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, -2.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 ],
             )
-            .unwrap(),
+            .unwrap()
+            .view(),
         );
         let u_prim_expect = Array2::from_shape_vec(
-            (EQ, S),
+            (E, S),
             vec![
                 0.25e-10, 0.25e-10, 0.25, 0.25, 0.25e-10, 0.25e-10, -2.0e-10, -2.0e-10, -2.0, -1.5, -1.5e-10, -1.5e-10,
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
-        for j in 0..EQ {
+        for j in 0..E {
             near_zero_west::<P, S>(j, &mut u);
             near_zero_east::<P, S>(j, &mut u);
         }
@@ -342,23 +347,24 @@ mod tests {
         let mut u = P::new(&PHYSICSCONFIG);
         u.assign_prim(
             &Array2::from_shape_vec(
-                (EQ, S),
+                (E, S),
                 vec![
                     0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, -2.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 ],
             )
-            .unwrap(),
+            .unwrap()
+            .view(),
         );
 
         let u_prim_expect = Array2::from_shape_vec(
-            (EQ, S),
+            (E, S),
             vec![
                 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, -2.0, -2.0, -2.0, -1.5, -1.5, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
 
-        for j in 0..EQ {
+        for j in 0..E {
             no_gradients_west::<P, S>(j, &mut u);
             no_gradients_east::<P, S>(j, &mut u);
         }
@@ -371,21 +377,22 @@ mod tests {
         let mut u = P::new(&PHYSICSCONFIG);
         u.assign_prim(
             &Array2::from_shape_vec(
-                (EQ, S),
+                (E, S),
                 vec![
                     0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, -2.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 ],
             )
-            .unwrap(),
+            .unwrap()
+            .view(),
         );
         let u_prim_expect = Array2::from_shape_vec(
-            (EQ, S),
+            (E, S),
             vec![
                 -0.25, -0.25, 0.25, 0.25, 0.25, 0.25, -2.0, -2.0, -2.0, -1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
-        for j in 0..EQ {
+        for j in 0..E {
             outflow_no_gradients_west::<P, S>(j, &mut u);
             outflow_no_gradients_east::<P, S>(j, &mut u);
         }
@@ -399,21 +406,22 @@ mod tests {
         let mut u = P::new(&PHYSICSCONFIG);
         u.assign_prim(
             &Array2::from_shape_vec(
-                (EQ, S),
+                (E, S),
                 vec![
                     0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, -2.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 ],
             )
-            .unwrap(),
+            .unwrap()
+            .view(),
         );
         let u_prim_expect = Array2::from_shape_vec(
-            (EQ, S),
+            (E, S),
             vec![
                 -0.25, -0.25, 0.25, 0.25, 0.25, 0.25, -3.0, -2.5, -2.0, -1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
-        for j in 0..EQ {
+        for j in 0..E {
             outflow_extrapolate_west(j, &mut u, &mesh);
             outflow_extrapolate_east(j, &mut u, &mesh);
         }
@@ -426,21 +434,22 @@ mod tests {
         let mut u = P::new(&PHYSICSCONFIG);
         u.assign_prim(
             &Array2::from_shape_vec(
-                (EQ, S),
+                (E, S),
                 vec![
                     0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0, -2.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 ],
             )
-            .unwrap(),
+            .unwrap()
+            .view(),
         );
         let u_prim_expect = Array2::from_shape_vec(
-            (EQ, S),
+            (E, S),
             vec![
                 -0.25, -0.25, 0.25, 0.25, -0.25, -0.25, 1.5, 2.0, -2.0, -1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
-        for j in 0..EQ {
+        for j in 0..E {
             reflecting_west::<P, S>(j, &mut u);
             reflecting_east::<P, S>(j, &mut u);
         }
