@@ -9,7 +9,7 @@ format:
 
 .PHONY: clippy
 clippy:
-	cargo clippy -- -A clippy::needless_return -A clippy::op_ref
+	cargo clippy -- -A clippy::needless_return -A clippy::op_ref -A clippy::too_many_arguments
 
 .PHONY:
 check:
