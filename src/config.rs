@@ -8,11 +8,14 @@ pub mod meshconfig;
 pub mod numericsconfig;
 pub mod physicsconfig;
 
+use color_eyre::{eyre::Context, Result};
 use serde::Serialize;
 
 pub use meshconfig::*;
 pub use numericsconfig::*;
 pub use physicsconfig::*;
+
+use crate::errorhandling::Validation;
 
 /// Enumerates the different boundary conditions
 #[derive(Debug, Serialize)]
@@ -79,18 +82,18 @@ pub struct CorriesConfig {
     // pub writer_config: Vec<OutputConfig>,
 }
 
-// impl Validation for CorriesConfig {
-//     fn validate(&self) -> Result<()> {
-//         self.meshconfig.validate().context("Validating config.meshconfig")?;
-//         self.physicsconfig
-//             .validate()
-//             .context("Validating config.physicsconfig")?;
-//         self.numericsconfig
-//             .validate()
-//             .context("Validating config.numericsconfig")?;
-//         for outputconf in self.writerconfig.iter() {
-//             outputconf.validate().context("Validating config.writerconf")?;
-//         }
-//         return Ok(());
-//     }
-// }
+impl Validation for CorriesConfig {
+    fn validate(&self) -> Result<()> {
+        self.mesh_config.validate().context("Validating config.meshconfig")?;
+        self.physics_config
+            .validate()
+            .context("Validating config.physicsconfig")?;
+        self.numerics_config
+            .validate()
+            .context("Validating config.numericsconfig")?;
+        // for outputconf in self.writerconfig.iter() {
+        //     outputconf.validate().context("Validating config.writerconf")?;
+        // }
+        return Ok(());
+    }
+}
