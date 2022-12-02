@@ -10,10 +10,10 @@ use crate::{
     config::numericsconfig::NumericsConfig,
     mesh::Mesh,
     physics::Physics,
-    writer::{
-        data::{Data, DataName, StructAssociation},
-        Collectable, DataValue,
-    },
+    // writer::{
+    //     data::{Data, DataName, StructAssociation},
+    //     Collectable, DataValue,
+    // },
 };
 
 use super::DtKind;
@@ -84,13 +84,12 @@ impl TimeStep {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    pub fn calc_dt_expl<const S: usize, const EQ: usize>(
+    pub fn calc_dt_expl<P: Physics, const S: usize>(
         &mut self,
-        u: &mut Physics<S, EQ>,
+        u: &mut P,
         // rhs: &Rhs<S, EQ>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
-        // let dt_cfl_pair = (u.calc_dt_cfl(self.dt_cfl_param, &mesh), DtKind::CFL);
         //TODO: source term time steps
         self.dt = u.calc_dt_cfl(self.dt_cfl_param, mesh)?;
         if self.dt < self.dt_min {
@@ -114,20 +113,20 @@ impl TimeStep {
     }
 }
 
-impl Collectable for TimeStep {
-    fn collect_data(&self, data: &mut Data, _: usize) -> Result<()> {
-        match (data.association, data.name) {
-            (StructAssociation::TimeStep, DataName::Iter) => data.payload = DataValue::Usize(self.iter),
-            (StructAssociation::TimeStep, DataName::T) => data.payload = DataValue::Float(self.t),
-            (StructAssociation::TimeStep, DataName::Dt) => data.payload = DataValue::Float(self.dt),
-            (StructAssociation::TimeStep, DataName::DtKind) => {
-                data.payload = DataValue::String(format!("{}", self.dt_kind))
-            },
-            (StructAssociation::TimeStep, x) => bail!("Tried associating {:?} with Time!", x),
-            (StructAssociation::Mesh, x) | (StructAssociation::Physics, x) => {
-                bail!("name.association() for {:?} returned {:?}", x, data.association)
-            },
-        };
-        return Ok(());
-    }
-}
+// impl Collectable for TimeStep {
+//     fn collect_data(&self, data: &mut Data, _: usize) -> Result<()> {
+//         match (data.association, data.name) {
+//             (StructAssociation::TimeStep, DataName::Iter) => data.payload = DataValue::Usize(self.iter),
+//             (StructAssociation::TimeStep, DataName::T) => data.payload = DataValue::Float(self.t),
+//             (StructAssociation::TimeStep, DataName::Dt) => data.payload = DataValue::Float(self.dt),
+//             (StructAssociation::TimeStep, DataName::DtKind) => {
+//                 data.payload = DataValue::String(format!("{}", self.dt_kind))
+//             },
+//             (StructAssociation::TimeStep, x) => bail!("Tried associating {:?} with Time!", x),
+//             (StructAssociation::Mesh, x) | (StructAssociation::Physics, x) => {
+//                 bail!("name.association() for {:?} returned {:?}", x, data.association)
+//             },
+//         };
+//         return Ok(());
+//     }
+// }

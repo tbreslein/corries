@@ -21,7 +21,7 @@ pub mod macros;
 pub mod mesh;
 pub mod physics;
 pub mod rhs;
-// mod timeintegration;
+pub mod timeintegration;
 // mod units;
 // pub mod writer;
 
@@ -33,14 +33,16 @@ pub mod prelude {
     pub use crate::rhs::*;
     pub use crate::run_corries;
     pub use crate::set_Physics_and_E;
+    pub use crate::timeintegration::*;
 }
 
 pub use prelude::*;
 
 /// TODO
-pub fn run_corries<P: Physics, N: NumFlux, const S: usize>(
+pub fn run_corries<P: Physics, N: NumFlux, T: TimeSolver<P>, const S: usize>(
     _u: &mut P,
     _rhs: &mut Rhs<P, N, S>,
+    _time: &mut T,
     _mesh: &Mesh<S>,
 ) -> Result<()> {
     print_banner();

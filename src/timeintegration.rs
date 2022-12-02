@@ -5,6 +5,7 @@
 //! Exports the [TimeIntegration] struct, and the [DtKind] enum.
 
 use std::fmt::Display;
+use std::marker::PhantomData;
 
 use color_eyre::{
     eyre::{bail, Context},
@@ -12,16 +13,18 @@ use color_eyre::{
 };
 
 use crate::{
-    config::{numericsconfig::TimeIntegrationConfig, CorriesConfig},
+    config::CorriesConfig,
     mesh::Mesh,
     physics::Physics,
     rhs::Rhs,
+    NumFlux,
 };
 
-use self::{rkf::RungeKuttaFehlberg, timestep::TimeStep};
 
-mod rkf;
-mod timestep;
+pub mod rkf;
+pub mod timestep;
+pub use self::rkf::RungeKuttaFehlberg;
+use self::timestep::TimeStep;
 
 /// Enumerates the different kinds of effects that can limit the time step width.
 pub enum DtKind {
@@ -46,7 +49,15 @@ impl Display for DtKind {
 }
 
 /// Trait for objects that solve the time integration step and produce new solutions
-trait TimeSolver<const S: usize, const EQ: usize> {
+pub trait TimeSolver<P: Physics> {
+    /// Constructs a new [TimeSolver] object
+    ///
+    /// # Arguments
+    ///
+    /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
+    /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
+    fn new<const E: usize, const S: usize>(config: &CorriesConfig, u: &P) -> Result<Self> where Self: Sized;
+
     /// Calculates the next solution for the physical state
     ///
     /// # Arguments
@@ -55,11 +66,11 @@ trait TimeSolver<const S: usize, const EQ: usize> {
     /// * `u` - The current physical state
     /// * `rhs` - Solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    fn next_solution(
+    fn next_solution<N: NumFlux, const E: usize, const S: usize>(
         &mut self,
         time: &mut TimeStep,
-        u: &mut Physics<S, EQ>,
-        rhs: &mut Rhs<S, EQ>,
+        u: &mut P,
+        rhs: &mut Rhs<P, N, S>,
         mesh: &Mesh<S>,
     ) -> Result<()>;
 }
@@ -68,30 +79,28 @@ trait TimeSolver<const S: usize, const EQ: usize> {
 ///
 /// Carries a [TimeStep] for keeping track of the time coordinate and data regarding it, as well as
 /// a `Box<dyn TimeSolver>` for calculating new solutions.
-pub struct TimeIntegration<const S: usize, const EQ: usize> {
+pub struct TimeIntegration<P: Physics, T: TimeSolver<P>> {
     /// Keeps track of the time coordinate and related data
     pub timestep: TimeStep,
 
     /// Calculates solutions for the [Physics] state
-    solver: Box<dyn TimeSolver<S, EQ>>,
+    solver: T,
+
+    embedded_type: PhantomData<P>,
 }
 
-impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
+impl<P: Physics, T: TimeSolver<P>> TimeIntegration<P, T> {
     /// Constructs a new [TimeIntegration] struct.
     ///
     /// # Arguments
     ///
     /// * `config` - a [CorriesConfig] configuration object
-    pub fn new(config: &CorriesConfig, u: &Physics<S, EQ>) -> Result<Self> {
-        let solver = match &config.numericsconfig.time_integration_config {
-            TimeIntegrationConfig::Rkf(rkfconfig) => {
-                let s = RungeKuttaFehlberg::new(rkfconfig, config, u).context("Constructing RungeKuttaFehlberg")?;
-                Box::new(s)
-            },
-        };
+    pub fn new<const E: usize, const S: usize>(config: &CorriesConfig, u: &P) -> Result<Self> {
+        let solver = T::new::<E, S>(config, u)?;
         return Ok(Self {
-            timestep: TimeStep::new(&config.numericsconfig, config.output_counter_max),
+            timestep: TimeStep::new(&config.numerics_config, config.output_counter_max),
             solver,
+            embedded_type: PhantomData,
         });
     }
 
@@ -102,9 +111,14 @@ impl<const S: usize, const EQ: usize> TimeIntegration<S, EQ> {
     /// * `u` - the [Physics] state being modified to transition between current and next state
     /// * `rhs` - solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    pub fn next_solution(&mut self, u: &mut Physics<S, EQ>, rhs: &mut Rhs<S, EQ>, mesh: &Mesh<S>) -> Result<()> {
+    pub fn next_solution<N: NumFlux, const E: usize, const S: usize>(
+        &mut self,
+        u: &mut P,
+        rhs: &mut Rhs<P, N, S>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
         self.solver
-            .next_solution(&mut self.timestep, u, rhs, mesh)
+            .next_solution::<N,E,S>(&mut self.timestep, u, rhs, mesh)
             .context("Calling TimeIntegration::solver.next_solution in TimeIntegration::next_solution")?;
         if self.timestep.iter >= self.timestep.iter_max {
             bail!(

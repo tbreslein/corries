@@ -118,7 +118,13 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
     }
 
     fn update_derived_values(&mut self) {
-        update_eigen_vals(self.eigen_vals.view_mut(),J_EIGENMIN, J_EIGENMAX, self.prim.row(JXI), self.c_sound.view());
+        update_eigen_vals(
+            self.eigen_vals.view_mut(),
+            J_EIGENMIN,
+            J_EIGENMAX,
+            self.prim.row(JXI),
+            self.c_sound.view(),
+        );
         update_flux(
             self.flux.view_mut(),
             self.prim.view(),
@@ -140,19 +146,30 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
     }
 
     #[inline(always)]
-    fn assign_prim(&mut self, rhs: &Array2<f64>) {
+    fn assign_prim(&mut self, rhs: &ArrayView2<f64>) {
         self.prim.assign(rhs);
     }
 
     #[inline(always)]
-    fn assign_cons(&mut self, rhs: &Array2<f64>) {
+    fn assign_cons(&mut self, rhs: &ArrayView2<f64>) {
         self.cons.assign(rhs);
+    }
+
+    #[inline(always)]
+    fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>) {
+        self.c_sound.assign(rhs);
     }
 }
 
 /// Updates eigen values
 #[inline(always)]
-pub fn update_eigen_vals(mut eigen_vals: ArrayViewMut2<f64>, j_eigen_min: usize, j_eigen_max: usize, xi_vel: ArrayView1<f64>, c_sound: ArrayView1<f64>) {
+pub fn update_eigen_vals(
+    mut eigen_vals: ArrayViewMut2<f64>,
+    j_eigen_min: usize,
+    j_eigen_max: usize,
+    xi_vel: ArrayView1<f64>,
+    c_sound: ArrayView1<f64>,
+) {
     Zip::from(eigen_vals.row_mut(j_eigen_min))
         .and(xi_vel)
         .and(c_sound)
@@ -191,7 +208,14 @@ pub fn update_flux(
 
 /// Converts conservative to primitive variables
 #[inline(always)]
-pub fn cons_to_prim(prim: &mut ArrayViewMut2<f64>, j_rho_prim: usize, j_xi_vel: usize, cons: &ArrayView2<f64>, j_rho_cons: usize, j_xi_mom: usize) {
+pub fn cons_to_prim(
+    prim: &mut ArrayViewMut2<f64>,
+    j_rho_prim: usize,
+    j_xi_vel: usize,
+    cons: &ArrayView2<f64>,
+    j_rho_cons: usize,
+    j_xi_mom: usize,
+) {
     Zip::from(prim.row_mut(j_rho_prim))
         .and(cons.row(j_rho_cons))
         .for_each(|rho_prim, &rho_cons| *rho_prim = rho_cons);
@@ -203,7 +227,14 @@ pub fn cons_to_prim(prim: &mut ArrayViewMut2<f64>, j_rho_prim: usize, j_xi_vel: 
 
 /// Converts primitive to conservative variables
 #[inline(always)]
-pub fn prim_to_cons(cons: &mut ArrayViewMut2<f64>, j_rho_cons: usize, j_xi_mom: usize, prim: &ArrayView2<f64>, j_rho_prim: usize, j_xi_vel: usize) {
+pub fn prim_to_cons(
+    cons: &mut ArrayViewMut2<f64>,
+    j_rho_cons: usize,
+    j_xi_mom: usize,
+    prim: &ArrayView2<f64>,
+    j_rho_prim: usize,
+    j_xi_vel: usize,
+) {
     Zip::from(cons.row_mut(j_rho_cons))
         .and(prim.row(j_rho_prim))
         .for_each(|rho_cons, &rho_prim| *rho_cons = rho_prim);

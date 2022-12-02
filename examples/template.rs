@@ -12,6 +12,7 @@ use corries::prelude::*;
 const S: usize = 10;
 set_Physics_and_E!(Euler1DIsot);
 type N = Hll;
+type T = RungeKuttaFehlberg<P>;
 
 fn main() -> Result<()> {
     let config: CorriesConfig = CorriesConfig {
@@ -52,6 +53,7 @@ fn main() -> Result<()> {
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u: P = P::new(&config.physics_config);
     let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    run_corries(&mut u, &mut rhs, &mesh)?;
+    let mut time = T::new::<E,S>(&config, &u)?;
+    run_corries(&mut u, &mut rhs, &mut time, &mesh)?;
     return Ok(());
 }

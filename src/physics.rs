@@ -4,7 +4,8 @@
 
 //! TODO
 
-use ndarray::{Array2, ArrayView1, ArrayView2};
+use color_eyre::{eyre::bail, Result};
+use ndarray::{ArrayView1, ArrayView2, Zip};
 
 use crate::{boundaryconditions::BoundaryCondition, config::physicsconfig::PhysicsConfig, Mesh};
 
@@ -70,13 +71,34 @@ pub trait Physics {
     fn assign_prim_entry(&mut self, j: usize, i: usize, rhs: f64);
 
     /// Assign rhs to primitive variables
-    fn assign_prim(&mut self, rhs: &Array2<f64>);
+    fn assign_prim(&mut self, rhs: &ArrayView2<f64>);
 
     /// Assign rhs to primitive variables at row j and column i
     fn assign_cons_entry(&mut self, j: usize, i: usize, rhs: f64);
 
     /// Assign rhs to conservative variables
-    fn assign_cons(&mut self, rhs: &Array2<f64>);
+    fn assign_cons(&mut self, rhs: &ArrayView2<f64>);
+
+    fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>);
+
+    /// Assign the object rhs to this one
+    fn assign(&mut self, rhs: &Self) {
+        self.assign_prim(&rhs.prim());
+        self.assign_cons(&rhs.cons());
+        self.assign_c_sound(&rhs.c_sound());
+    }
+
+    /// Calculate the CFL limited time step width
+    fn calc_dt_cfl<const S: usize>(&self, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
+        let dt = c_cfl
+            / Zip::from(self.eigen_max())
+                .and(&mesh.cell_width_inv)
+                .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
+        if !dt.is_finite() {
+            bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
+        }
+        return Ok(dt);
+    }
 }
 
 /// Update everything assuming that the conservative variables are up-to-date
