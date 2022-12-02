@@ -23,7 +23,7 @@ fn main() -> Result<()> {
             xi_out: 2.0,
             ratio_disk: 1.0,
         },
-        physics_config: PhysicsConfig { adiabatic_index: 1.4 },
+        physics_config: PhysicsConfig { adiabatic_index: 1.4, units_mode: UnitsMode::SI },
         boundary_condition_west: BoundaryMode::Custom(vec![
             (0, CustomBoundaryMode::NoGradients),
             (1, CustomBoundaryMode::NoGradients),
