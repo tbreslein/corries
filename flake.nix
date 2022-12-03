@@ -76,7 +76,6 @@
             nixpkgs-fmt
             rust-analyzer
             nodePackages.prettier
-            cargo-make # https://github.com/sagiegurari/cargo-make
             cargo-nextest # https://nexte.st/
             cargo-criterion # https://github.com/bheisler/cargo-criterion
           ];
