@@ -4,10 +4,12 @@
 
 //! TODO
 
-use color_eyre::{Result, eyre::ensure};
+use color_eyre::{eyre::ensure, Result};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
-use crate::{config::physicsconfig::PhysicsConfig, data::Data, physics::Physics, Collectable, errorhandling::Validation};
+use crate::{
+    config::physicsconfig::PhysicsConfig, data::Data, errorhandling::Validation, physics::Physics, Collectable,
+};
 
 const E: usize = 2;
 const JRHO: usize = 0;

@@ -277,7 +277,8 @@ impl<P: Physics + Validation + 'static> RungeKuttaFehlberg<P> {
             .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         u.assign_cons(&self.utilde.cons());
         update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
-        u.validate().context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        u.validate()
+            .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         return Ok(dt_out);
     }
 }
