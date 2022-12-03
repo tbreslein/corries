@@ -38,10 +38,10 @@ pub mod writer;
 /// as well as the [set_Physics_and_E] macro, and the [run_corries] function
 pub mod prelude {
     pub use crate::config::*;
+    pub use crate::init_corries;
     pub use crate::mesh::*;
     pub use crate::physics::*;
     pub use crate::rhs::*;
-    pub use crate::init_corries;
     pub use crate::run_corries;
     pub use crate::set_Physics_and_E;
     pub use crate::time::*;
@@ -57,8 +57,14 @@ pub use prelude::*;
 /// Apart from the `config` argument, the important bits that also help configuring the simulation
 /// are the template Parameters. For example, the type you pass as the first template argument
 /// determines the type of `Physics` used throughout the whole simulation!
-pub fn init_corries<P, N, T, const E: usize, const S: usize>(config: &CorriesConfig) -> Result<(P, Rhs<P,N,S>, Time<P,T>, Mesh<S>, Writer)> where P: Physics + Collectable + 'static, N: NumFlux, T: TimeSolver<P> {
-
+pub fn init_corries<P, N, T, const E: usize, const S: usize>(
+    config: &CorriesConfig,
+) -> Result<(P, Rhs<P, N, S>, Time<P, T>, Mesh<S>, Writer)>
+where
+    P: Physics + Collectable + 'static,
+    N: NumFlux,
+    T: TimeSolver<P>,
+{
     config.validate()?;
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
