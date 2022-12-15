@@ -1,5 +1,5 @@
 {
-  description = "aoc 2022";
+  description = "A corrosive 1D hydrodynamics solver";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
