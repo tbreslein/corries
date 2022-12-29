@@ -6,9 +6,7 @@
 
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
-use ndarray::parallel::prelude::*;
-use ndarray::{par_azip, s, Array1, Array2, Axis};
-use rayon::prelude::IntoParallelIterator;
+use ndarray::{par_azip, s, Array1, Array2};
 
 use crate::errorhandling::Validation;
 use crate::numericsconfig::NumericsConfig;
