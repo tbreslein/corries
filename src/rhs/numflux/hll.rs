@@ -85,8 +85,10 @@ impl NumFlux for Hll {
         }
 
         calc_dflux_xi_generic::<E, S>(dflux_dxi, &self.flux_num, mesh);
-        self.validate()
-            .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
+        if cfg!(feature = "validation") {
+            self.validate()
+                .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
+        }
         return Ok(());
     }
 }

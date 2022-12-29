@@ -385,7 +385,10 @@ impl<const S: usize> Mesh<S> {
             minus_cepe,
         };
 
-        mesh.validate().context("Validating Mesh")?;
+        if cfg!(feature = "validation") {
+            mesh.validate().context("Validating Mesh")?;
+        }
+
         return Ok(mesh);
     }
 }

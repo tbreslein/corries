@@ -65,7 +65,9 @@ where
     N: NumFlux,
     T: TimeSolver<P>,
 {
-    config.validate()?;
+    if cfg!(feature = "validation") {
+        config.validate()?;
+    }
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let u: P = P::new(&config.physics_config);

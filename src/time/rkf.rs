@@ -141,8 +141,10 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
 
         u.assign_cons(&self.utilde.cons());
         update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
-        u.validate()
-            .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        if cfg!(feature = "validation") {
+            u.validate()
+                .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        }
 
         time.t += time.dt;
         return Ok(());
@@ -259,8 +261,10 @@ impl<P: Physics + Validation + 'static> RungeKuttaFehlberg<P> {
             self.err_old = self.err_new;
         }
 
-        self.validate()
-            .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        if cfg!(feature = "validation") {
+            self.validate()
+                .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+        }
         return Ok(dt_out);
     }
 }

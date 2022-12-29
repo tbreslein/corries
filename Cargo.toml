@@ -15,6 +15,10 @@ categories = ["science", "mathematics"]
 # deactivates auto-discovery in ./tests, so that I can add the integration tests manually
 # autotests = false
 
+[features]
+default = ["validation"]
+validation = []
+
 # [[example]]
 # name = "accretiondisk"
 #
