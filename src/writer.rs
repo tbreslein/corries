@@ -94,8 +94,7 @@ impl Writer {
     pub fn write_output(&mut self) -> Result<()> {
         self.outputs
             .par_iter_mut()
-            .map(|output| output.write_output(self.output_counter))
-            .collect::<Result<()>>()?;
+            .try_for_each(|output| output.write_output(self.output_counter))?;
         self.output_counter += 1;
         return Ok(());
     }
@@ -105,8 +104,7 @@ impl Writer {
     pub fn write_metadata<const S: usize>(&mut self) -> Result<()> {
         self.outputs
             .par_iter_mut()
-            .map(|output| output.write_metadata::<S>(&self.meta_data))
-            .collect::<Result<()>>()?;
+            .try_for_each(|output| output.write_metadata::<S>(&self.meta_data))?;
         return Ok(());
     }
 }
