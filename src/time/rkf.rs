@@ -66,9 +66,6 @@ pub struct RungeKuttaFehlberg<P: Physics + Validation> {
 
     /// Stores the full intermediate solution
     utilde: P,
-
-    /// Temporary holder for dt, needed for embedded methods
-    dt_temp: f64,
 }
 
 impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> {
@@ -86,7 +83,7 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
                     rkf_config.asc_relative_tolerance,
                     rkf_config.asc_absolute_tolerance,
                     rkf_config.asc_timestep_friction,
-                ), // _ => bail!("HOW DID THIS HAPPEN?!")
+                ),
             };
         let order = bt.order;
         let mut utilde = P::new(&config.physics_config);
@@ -104,7 +101,6 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
             u_cons_low: Array2::zeros((E, S)),
             u_prim_old: Array2::zeros((E, S)),
             utilde,
-            dt_temp: 0.0,
         });
     }
 
@@ -116,7 +112,6 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
         mesh: &Mesh<S>,
     ) -> Result<()> {
         time.iter += 1;
-        self.n_asc = 0;
         time.calc_dt_expl(u, mesh)
             .context("time.calc_dt_expl at the beginning of RungeKuttaFehlberg::next_solution")?;
         time.cap_dt();
@@ -124,38 +119,29 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
         if self.bt.asc {
             self.u_prim_old.assign(&u.prim());
             self.solution_accepted = false;
-            self.dt_temp = time.dt;
-        }
+            self.n_asc = 0;
 
-        while !self.solution_accepted {
-            self.dt_temp = self.calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh).context(
-                "RungeKuttaFehlberg::calc_rkf_solution in the while loop in RungeKuttaFehlberg::next_solution",
-            )?;
-            if self.err_new < 1.0 {
-                time.dt = self.dt_temp;
-                time.cap_dt();
-                self.solution_accepted = true;
+            while !self.solution_accepted {
+                time.dt = self.calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh).context(
+                    "RungeKuttaFehlberg::calc_rkf_solution in the while loop in RungeKuttaFehlberg::next_solution",
+                )?;
+                if self.err_new < 1.0 {
+                    time.cap_dt();
+                    self.solution_accepted = true;
+                }
+                self.n_asc += 1;
             }
-
-            // reset before calculating the final rkf solution or trying again depending on
-            // solution_accepted
-            u.assign_prim(&self.u_prim_old.view());
-            u.update_cons();
-            u.update_derived_values();
-            self.n_asc += 1;
         }
 
-        // Calculate the final rkf solution.
-        // TODO:
-        // For embedded methods, this might actually be a redundant call to this method, since u
-        // should already have that solution from the last iteration of the while loop.
-        // In an earlier iteration skipping this call for embedded methods did not work, so I
-        // should play around with this again, since this call can be quite expensive.
-        // Idea: I could put the while loop into the `if self.bt.asc` block up top, and this single
-        // call into the associated else block
+        // NOTE: for embedded methods, this call calculates a solution with the finalised this->dt since the solution is
+        // already considered accepted. This is necessary, since this->dt might have been capped again.
         let _ = self
             .calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh)
             .context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
+        u.assign_cons(&self.utilde.cons());
+        update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
+        u.validate()
+            .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         time.t += time.dt;
         return Ok(());
     }
@@ -269,16 +255,10 @@ impl<P: Physics + Validation + 'static> RungeKuttaFehlberg<P> {
                 dt_new
             };
             self.err_old = self.err_new;
-            // NOTE: is this necessary?
-            // self.u_cons_low.fill(0.0);
         }
 
         self.validate()
             .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
-        u.assign_cons(&self.utilde.cons());
-        update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
-        u.validate()
-            .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         return Ok(dt_out);
     }
 }
