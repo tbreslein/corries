@@ -69,9 +69,9 @@ where
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let u: P = P::new(&config.physics_config);
-    let rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
-    let mut writer = Writer::new::<S>(&config, &mesh)?;
+    let rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(config);
+    let time: Time<P, T> = Time::new::<E, S>(config, &u)?;
+    let mut writer = Writer::new::<S>(config, &mesh)?;
 
     if writer.print_banner {
         print_banner();
