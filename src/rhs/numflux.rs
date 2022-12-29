@@ -22,7 +22,7 @@ pub trait NumFlux {
     fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
-        u: &mut P,
+        u: &P,
         mesh: &Mesh<S>,
     ) -> Result<()>;
 }

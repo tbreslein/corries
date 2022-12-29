@@ -6,7 +6,9 @@
 
 use color_eyre::eyre::{ensure, Context};
 use color_eyre::Result;
-use ndarray::{par_azip, s, Array1, Array2};
+use ndarray::parallel::prelude::*;
+use ndarray::{par_azip, s, Array1, Array2, Axis};
+use rayon::prelude::IntoParallelIterator;
 
 use crate::errorhandling::Validation;
 use crate::numericsconfig::NumericsConfig;
@@ -47,49 +49,43 @@ impl NumFlux for Hll {
     fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
-        u: &mut P,
+        u: &P,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         // NOTE: Assumes that u.eigen_vals and u.flux are already up to date
-        // NOTE: This function was benchmarked using many different combinations of raw loops,
-        // azips, par_azips, and Zip::par_for_each. This ended up being the most performant
-        // version. The lession we can take from this is that, that the BLAS parallelisation used
-        // in the .assign method is already good enough, and that parallelisation over the
-        // equations creates to much overhead. This function in particular ran about 7.5% slower in
-        // my notebook when replacing the for j loop with a Zip::par_for_each.
-        // My guess is that the for loop probably got fully unrolled, since the compiler knows the
-        // length of the loop at compile time, and that lead to a far greater performance boost
-        // compared to what the Zip::par_for_each had to offer.
-        // The assignments for sl, sr, inv_sr_minus_sl, and sr_times_sl on the other hand performed
-        // just well in both version: simple .assign calls and par_azip calls. I chose to stick
-        // with the par_azip version because I think it's easier to read, and might(!) scale
-        // better.
         let s = s![(mesh.ixi_in - 1)..=mesh.ixi_out];
         let sp1 = s![mesh.ixi_in..=(mesh.ixi_out + 1)];
 
-        par_azip!((sl in &mut self.sl.slice_mut(s), &ev1 in &u.eigen_min().slice(s), &ev2 in &u.eigen_min().slice(sp1))
-            *sl = 0.0f64.min(ev1.min(ev2))
-        );
-        par_azip!((sr in &mut self.sr.slice_mut(s), &ev1 in &u.eigen_max().slice(s), &ev2 in &u.eigen_max().slice(sp1))
-            *sr = 0.0f64.max(ev1.max(ev2))
-        );
-        par_azip!((a in &mut self.inv_sr_minus_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
-            *a = 1.0 / (sr - sl)
-        );
-        par_azip!((b in &mut self.sr_times_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
-            *b = sr * sl
-        );
+        // PERF: This was benchmarked in comparison with running these 4 calls in blocks of two
+        // parallel calls using rayon::join. The operations themselves, even on a 500 cell mesh,
+        // were fast enough to outpace the overhead of the joins. Calling the parallel zip as 4
+        // sequential calls was the clear benchmark winner on two seperate machines.
+        par_azip!((
+                sl in &mut self.sl.slice_mut(s), &ev1 in &u.eigen_min().slice(s), &ev2 in &u.eigen_min().slice(sp1))
+                *sl = 0.0f64.min(ev1.min(ev2)));
+        par_azip!((
+                sr in &mut self.sr.slice_mut(s), &ev1 in &u.eigen_max().slice(s), &ev2 in &u.eigen_max().slice(sp1))
+                *sr = 0.0f64.max(ev1.max(ev2)));
+        par_azip!((
+                a in &mut self.inv_sr_minus_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
+                *a = 1.0 / (sr - sl));
+        par_azip!((
+                b in &mut self.sr_times_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
+                *b = sr * sl);
 
+        // PERF: This loop was benchmarked against using a parallel iterator on self.flux_num with
+        // the benchmark using 3 equations and a mesh of 500 cells. The raw loop won over the
+        // parallel iterator in that case, probably due to parallelisation in the .assign(), since
+        // that uses parallel BLAS under the hood.
+        // Adding a parallel iter on top of that creates too much overhead to be useful.
         for j in 0..E {
-            let mut flux_num_j = self.flux_num.row_mut(j);
-            let flux_phys_j = u.flux_row(j);
-            let uc_j = u.cons_row(j);
-            flux_num_j.slice_mut(s).assign(
+            self.flux_num.row_mut(j).slice_mut(s).assign(
                 &(&self.inv_sr_minus_sl.slice(s)
-                    * (&self.sr.slice(s) * &flux_phys_j.slice(s) - &self.sl.slice(s) * &flux_phys_j.slice(sp1)
-                        + &self.sr_times_sl.slice(s) * (&uc_j.slice(sp1) - &uc_j.slice(s)))),
+                    * (&self.sr.slice(s) * &u.flux_row(j).slice(s) - &self.sl.slice(s) * &u.flux_row(j).slice(sp1)
+                        + &self.sr_times_sl.slice(s) * (&u.cons_row(j).slice(sp1) - &u.cons_row(j).slice(s)))),
             );
         }
+
         calc_dflux_xi_generic::<E, S>(dflux_dxi, &self.flux_num, mesh);
         self.validate()
             .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
