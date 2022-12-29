@@ -5,7 +5,6 @@ CORrosive RIEmann Solver (corrosive because it's written in Rust...)
 ## TODO
 
 - more detailed README
-- streamline rkf solver a tiny bit (like in my doc project)
 - turn calc_dt_expl into an external generic function and make it return `(double, DtKind)`
 - find more opportunities to use `ensure!`, like in calc_dt_expl
 - Add Sod test
