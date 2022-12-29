@@ -138,10 +138,12 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
         let _ = self
             .calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh)
             .context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
+
         u.assign_cons(&self.utilde.cons());
         update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
         u.validate()
             .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
+
         time.t += time.dt;
         return Ok(());
     }
