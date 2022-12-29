@@ -182,7 +182,7 @@ pub fn update_eigen_vals(
         .and(c_sound)
         .for_each(|e, &v, &cs| *e = v - cs);
 
-    for j in j_eigen_min..j_eigen_max {
+    for j in j_eigen_min + 1..j_eigen_max {
         eigen_vals.row_mut(j).assign(&xi_vel);
     }
 
