@@ -17,9 +17,6 @@ use super::NumFlux;
 
 /// Handles calculating numerical flux using the HLL scheme
 pub struct Hll {
-    /// Physical flux
-    flux_phys: Array2<f64>,
-
     /// Left-side characteristics
     sl: Array1<f64>,
 
@@ -39,7 +36,6 @@ pub struct Hll {
 impl NumFlux for Hll {
     fn new<const E: usize, const S: usize>(_: &NumericsConfig) -> Self {
         return Self {
-            flux_phys: Array2::zeros((E, S)),
             sl: Array1::zeros(S),
             sr: Array1::zeros(S),
             inv_sr_minus_sl: Array1::zeros(S),
@@ -86,7 +82,7 @@ impl NumFlux for Hll {
 
         for j in 0..E {
             let mut flux_num_j = self.flux_num.row_mut(j);
-            let flux_phys_j = self.flux_phys.row(j);
+            let flux_phys_j = u.flux_row(j);
             let uc_j = u.cons_row(j);
             flux_num_j.slice_mut(s).assign(
                 &(&self.inv_sr_minus_sl.slice(s)
@@ -94,7 +90,6 @@ impl NumFlux for Hll {
                         + &self.sr_times_sl.slice(s) * (&uc_j.slice(sp1) - &uc_j.slice(s)))),
             );
         }
-
         calc_dflux_xi_generic::<E, S>(dflux_dxi, &self.flux_num, mesh);
         self.validate()
             .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
@@ -104,11 +99,6 @@ impl NumFlux for Hll {
 
 impl Validation for Hll {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.flux_phys.fold(true, |acc, x| acc && x.is_finite()),
-            "Hll::flux_phys must be finite! Got: {}",
-            self.flux_phys
-        );
         ensure!(
             self.sl.fold(true, |acc, x| acc && x.is_finite()),
             "Hll::sl must be finite! Got: {}",
@@ -135,69 +125,83 @@ impl Validation for Hll {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::{
-//         config::{
-//             meshconfig::{MeshConfig, MeshMode},
-//             physicsconfig::{PhysicsConfig, PhysicsMode},
-//         },
-//         units::UnitsMode,
-//     };
-//
-//     use super::*;
-//     use approx::assert_relative_eq;
-//     use ndarray::Array2;
-//     const S: usize = 8;
-//     const EQ: usize = 2;
-//     const MESHCONFIG: MeshConfig = MeshConfig {
-//         mode: MeshMode::Cartesian,
-//         xi_in: 2.0,
-//         xi_out: 3.0,
-//         ratio_disk: 1.0,
-//     };
-//     const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig {
-//         mode: PhysicsMode::Euler1DIsot,
-//         units_mode: UnitsMode::SI,
-//         adiabatic_index: 1.4,
-//     };
-//
-//     fn init_noh<const S: usize, const EQ: usize>(u: &mut Physics<S, EQ>) {
-//         let breakpoint_index = (S as f64 * 0.5) as usize;
-//         u.prim.fill(0.0);
-//         u.cons.fill(0.0);
-//         for i in 0..breakpoint_index {
-//             u.prim[[u.jdensity, i]] = 1.0;
-//             u.prim[[u.jxivelocity, i]] = 1.0;
-//         }
-//         for i in breakpoint_index..S {
-//             u.prim[[u.jdensity, i]] = 1.0;
-//             u.prim[[u.jxivelocity, i]] = -1.0;
-//         }
-//         u.c_sound.fill(1.0);
-//         return;
-//     }
-//
-//     #[test]
-//     fn hll_test() {
-//         // Also test this on log meshes
-//         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
-//         let mut u: Physics<S, EQ> = Physics::new(&PHYSICSCONFIG);
-//         init_noh(&mut u);
-//         u.update_cons();
-//         u.update_derived_variables();
-//         let mut hll: Hll<S, EQ> = Hll::new();
-//
-//         let dflux_dxi_prim_expect = Array2::from_shape_vec(
-//             (EQ, S),
-//             vec![
-//                 0.0, 0.0, 0.0, -4.0, -4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.0, -8.0, 0.0, 0.0, 0.0,
-//             ],
-//         )
-//         .unwrap();
-//
-//         let mut dflux_dxi = Array2::zeros((EQ, S));
-//         hll.calc_dflux_dxi(&mut dflux_dxi, &mut u, &mesh).unwrap();
-//         assert_relative_eq!(dflux_dxi, dflux_dxi_prim_expect, max_relative = 1.0e-12);
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+
+    use super::*;
+    use approx::assert_relative_eq;
+    use ndarray::Array2;
+    const S: usize = 8;
+    const EQ: usize = 2;
+    const MESHCONFIG: MeshConfig = MeshConfig {
+        mode: MeshMode::Cartesian,
+        xi_in: 2.0,
+        xi_out: 3.0,
+        ratio_disk: 1.0,
+    };
+    const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig {
+        units_mode: UnitsMode::SI,
+        adiabatic_index: 1.4,
+    };
+
+    fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
+        let breakpoint_index = (S as f64 * 0.5) as usize;
+        let mut prim = Array2::zeros((E, S));
+        prim.fill(0.0);
+        for i in 0..breakpoint_index {
+            prim[[0, i]] = 1.0;
+            prim[[1, i]] = 1.0;
+        }
+        for i in breakpoint_index..S {
+            prim[[0, i]] = 1.0;
+            prim[[1, i]] = -1.0;
+        }
+        if u.is_adiabatic() {
+            prim.row_mut(E - 1).fill(1.0E-5)
+        } else {
+            let c_sound = Array1::ones(S);
+            u.assign_c_sound(&c_sound.view());
+        }
+        u.assign_prim(&prim.view());
+        return;
+    }
+
+    #[test]
+    fn hll_test() {
+        set_Physics_and_E!(Euler1DIsot);
+        // Also test this on log meshes
+        let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
+        let mut u: P = P::new(&PHYSICSCONFIG);
+        init_noh::<P, E, S>(&mut u);
+        u.update_cons();
+        u.update_derived_values();
+        let mut hll = Hll::new::<E, S>(&NumericsConfig {
+            time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
+                rkf_mode: RKFMode::SSPRK5,
+                asc: false,
+                asc_relative_tolerance: 0.001,
+                asc_absolute_tolerance: 0.001,
+                asc_timestep_friction: 0.08,
+            }),
+            iter_max: usize::MAX - 2,
+            t0: 0.0,
+            t_end: 0.5,
+            dt_min: 1.0e-12,
+            dt_max: f64::MAX,
+            dt_cfl_param: 0.4,
+        });
+
+        let dflux_dxi_prim_expect = Array2::from_shape_vec(
+            (EQ, S),
+            vec![
+                0.0, 0.0, 0.0, -4.0, -4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.0, -8.0, 0.0, 0.0, 0.0,
+            ],
+        )
+        .unwrap();
+
+        let mut dflux_dxi = Array2::zeros((EQ, S));
+        hll.calc_dflux_dxi::<P, E, S>(&mut dflux_dxi, &mut u, &mesh).unwrap();
+        assert_relative_eq!(dflux_dxi, dflux_dxi_prim_expect, max_relative = 1.0e-12);
+    }
+}
