@@ -48,7 +48,11 @@ I recommend setting these types with type definitions local to your setup, and t
 
 Technically you also need to set the number of equations you are solving, but since that number is coupled to your `Physics` type, there is a macro that sets it for you in `src/macros.rs`.
 
-## Building
+There is also a feature that is on by default and that you can turn off if you like.
+At a couple of points during the simulation parts of the state run through validation, where, for example, we check that we did not produce infinities or NaNs, or that we ran into situations that are not feasible, like non-positive pressure.
+These checks are turned on by default, but you can turn them off by passing the `--no-default-features` flag to your cargo command.
+
+## Building / running
 
 You can build your executables like you would any other cargo project.
 If you are writing your simulations in the `examples` folder, you can simply run that example with:
@@ -59,6 +63,15 @@ cargo run name-of-you-example-file
 
 though omit the `.rs` ending.
 
+## The `justfile`
+
+This project includes a `justfile` that lists a couple of common operations.
+For example the `test` recipe runs the whole test suite, including clippy.
+
+You can run these directly using [just](https://github.com/casey/just).
+
+Some of these recipes assume additional external tools like `rustfmt` and `nextest`!
+
 ## Examples
 
 TODO
@@ -66,6 +79,8 @@ TODO
 ## Tests
 
 Apart from unit tests, `Corries` also has a couple of integration tests, which are standard hydrodynamics problems to test that the solver runs like it's supposed to.
+
+The whole test suite can be run with `cargo test`.
 
 TODO: Add plots for those tests?
 
