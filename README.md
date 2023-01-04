@@ -84,6 +84,12 @@ The whole test suite can be run with `cargo test`.
 
 TODO: Add plots for those tests?
 
+<img
+  src="https://www.dropbox.com/s/vixbwrxxvqqnllr/noh_euler1d_adiabatic.png?dl=0"
+  alt="Alt text"
+  title="Optional title"
+  style="display: inline-block; margin: 0 auto; max-width: 300px">
+
 ## TODO
 
 - more detailed README
