@@ -82,14 +82,45 @@ Apart from unit tests, `Corries` also has a couple of integration tests, which a
 
 The whole test suite can be run with `cargo test`.
 
-TODO: Add plots for those tests?
+### Note for all the plots below
+
+Below you can see a couple of plots for the integration tests.
+Note that the single spatial coordinate is called ξ, and that the units in the different plots are arbitrary / dimensionless.
+Most plots show both the initial initial condition (n = 0), and then one or several states, though most will only show the final state of the test.
+
+Many tests are performed using both isothermal and adiabatic systems.
+This means that in the former we do not explicitly solve for changes in inner energy/pressure.
+There we assume that temperature and speed of sound are constant throughout the simulation.
+
+The values being plotted are usually the mass density $ρ$, the pressure $P$, and velocities $v_\xi$ and $v_\eta$.
+Isothermal simulations will not feature the pressure, and simulations with only a single non-vanishing velocity component will drop the second velocity $v_\eta$.
+
+### Noh
+
+The Noh test is a classic test modelling a shock tube, where the initial conditions are as follows:
+
+- the mass density (and pressure in the adiabatic case) is the same throughout the tube
+- the velocity field is pointing towards horizontal center of the tube with a sharp jump in that center
+
+Here we see the adiabatic case:
 
 <img
-  src="https://www.dropbox.com/s/vixbwrxxvqqnllr/noh_euler1d_adiabatic.png?dl=0"
-  alt="Alt text"
-  title="Optional title"
+  src="https://www.dropbox.com/s/vixbwrxxvqqnllr/noh_euler1d_adiabatic.png?raw=1"
+  alt="A plot showing the results of the adiabatic Noh test using 1d Euler equations"
+  title="Noh test using adiabatic 1d Euler"
   style="display: inline-block; margin: 0 auto; max-width: 300px">
 
+And this is the isothermal case:
+
+<img
+  src="https://www.dropbox.com/s/fbaqcotkn49k8gq/noh_euler1d_isot.png?raw=1"
+  alt="A plot showing the results of the isothermal Noh test using 1d Euler equations"
+  title="Noh test using isothermal 1d Euler"
+  style="display: inline-block; margin: 0 auto; max-width: 300px">
+  
+Note that, in the initial state, the velocity has a sharp jump.
+As the simulation progresses, we see the fluid bunching up in the middle as more and more material streams in from the boundaries on the sides.
+  
 ## TODO
 
 - more detailed README
