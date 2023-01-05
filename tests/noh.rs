@@ -136,20 +136,14 @@ fn get_config(mode: usize) -> CorriesConfig {
 
 fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
-    let mut prim = Array2::zeros((E, S));
-    for i in 0..breakpoint_index {
-        prim[[0, i]] = 1.0;
-        prim[[1, i]] = 1.0;
-    }
+    let mut prim = Array2::ones((E, S));
     for i in breakpoint_index..S {
-        prim[[0, i]] = 1.0;
         prim[[1, i]] = -1.0;
     }
     if u.is_adiabatic() {
         prim.row_mut(E - 1).fill(1.0E-5);
     } else {
-        let c_sound = Array1::ones(S);
-        u.assign_c_sound(&c_sound.view());
+        u.assign_c_sound(&Array1::ones(S).view());
     }
     u.assign_prim(&prim.view());
     return;
