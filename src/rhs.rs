@@ -28,9 +28,6 @@ pub struct Rhs<P: Physics, N: NumFlux, const S: usize> {
     /// Calculates the numerical flux
     numflux: N,
 
-    /// Stores the numerical flux derivative along xi
-    dflux_dxi: Array2<f64>,
-
     /// Boundary condition operator for the west boundary
     pub boundary_west: Box<dyn BoundaryCondition<P, S>>,
 
@@ -50,7 +47,6 @@ impl<P: Physics + 'static, N: NumFlux, const S: usize> Rhs<P, N, S> {
         return Rhs {
             full_rhs: Array2::zeros((E, S)),
             numflux: init_numflux::<N, E, S>(&config.numerics_config),
-            dflux_dxi: Array2::zeros((E, S)),
             boundary_west: Box::new(init_boundary_condition::<P, S>(Direction::West, config)),
             boundary_east: Box::new(init_boundary_condition::<P, S>(Direction::East, config)),
         };
@@ -63,23 +59,10 @@ impl<P: Physics + 'static, N: NumFlux, const S: usize> Rhs<P, N, S> {
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
     pub fn update<const E: usize>(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
-        self.update_dflux_dxi::<E>(u, mesh)
-            .context("Calling Rhs::update_dflux_dxi in Rhs::update")?;
-        self.full_rhs.assign(&self.dflux_dxi);
-        return Ok(());
-    }
-
-    /// Updates the numerical flux derivative `dflux_dxi`
-    ///
-    /// # Arguments
-    ///
-    /// * `u` - The current [Physics] state
-    /// * `mesh` - Information about spatial properties
-    fn update_dflux_dxi<const E: usize>(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date
         update_everything_from_cons(u, &mut self.boundary_west, &mut self.boundary_east, mesh);
         self.numflux
-            .calc_dflux_dxi::<P, E, S>(&mut self.dflux_dxi, u, mesh)
+            .calc_dflux_dxi::<P, E, S>(&mut self.full_rhs, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
         return Ok(());
     }
@@ -87,11 +70,6 @@ impl<P: Physics + 'static, N: NumFlux, const S: usize> Rhs<P, N, S> {
 
 impl<P: Physics, N: NumFlux, const S: usize> Validation for Rhs<P, N, S> {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.dflux_dxi.fold(true, |acc, x| acc && x.is_finite()),
-            "Rhs::dflux_dxi must be finite! Got: {}",
-            self.dflux_dxi
-        );
         ensure!(
             self.full_rhs.fold(true, |acc, x| acc && x.is_finite()),
             "Rhs::full_rhs must be finite! Got: {}",
