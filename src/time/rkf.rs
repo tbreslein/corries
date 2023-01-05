@@ -60,10 +60,6 @@ pub struct RungeKuttaFehlberg<P: Physics + Validation> {
     /// Conservative variables for the low-order solution, used by automated step control
     u_cons_low: Array2<f64>,
 
-    /// Primitive variables from the last time step; automated step control needs this to
-    /// be saved at the beginning of each iteration to roll the state back from time to time.
-    u_prim_old: Array2<f64>,
-
     /// Stores the full intermediate solution
     utilde: P,
 }
@@ -99,7 +95,6 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
             asc_timestep_friction,
             solution_accepted: true,
             u_cons_low: Array2::zeros((E, S)),
-            u_prim_old: Array2::zeros((E, S)),
             utilde,
         });
     }
@@ -117,10 +112,8 @@ impl<P: Physics + Validation + 'static> TimeSolver<P> for RungeKuttaFehlberg<P> 
         time.cap_dt();
 
         if self.bt.asc {
-            self.u_prim_old.assign(&u.prim());
             self.solution_accepted = false;
             self.n_asc = 0;
-
             while !self.solution_accepted {
                 time.dt = self.calc_rkf_solution::<N, E, S>(time.dt, u, rhs, mesh).context(
                     "RungeKuttaFehlberg::calc_rkf_solution in the while loop in RungeKuttaFehlberg::next_solution",
@@ -179,8 +172,7 @@ impl<P: Physics + Validation + 'static> RungeKuttaFehlberg<P> {
             }
             rhs.update::<E>(&mut self.utilde, mesh)
                 .context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
-            let mut k_bundle_q = self.k_bundle.index_axis_mut(Axis(0), q);
-            k_bundle_q.assign(&rhs.full_rhs);
+            self.k_bundle.index_axis_mut(Axis(0), q).assign(&rhs.full_rhs);
         }
 
         // calculate high order solution
