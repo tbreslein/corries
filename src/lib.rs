@@ -1,4 +1,4 @@
-// Copyright (c) 2022
+// Copyright (c) 2022-2023
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
@@ -140,7 +140,7 @@ fn print_banner() {
     println!("# Corries - corrosive Riemann solver ");
     println!("# ");
     println!("# Version: {}", VERSION);
-    println!("# Copyright (c) 2022");
+    println!("# Copyright (c) 2022-2023");
     println!("# Author: tbreslein <github.com/tbreslein>");
     println!("# License: MIT");
     println!("# ****************************************");
