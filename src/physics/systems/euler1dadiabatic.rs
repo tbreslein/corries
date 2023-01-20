@@ -7,7 +7,7 @@
 use color_eyre::{eyre::ensure, Result};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut1, ArrayViewMut2, Zip};
 
-use crate::{config::physicsconfig::PhysicsConfig, errorhandling::Validation, physics::Physics, Collectable, Data};
+use crate::{config::physicsconfig::PhysicsConfig, errorhandling::Validation, physics::Physics, Collectable, Data, variables::Variables};
 
 const E: usize = 3;
 const JRHO: usize = 0;
@@ -19,104 +19,43 @@ const J_EIGENMAX: usize = 2;
 /// Test struct for using a trait for Physics
 #[derive(Debug)]
 pub struct Euler1DAdiabatic<const S: usize> {
-    /// Primitive variables
-    pub prim: Array2<f64>,
+    /// Variables at the centre of the mesh's cells
+    pub cent: Variables<E, S>,
 
-    /// Conservative variables
-    pub cons: Array2<f64>,
+    /// Variables at the centre of the mesh's cells
+    pub west: Variables<E, S>,
 
-    /// Speed of sound
-    c_sound: Array1<f64>,
-
-    /// Eigen values
-    eigen_vals: Array2<f64>,
-
-    /// Physical flux
-    flux: Array2<f64>,
-
-    /// Adiabatic index
-    gamma: f64,
+    /// Variables at the centre of the mesh's cells
+    pub east: Variables<E, S>,
 }
 
 impl<const S: usize> Physics for Euler1DAdiabatic<S> {
+    const E: usize = E;
+    const S: usize = S;
+    type Vars = Variables<E, S>;
+
     fn new(physics_config: &PhysicsConfig) -> Self {
         return Self {
-            prim: Array2::zeros((E, S)),
-            cons: Array2::zeros((E, S)),
-            c_sound: Array1::zeros(S),
-            eigen_vals: Array2::zeros((E, S)),
-            flux: Array2::zeros((E, S)),
-            gamma: physics_config.adiabatic_index,
+            cent: Variables::new(physics_config),
+            west: Variables::new(physics_config),
+            east: Variables::new(physics_config),
         };
+    }
+
+    fn cent<'a>(&self) -> &'a Self::Vars {
+        &self.cent
+    }
+
+    fn west<'a>(&self) -> &'a Self::Vars {
+        &self.west
+    }
+
+    fn east<'a>(&self) -> &'a Self::Vars {
+        &self.east
     }
 
     fn is_adiabatic(&self) -> bool {
         return true;
-    }
-
-    #[inline(always)]
-    fn prim_entry(&self, j: usize, i: usize) -> f64 {
-        return self.prim[[j, i]];
-    }
-
-    #[inline(always)]
-    fn prim_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.prim.row(j);
-    }
-
-    #[inline(always)]
-    fn prim(&self) -> ArrayView2<f64> {
-        return self.prim.view();
-    }
-
-    #[inline(always)]
-    fn cons_entry(&self, j: usize, i: usize) -> f64 {
-        return self.cons[[j, i]];
-    }
-
-    #[inline(always)]
-    fn cons_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.cons.row(j);
-    }
-
-    #[inline(always)]
-    fn cons(&self) -> ArrayView2<f64> {
-        return self.cons.view();
-    }
-
-    #[inline(always)]
-    fn eigen_vals(&self) -> ArrayView2<f64> {
-        return self.eigen_vals.view();
-    }
-
-    #[inline(always)]
-    fn eigen_min(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(J_EIGENMIN);
-    }
-
-    #[inline(always)]
-    fn eigen_max(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(J_EIGENMAX);
-    }
-
-    #[inline(always)]
-    fn c_sound(&self) -> ArrayView1<f64> {
-        return self.c_sound.view();
-    }
-
-    #[inline(always)]
-    fn flux_entry(&self, j: usize, i: usize) -> f64 {
-        return self.flux[[j, i]];
-    }
-
-    #[inline(always)]
-    fn flux_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.flux.row(j);
-    }
-
-    #[inline(always)]
-    fn flux(&self) -> ArrayView2<f64> {
-        return self.flux.view();
     }
 
     fn update_prim(&mut self) {
