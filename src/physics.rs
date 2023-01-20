@@ -24,50 +24,29 @@ pub use systems::*;
 
 /// Trait for Physics objects
 pub trait Physics {
+    /// Number of equations in the system
+    const E: usize;
+
+    /// Number of grid cells in the mesh
+    const S: usize;
+
+    /// The exact type of the generic Variables container
+    type Vars;
+
     /// construct a new trait object
     fn new(physics_config: &PhysicsConfig) -> Self;
 
+    /// Returns a reference to the variables at the center of the mesh's cells
+    fn cent<'a>(&self) -> &'a Self::Vars;
+
+    /// Returns a reference to the variables at the west border of the mesh's cells
+    fn west<'a>(&self) -> &'a Self::Vars;
+
+    /// Returns a reference to the variables at the east border of the mesh's cells
+    fn east<'a>(&self) -> &'a Self::Vars;
+
     /// Whether the physics system is adiabatic or not
     fn is_adiabatic(&self) -> bool;
-
-    /// Return copy of the primitive variable in row j at column i
-    fn prim_entry(&self, j: usize, i: usize) -> f64;
-
-    /// Return a view of the row j of the primitive variables
-    fn prim_row(&self, j: usize) -> ArrayView1<f64>;
-
-    /// Return a view of primitive variables
-    fn prim(&self) -> ArrayView2<f64>;
-
-    /// Return copy of the conservative variable in row j at column i
-    fn cons_entry(&self, j: usize, i: usize) -> f64;
-
-    /// Return a view of the row j of the conservative variables
-    fn cons_row(&self, j: usize) -> ArrayView1<f64>;
-
-    /// Return a view of conservative variables
-    fn cons(&self) -> ArrayView2<f64>;
-
-    /// Return a view of eigen value matrix
-    fn eigen_vals(&self) -> ArrayView2<f64>;
-
-    /// Return a view of the vector of minimal eigen values
-    fn eigen_min(&self) -> ArrayView1<f64>;
-
-    /// Return a view of the vector of maximal eigen values
-    fn eigen_max(&self) -> ArrayView1<f64>;
-
-    /// Return a view of speed of sound vector
-    fn c_sound(&self) -> ArrayView1<f64>;
-
-    /// Return copy of the physical flux in row j at column i
-    fn flux_entry(&self, j: usize, i: usize) -> f64;
-
-    /// Return a view of the row j of the physical flux
-    fn flux_row(&self, j: usize) -> ArrayView1<f64>;
-
-    /// Return a view of the physical flux
-    fn flux(&self) -> ArrayView2<f64>;
 
     /// Update primitive variables
     fn update_prim(&mut self);
@@ -94,16 +73,12 @@ pub trait Physics {
     fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>);
 
     /// Assign the object rhs to this one
-    fn assign(&mut self, rhs: &Self) {
-        self.assign_prim(&rhs.prim());
-        self.assign_cons(&rhs.cons());
-        self.assign_c_sound(&rhs.c_sound());
-    }
+    fn assign(&mut self, rhs: &Self);
 
     /// Calculate the CFL limited time step width
-    fn calc_dt_cfl<const S: usize>(&self, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
+    fn calc_dt_cfl<const S: usize>(&self, eigen_max: &ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
         let dt = c_cfl
-            / Zip::from(self.eigen_max())
+            / Zip::from(eigen_max)
                 .and(&mesh.cell_width_inv)
                 .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
         if !dt.is_finite() {
@@ -137,31 +112,42 @@ pub fn update_everything_from_prim<P: Physics, const S: usize>(
     u.update_derived_values();
 }
 
+pub fn calc_dt_cfl_generic<const S: usize>(eigen_max: ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
+    let dt = c_cfl
+        / Zip::from(eigen_max)
+            .and(&mesh.cell_width_inv)
+            .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
+    if !dt.is_finite() {
+        bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
+    }
+    return Ok(dt);
+}
+
 pub fn collect_data<P: Physics + Collectable>(u: &P, data: &mut Data, mesh_offset: usize) -> Result<()> {
-    match (data.association, data.name) {
-        (StructAssociation::Physics, DataName::Prim(j)) => u.write_vector(&u.prim_row(j), data, mesh_offset),
-        (StructAssociation::Physics, DataName::Cons(j)) => u.write_vector(&u.cons_row(j), data, mesh_offset),
-        (StructAssociation::Physics, DataName::CSound) => u.write_vector(&u.c_sound(), data, mesh_offset),
-        (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
-        (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
-            bail!("name.association() for {:?} returned {:?}", x, data.association)
-        },
-    }?;
+    // match (data.association, data.name) {
+    //     (StructAssociation::Physics, DataName::Prim(j)) => u.write_vector(&u.prim_row(j), data, mesh_offset),
+    //     (StructAssociation::Physics, DataName::Cons(j)) => u.write_vector(&u.cons_row(j), data, mesh_offset),
+    //     (StructAssociation::Physics, DataName::CSound) => u.write_vector(&u.c_sound(), data, mesh_offset),
+    //     (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
+    //     (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
+    //         bail!("name.association() for {:?} returned {:?}", x, data.association)
+    //     },
+    // }?;
     return Ok(());
 }
 
 #[inline(always)]
 pub fn validate<P: Physics>(u: &P) -> Result<()> {
-    ensure!(
-        u.prim().fold(true, |acc, x| acc && x.is_finite()),
-        "Physics::prim must be finite! Got: {}",
-        u.prim()
-    );
-    ensure!(
-        u.cons().fold(true, |acc, x| acc && x.is_finite()),
-        "Physics::cons must be finite! Got: {}",
-        u.cons()
-    );
+    // ensure!(
+    //     u.prim().fold(true, |acc, x| acc && x.is_finite()),
+    //     "Physics::prim must be finite! Got: {}",
+    //     u.prim()
+    // );
+    // ensure!(
+    //     u.cons().fold(true, |acc, x| acc && x.is_finite()),
+    //     "Physics::cons must be finite! Got: {}",
+    //     u.cons()
+    // );
     return Ok(());
 }
 
