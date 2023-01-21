@@ -5,7 +5,7 @@
 //! Exports [CustomBoundaryConditions] which applies a set of custom boundary conditions to a
 //! `Physics` object.
 
-use crate::{config::CustomBoundaryMode, mesh::Mesh, physics::Physics};
+use crate::{config::CustomBoundaryMode, mesh::Mesh, physics::Physics, variables::Variables};
 
 use super::{BoundaryCondition, Direction};
 
@@ -50,211 +50,149 @@ impl CustomBoundaryConditions {
     }
 }
 
-fn extrapolate_west<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
+fn extrapolate_west<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>, mesh: &Mesh<S>) {
     if mesh.is_logarithmic {
-        if !(1.0 / u.prim_entry(j, 2)).is_finite() || !(1.0 / u.prim_entry(j, 3)).is_finite() {
+        if !(1.0 / vars.prim[[j, 2]]).is_finite() || !(1.0 / vars.prim[[j, 3]]).is_finite() {
             for i in 0..=1 {
-                u.assign_prim_entry(j, i, 0.0);
+                vars.prim[[j, i]] = 0.0;
             }
         } else {
             for i in 1..=2 {
-                u.assign_prim_entry(
-                    j,
-                    2 - i,
-                    u.prim_entry(j, 2) * (u.prim_entry(j, 2) / u.prim_entry(j, 3)).abs().powi(i as i32),
-                );
+                vars.prim[[j, 2 - i]] =
+                    vars.prim[[j, 2]] * (vars.prim[[j, 2]] / vars.prim[[j, 3]]).abs().powi(i as i32);
             }
         }
     } else {
         for i in 1..=2 {
-            u.assign_prim_entry(
-                j,
-                2 - i,
-                (i + 1) as f64 * u.prim_entry(j, 2) - i as f64 * u.prim_entry(j, 3),
-            );
+            vars.prim[[j, 2 - i]] = (i + 1) as f64 * vars.prim[[j, 2]] - i as f64 * vars.prim[[j, 3]];
         }
     }
 }
 
-fn extrapolate_east<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
+fn extrapolate_east<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>, mesh: &Mesh<S>) {
     if mesh.is_logarithmic {
-        if !(1.0 / u.prim_entry(j, S - 3)).is_finite() || !(1.0 / u.prim_entry(j, S - 4)).is_finite() {
+        if !(1.0 / vars.prim[[j, S - 3]]).is_finite() || !(1.0 / vars.prim[[j, S - 4]]).is_finite() {
             for i in S - 2..=S - 1 {
-                u.assign_prim_entry(j, i, 0.0);
+                vars.prim[[j, i]] = 0.0;
             }
         } else {
             for i in 1..=2 {
-                u.assign_prim_entry(
-                    j,
-                    S - 3 + i,
-                    u.prim_entry(j, S - 3) * (u.prim_entry(j, S - 3) / u.prim_entry(j, S - 4)).abs().powi(i as i32),
-                );
+                vars.prim[[j, S - 3 + i]] =
+                    vars.prim[[j, S - 3]] * (vars.prim[[j, S - 3]] / vars.prim[[j, S - 4]]).abs().powi(i as i32);
             }
         }
     } else {
         for i in 1..=2 {
-            u.assign_prim_entry(
-                j,
-                S - 3 + i,
-                (i + 1) as f64 * u.prim_entry(j, S - 3) - i as f64 * u.prim_entry(j, S - 4),
-            );
+            vars.prim[[j, S - 3 + i]] = (i + 1) as f64 * vars.prim[[j, S - 3]] - i as f64 * vars.prim[[j, S - 4]];
         }
     }
 }
 
-fn extrapolate_density_kepler_west<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
+fn extrapolate_density_kepler_west<const E: usize, const S: usize>(
+    j: usize,
+    vars: &mut Variables<E, S>,
+    mesh: &Mesh<S>,
+) {
     for i in (0..=1).rev() {
-        u.assign_prim_entry(
-            j,
-            i,
-            u.prim_entry(j, i + 1) / (mesh.xi_cent[i] * mesh.xi_cent_inv[i + 1]).sqrt(),
-        );
+        vars.prim[[j, i]] = vars.prim[[j, i + 1]] / (mesh.xi_cent[i] * mesh.xi_cent_inv[i + 1]).sqrt();
     }
 }
 
-fn extrapolate_density_kepler_east<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
+fn extrapolate_density_kepler_east<const E: usize, const S: usize>(
+    j: usize,
+    vars: &mut Variables<E, S>,
+    mesh: &Mesh<S>,
+) {
     for i in S - 2..=S - 1 {
-        u.assign_prim_entry(
-            j,
-            i,
-            u.prim_entry(j, i - 1) / (mesh.xi_cent[i] * mesh.xi_cent_inv[i - 1]).sqrt(),
-        );
+        vars.prim[[j, i]] = vars.prim[[j, i - 1]] / (mesh.xi_cent[i] * mesh.xi_cent_inv[i - 1]).sqrt();
     }
 }
 
-fn extrapolate_etavel_kepler_west<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
+fn extrapolate_etavel_kepler_west<const E: usize, const S: usize>(
+    j: usize,
+    vars: &mut Variables<E, S>,
+    mesh: &Mesh<S>,
+) {
     for i in (0..=1).rev() {
-        u.assign_prim_entry(
-            j,
-            i,
-            u.prim_entry(j, i + 1) / (mesh.xi_cent[i] * mesh.xi_cent_inv[i + 1]).sqrt(),
-        );
+        vars.prim[[j, i]] = vars.prim[[j, i + 1]] / (mesh.xi_cent[i] * mesh.xi_cent_inv[i + 1]).sqrt();
     }
 }
 
-fn extrapolate_etavel_kepler_east<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
+fn extrapolate_etavel_kepler_east<const E: usize, const S: usize>(
+    j: usize,
+    vars: &mut Variables<E, S>,
+    mesh: &Mesh<S>,
+) {
     for i in S - 2..=S - 1 {
-        u.assign_prim_entry(
-            j,
-            i,
-            u.prim_entry(j, i - 1) / (mesh.xi_cent[i] * mesh.xi_cent_inv[i - 1]).sqrt(),
-        );
+        vars.prim[[j, i]] = vars.prim[[j, i - 1]] / (mesh.xi_cent[i] * mesh.xi_cent_inv[i - 1]).sqrt();
     }
 }
 
-fn near_zero_west<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
+fn near_zero_west<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
     for i in 0..=1 {
-        u.assign_prim_entry(j, i, 1.0e-10 * u.prim_entry(j, 2));
+        vars.prim[[j, i]] = 1.0e-10 * vars.prim[[j, 2]];
     }
 }
 
-fn near_zero_east<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
+fn near_zero_east<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
     for i in S - 2..=S - 1 {
-        u.assign_prim_entry(j, i, 1.0e-10 * u.prim_entry(j, S - 3));
+        vars.prim[[j, i]] = 1.0e-10 * vars.prim[[j, S - 3]];
     }
 }
 
-fn no_gradients_west<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
+fn no_gradients_west<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
     for i in 0..=1 {
-        u.assign_prim_entry(j, i, u.prim_entry(j, 2));
+        vars.prim[[j, i]] = vars.prim[[j, 2]];
     }
 }
 
-fn no_gradients_east<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
+fn no_gradients_east<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
     for i in S - 2..=S - 1 {
-        u.assign_prim_entry(j, i, u.prim_entry(j, S - 3));
+        vars.prim[[j, i]] = vars.prim[[j, S - 3]];
     }
 }
 
-fn outflow_no_gradients_west<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
-    if u.prim_entry(j, 2).is_sign_positive() {
-        reflecting_west::<P, S>(j, u);
+fn outflow_no_gradients_west<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
+    if vars.prim[[j, 2]].is_sign_positive() {
+        reflecting_west(j, vars);
     } else {
-        no_gradients_west::<P, S>(j, u);
+        no_gradients_west(j, vars);
     }
 }
 
-fn outflow_no_gradients_east<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
-    if u.prim_entry(j, S - 3).is_sign_negative() {
-        reflecting_east::<P, S>(j, u);
+fn outflow_no_gradients_east<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
+    if vars.prim[[j, S - 3]].is_sign_negative() {
+        reflecting_east(j, vars);
     } else {
-        no_gradients_east::<P, S>(j, u);
+        no_gradients_east(j, vars);
     }
 }
 
-fn outflow_extrapolate_west<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
-    if u.prim_entry(j, 2).is_sign_positive() {
-        reflecting_west::<P, S>(j, u);
+fn outflow_extrapolate_west<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>, mesh: &Mesh<S>) {
+    if vars.prim[[j, 2]].is_sign_positive() {
+        reflecting_west(j, vars);
     } else {
-        extrapolate_west::<P, S>(j, u, mesh);
+        extrapolate_west(j, vars, mesh);
     }
 }
 
-fn outflow_extrapolate_east<P, const S: usize>(j: usize, u: &mut P, mesh: &Mesh<S>)
-where
-    P: Physics + ?Sized,
-{
-    if u.prim_entry(j, S - 3).is_sign_negative() {
-        reflecting_east::<P, S>(j, u);
+fn outflow_extrapolate_east<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>, mesh: &Mesh<S>) {
+    if vars.prim[[j, S - 3]].is_sign_negative() {
+        reflecting_east(j, vars);
     } else {
-        extrapolate_east(j, u, mesh);
+        extrapolate_east(j, vars, mesh);
     }
 }
 
-fn reflecting_west<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
+fn reflecting_west<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
     for i in 1..=2 {
-        u.assign_prim_entry(j, 2 - i, -1.0 * u.prim_entry(j, i + 1));
+        vars.prim[[j, 2 - i]] = -1.0 * vars.prim[[j, i + 1]];
     }
 }
 
-fn reflecting_east<P, const S: usize>(j: usize, u: &mut P)
-where
-    P: Physics + ?Sized,
-{
+fn reflecting_east<const E: usize, const S: usize>(j: usize, vars: &mut Variables<E, S>) {
     for i in 1..=2 {
-        u.assign_prim_entry(j, S - 3 + i, -1.0 * u.prim_entry(j, S - 2 - i));
+        vars.prim[[j, S - 3 + i]] = -1.0 * vars.prim[[j, S - 2 - i]];
     }
 }
 

@@ -4,9 +4,13 @@
 
 //! TODO
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use color_eyre::{
+    eyre::{bail, ensure},
+    Result,
+};
+use ndarray::{Array1, Array2};
 
-use crate::PhysicsConfig;
+use crate::{errorhandling::Validation, Collectable, Data, DataName, PhysicsConfig, StructAssociation};
 
 /// Contains the variables of a physics system
 #[derive(Debug)]
@@ -42,81 +46,40 @@ impl<const E: usize, const S: usize> Variables<E, S> {
         };
     }
 
-    /// Return copy of the primitive variable in row j at column i
-    #[inline(always)]
-    pub fn prim_entry(&self, j: usize, i: usize) -> f64 {
-        return self.prim[[j, i]];
+    pub fn assign(&mut self, rhs: &Self) {
+        self.prim.assign(&rhs.prim);
+        self.cons.assign(&rhs.cons);
+        self.c_sound.assign(&rhs.c_sound);
     }
+}
 
-    /// Return a view of the row j of the primitive variables
-    #[inline(always)]
-    pub fn prim_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.prim.row(j);
+impl<const E: usize, const S: usize> Collectable for Variables<E, S> {
+    fn collect_data(&self, data: &mut Data, mesh_offset: usize) -> Result<()> {
+        match (data.association, data.name) {
+            (StructAssociation::Physics, DataName::Prim(j)) => self.write_vector(&self.prim.row(j), data, mesh_offset),
+            (StructAssociation::Physics, DataName::Cons(j)) => self.write_vector(&self.cons.row(j), data, mesh_offset),
+            (StructAssociation::Physics, DataName::CSound) => self.write_vector(&self.c_sound.view(), data, mesh_offset),
+            (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
+            (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
+                bail!("name.association() for {:?} returned {:?}", x, data.association)
+            },
+        }?;
+        return Ok(());
     }
+}
 
-    /// Return a view of primitive variables
-    #[inline(always)]
-    pub fn prim(&self) -> ArrayView2<f64> {
-        return self.prim.view();
-    }
-
-    /// Return copy of the conservative variable in row j at column i
-    #[inline(always)]
-    pub fn cons_entry(&self, j: usize, i: usize) -> f64 {
-        return self.cons[[j, i]];
-    }
-
-    /// Return a view of the row j of the conservative variables
-    #[inline(always)]
-    pub fn cons_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.cons.row(j);
-    }
-
-    /// Return a view of conservative variables
-    #[inline(always)]
-    pub fn cons(&self) -> ArrayView2<f64> {
-        return self.cons.view();
-    }
-
-    /// Return a view of eigen value matrix
-    #[inline(always)]
-    pub fn eigen_vals(&self) -> ArrayView2<f64> {
-        return self.eigen_vals.view();
-    }
-
-    /// Return a view of the vector of minimal eigen values
-    #[inline(always)]
-    pub fn eigen_min(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(0);
-    }
-
-    /// Return a view of the vector of maximal eigen values
-    #[inline(always)]
-    pub fn eigen_max(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(E-1);
-    }
-
-    /// Return a view of speed of sound vector
-    #[inline(always)]
-    pub fn c_sound(&self) -> ArrayView1<f64> {
-        return self.c_sound.view();
-    }
-
-    /// Return copy of the physical flux in row j at column i
-    #[inline(always)]
-    pub fn flux_entry(&self, j: usize, i: usize) -> f64 {
-        return self.flux[[j, i]];
-    }
-
-    /// Return a view of the row j of the physical flux
-    #[inline(always)]
-    pub fn flux_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.flux.row(j);
-    }
-
-    /// Return a view of the physical flux
-    #[inline(always)]
-    pub fn flux(&self) -> ArrayView2<f64> {
-        return self.flux.view();
+impl<const E: usize, const S: usize> Validation for Variables<E, S> {
+    fn validate(&self) -> Result<()> {
+        ensure!(
+            self.prim.fold(true, |acc, x| acc && x.is_finite()),
+            "Physics::prim must be finite! Got: {}",
+            self.prim
+        );
+        ensure!(
+            self.cons.fold(true, |acc, x| acc && x.is_finite()),
+            "Physics::cons must be finite! Got: {}",
+            self.cons
+        );
+        return Ok(());
     }
 }
