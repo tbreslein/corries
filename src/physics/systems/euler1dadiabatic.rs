@@ -5,9 +5,12 @@
 //! TODO
 
 use color_eyre::{eyre::ensure, Result};
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut1, ArrayViewMut2, Zip};
+use ndarray::{ArrayView1, ArrayView2, ArrayViewMut1, ArrayViewMut2, Zip};
 
-use crate::{config::physicsconfig::PhysicsConfig, errorhandling::Validation, physics::Physics, Collectable, Data, variables::Variables};
+use crate::{
+    config::physicsconfig::PhysicsConfig, errorhandling::Validation, physics::Physics, variables::Variables,
+    Collectable, Data,
+};
 
 const E: usize = 3;
 const JRHO: usize = 0;
@@ -60,72 +63,57 @@ impl<const S: usize> Physics for Euler1DAdiabatic<S> {
 
     fn update_prim(&mut self) {
         cons_to_prim(
-            &mut self.prim.view_mut(),
+            &mut self.cent().prim.view_mut(),
             JRHO,
             JXI,
             JP,
-            &self.cons.view(),
+            &self.cent().cons.view(),
             JRHO,
             JXI,
             JP,
-            self.gamma,
+            self.cent().gamma,
         );
     }
 
     fn update_cons(&mut self) {
         prim_to_cons(
-            &mut self.cons.view_mut(),
+            &mut self.cent().cons.view_mut(),
             JRHO,
             JXI,
             JP,
-            &self.prim.view(),
+            &self.cent().prim.view(),
             JRHO,
             JXI,
             JP,
-            self.gamma,
+            self.cent().gamma,
         );
     }
 
     fn update_derived_values(&mut self) {
         update_c_sound(
-            self.c_sound.view_mut(),
-            self.gamma,
-            self.prim.row(JP),
-            self.prim.row(JRHO),
+            self.cent().c_sound.view_mut(),
+            self.cent().gamma,
+            self.cent().prim.row(JP),
+            self.cent().prim.row(JRHO),
         );
         super::euler1disot::update_eigen_vals(
-            self.eigen_vals.view_mut(),
+            self.cent().eigen_vals.view_mut(),
             J_EIGENMIN,
             J_EIGENMAX,
-            self.prim.row(JXI),
-            self.c_sound.view(),
+            self.cent().prim.row(JXI),
+            self.cent().c_sound.view(),
         );
-        update_flux(self.flux.view_mut(), self.prim.view(), self.cons.view(), JRHO, JXI, JP);
     }
 
-    #[inline(always)]
-    fn assign_prim_entry(&mut self, j: usize, i: usize, rhs: f64) {
-        self.prim[[j, i]] = rhs;
-    }
-
-    #[inline(always)]
-    fn assign_cons_entry(&mut self, j: usize, i: usize, rhs: f64) {
-        self.cons[[j, i]] = rhs;
-    }
-
-    #[inline(always)]
-    fn assign_prim(&mut self, rhs: &ArrayView2<f64>) {
-        self.prim.assign(rhs);
-    }
-
-    #[inline(always)]
-    fn assign_cons(&mut self, rhs: &ArrayView2<f64>) {
-        self.cons.assign(rhs);
-    }
-
-    #[inline(always)]
-    fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>) {
-        self.c_sound.assign(rhs);
+    fn update_flux_cent(&mut self) {
+        update_flux(
+            self.cent().flux.view_mut(),
+            self.cent().prim.view(),
+            self.cent().cons.view(),
+            JRHO,
+            JXI,
+            JP,
+        );
     }
 }
 
@@ -213,13 +201,13 @@ pub fn prim_to_cons(
 
 impl<const S: usize> Collectable for Euler1DAdiabatic<S> {
     fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()> {
-        return super::super::collect_data(self, name, mesh_offset);
+        return self.cent().collect_data(name, mesh_offset);
     }
 }
 
 impl<const S: usize> Validation for Euler1DAdiabatic<S> {
     fn validate(&self) -> Result<()> {
-        super::super::validate(self)?;
+        self.cent().validate()?;
         super::euler1disot::validate(self, JRHO)?;
         validate(self, JP)?;
         return Ok(());
@@ -229,9 +217,9 @@ impl<const S: usize> Validation for Euler1DAdiabatic<S> {
 #[inline(always)]
 pub fn validate<P: Physics>(u: &P, j_pressure: usize) -> Result<()> {
     ensure!(
-        u.prim_row(j_pressure).fold(true, |acc, x| acc && x > &0.0),
+        u.cent().prim_row(j_pressure).fold(true, |acc, x| acc && x > &0.0),
         "Pressure must be positive! Got: {}",
-        u.prim_row(j_pressure)
+        u.cent().prim_row(j_pressure)
     );
     return Ok(());
 }

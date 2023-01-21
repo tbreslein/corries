@@ -4,18 +4,10 @@
 
 //! TODO
 
-use color_eyre::{
-    eyre::{bail, ensure},
-    Result,
-};
-use ndarray::{ArrayView1, ArrayView2, Zip};
+use color_eyre::{eyre::bail, Result};
+use ndarray::{ArrayView1, Zip};
 
-use crate::{
-    boundaryconditions::BoundaryCondition,
-    config::physicsconfig::PhysicsConfig,
-    data::{Data, DataName, StructAssociation},
-    Collectable, Mesh,
-};
+use crate::{boundaryconditions::BoundaryCondition, config::physicsconfig::PhysicsConfig, Mesh};
 
 pub mod systems;
 pub mod variables;
@@ -55,25 +47,10 @@ pub trait Physics {
     fn update_cons(&mut self);
 
     /// Update values not part of the primitive and conservative variables, i.e. speed of sound,
-    /// eigen values, physical flux and maybe others
+    /// eigen values, and maybe others
     fn update_derived_values(&mut self);
 
-    /// Assign rhs to primitive variables at row j and column i
-    fn assign_prim_entry(&mut self, j: usize, i: usize, rhs: f64);
-
-    /// Assign rhs to primitive variables
-    fn assign_prim(&mut self, rhs: &ArrayView2<f64>);
-
-    /// Assign rhs to primitive variables at row j and column i
-    fn assign_cons_entry(&mut self, j: usize, i: usize, rhs: f64);
-
-    /// Assign rhs to conservative variables
-    fn assign_cons(&mut self, rhs: &ArrayView2<f64>);
-
-    fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>);
-
-    /// Assign the object rhs to this one
-    fn assign(&mut self, rhs: &Self);
+    fn update_flux_cent(&mut self);
 
     /// Calculate the CFL limited time step width
     fn calc_dt_cfl<const S: usize>(&self, eigen_max: &ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
@@ -123,34 +100,6 @@ pub fn calc_dt_cfl_generic<const S: usize>(eigen_max: ArrayView1<f64>, c_cfl: f6
     return Ok(dt);
 }
 
-pub fn collect_data<P: Physics + Collectable>(u: &P, data: &mut Data, mesh_offset: usize) -> Result<()> {
-    // match (data.association, data.name) {
-    //     (StructAssociation::Physics, DataName::Prim(j)) => u.write_vector(&u.prim_row(j), data, mesh_offset),
-    //     (StructAssociation::Physics, DataName::Cons(j)) => u.write_vector(&u.cons_row(j), data, mesh_offset),
-    //     (StructAssociation::Physics, DataName::CSound) => u.write_vector(&u.c_sound(), data, mesh_offset),
-    //     (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
-    //     (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
-    //         bail!("name.association() for {:?} returned {:?}", x, data.association)
-    //     },
-    // }?;
-    return Ok(());
-}
-
-#[inline(always)]
-pub fn validate<P: Physics>(u: &P) -> Result<()> {
-    // ensure!(
-    //     u.prim().fold(true, |acc, x| acc && x.is_finite()),
-    //     "Physics::prim must be finite! Got: {}",
-    //     u.prim()
-    // );
-    // ensure!(
-    //     u.cons().fold(true, |acc, x| acc && x.is_finite()),
-    //     "Physics::cons must be finite! Got: {}",
-    //     u.cons()
-    // );
-    return Ok(());
-}
-
 #[cfg(test)]
 mod tests {
     use crate::UnitsMode;
@@ -171,27 +120,18 @@ mod tests {
             fn conversion(p0 in 0.1f64..10.0, p1 in -10.0f64..10.0, p2 in 0.1f64..10.0) {
                 // converting to cons and back to prim should be idempotent
                 let mut u0 = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-                u0.prim.row_mut(0).fill(p0);
-                u0.prim.row_mut(1).fill(p1);
-                u0.prim.row_mut(2).fill(p2);
+                u0.cent().prim.row_mut(0).fill(p0);
+                u0.cent().prim.row_mut(1).fill(p1);
+                u0.cent().prim.row_mut(2).fill(p2);
                 let mut u = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-                u.prim.row_mut(0).fill(p0);
-                u.prim.row_mut(1).fill(p1);
-                u.prim.row_mut(2).fill(p2);
-                println!("before:");
-                dbg!(&u.prim);
-                dbg!(&u.cons);
+                u.cent().prim.row_mut(0).fill(p0);
+                u.cent().prim.row_mut(1).fill(p1);
+                u.cent().prim.row_mut(2).fill(p2);
                 u.update_cons();
-                println!("after update_cons:");
-                dbg!(&u.prim);
-                dbg!(&u.cons);
                 u.update_prim();
-                println!("after update_prim:");
-                dbg!(&u.prim);
-                dbg!(&u.cons);
-                assert_relative_eq!(u.prim.row(0), u0.prim.row(0), max_relative = 1.0e-12);
-                assert_relative_eq!(u.prim.row(1), u0.prim.row(1), max_relative = 1.0e-12);
-                assert_relative_eq!(u.prim.row(2), u0.prim.row(2), max_relative = 1.0e-8);
+                assert_relative_eq!(u.cent().prim.row(0), u0.cent().prim.row(0), max_relative = 1.0e-12);
+                assert_relative_eq!(u.cent().prim.row(1), u0.cent().prim.row(1), max_relative = 1.0e-12);
+                assert_relative_eq!(u.cent().prim.row(2), u0.cent().prim.row(2), max_relative = 1.0e-8);
             }
         }
     }
@@ -203,14 +143,14 @@ mod tests {
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
                 // converting to cons and back to prim should be idempotent
                 let mut u0 = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-                u0.prim.row_mut(0).fill(p0);
-                u0.prim.row_mut(1).fill(p1);
+                u0.cent().prim.row_mut(0).fill(p0);
+                u0.cent().prim.row_mut(1).fill(p1);
                 let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-                u.prim.row_mut(0).fill(p0);
-                u.prim.row_mut(1).fill(p1);
+                u.cent().prim.row_mut(0).fill(p0);
+                u.cent().prim.row_mut(1).fill(p1);
                 u.update_cons();
                 u.update_prim();
-                assert_relative_eq!(u.prim, u0.prim, max_relative = 1.0e-12);
+                assert_relative_eq!(u.cent().prim, u0.cent().prim, max_relative = 1.0e-12);
             }
         }
     }

@@ -5,10 +5,11 @@
 //! TODO
 
 use color_eyre::{eyre::ensure, Result};
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, ArrayViewMut2, Zip};
+use ndarray::{ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
 use crate::{
-    config::physicsconfig::PhysicsConfig, data::Data, errorhandling::Validation, physics::Physics, Collectable,
+    config::physicsconfig::PhysicsConfig, data::Data, errorhandling::Validation, physics::Physics,
+    variables::Variables, Collectable,
 };
 
 const E: usize = 2;
@@ -20,151 +21,86 @@ const J_EIGENMAX: usize = 1;
 /// Test struct for using a trait for Physics
 #[derive(Debug)]
 pub struct Euler1DIsot<const S: usize> {
-    /// Primitive variables
-    pub prim: Array2<f64>,
+    /// Variables at the centre of the mesh's cells
+    pub cent: Variables<E, S>,
 
-    /// Conservative variables
-    pub cons: Array2<f64>,
+    /// Variables at the centre of the mesh's cells
+    pub west: Variables<E, S>,
 
-    /// Speed of sound
-    pub c_sound: Array1<f64>,
-
-    /// Eigen values
-    pub eigen_vals: Array2<f64>,
-
-    /// Physical flux
-    pub flux: Array2<f64>,
+    /// Variables at the centre of the mesh's cells
+    pub east: Variables<E, S>,
 }
 
 impl<const S: usize> Physics for Euler1DIsot<S> {
-    fn new(_: &PhysicsConfig) -> Self {
+    const E: usize = E;
+    const S: usize = S;
+    type Vars = Variables<E, S>;
+
+    fn new(physics_config: &PhysicsConfig) -> Self {
         return Self {
-            prim: Array2::zeros((E, S)),
-            cons: Array2::zeros((E, S)),
-            c_sound: Array1::zeros(S),
-            eigen_vals: Array2::zeros((E, S)),
-            flux: Array2::zeros((E, S)),
+            cent: Variables::new(physics_config),
+            west: Variables::new(physics_config),
+            east: Variables::new(physics_config),
         };
+    }
+
+    fn cent<'a>(&self) -> &'a Self::Vars {
+        &self.cent
+    }
+
+    fn west<'a>(&self) -> &'a Self::Vars {
+        &self.west
+    }
+
+    fn east<'a>(&self) -> &'a Self::Vars {
+        &self.east
     }
 
     fn is_adiabatic(&self) -> bool {
         return false;
     }
 
-    #[inline(always)]
-    fn prim_entry(&self, j: usize, i: usize) -> f64 {
-        return self.prim[[j, i]];
-    }
-
-    #[inline(always)]
-    fn prim_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.prim.row(j);
-    }
-
-    #[inline(always)]
-    fn prim(&self) -> ArrayView2<f64> {
-        return self.prim.view();
-    }
-
-    #[inline(always)]
-    fn cons_entry(&self, j: usize, i: usize) -> f64 {
-        return self.cons[[j, i]];
-    }
-
-    #[inline(always)]
-    fn cons_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.cons.row(j);
-    }
-
-    #[inline(always)]
-    fn cons(&self) -> ArrayView2<f64> {
-        return self.cons.view();
-    }
-
-    #[inline(always)]
-    fn eigen_vals(&self) -> ArrayView2<f64> {
-        return self.eigen_vals.view();
-    }
-
-    #[inline(always)]
-    fn eigen_min(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(J_EIGENMIN);
-    }
-
-    #[inline(always)]
-    fn eigen_max(&self) -> ArrayView1<f64> {
-        return self.eigen_vals.row(J_EIGENMAX);
-    }
-
-    #[inline(always)]
-    fn c_sound(&self) -> ArrayView1<f64> {
-        return self.c_sound.view();
-    }
-
-    #[inline(always)]
-    fn flux_entry(&self, j: usize, i: usize) -> f64 {
-        return self.flux[[j, i]];
-    }
-
-    #[inline(always)]
-    fn flux_row(&self, j: usize) -> ArrayView1<f64> {
-        return self.flux.row(j);
-    }
-
-    #[inline(always)]
-    fn flux(&self) -> ArrayView2<f64> {
-        return self.flux.view();
-    }
-
     fn update_prim(&mut self) {
-        cons_to_prim(&mut self.prim.view_mut(), JRHO, JXI, &self.cons.view(), JRHO, JXI);
+        cons_to_prim(
+            &mut self.cent().prim.view_mut(),
+            JRHO,
+            JXI,
+            &self.cent().cons.view(),
+            JRHO,
+            JXI,
+        );
     }
 
     fn update_cons(&mut self) {
-        prim_to_cons(&mut self.cons.view_mut(), JRHO, JXI, &self.prim.view(), JRHO, JXI);
+        prim_to_cons(
+            &mut self.cent().cons.view_mut(),
+            JRHO,
+            JXI,
+            &self.cent().prim.view(),
+            JRHO,
+            JXI,
+        );
     }
 
     fn update_derived_values(&mut self) {
         update_eigen_vals(
-            self.eigen_vals.view_mut(),
+            self.cent().eigen_vals.view_mut(),
             J_EIGENMIN,
             J_EIGENMAX,
-            self.prim.row(JXI),
-            self.c_sound.view(),
+            self.cent().prim.row(JXI),
+            self.cent().c_sound.view(),
         );
+    }
+
+    fn update_flux_cent(&mut self) {
         update_flux(
-            self.flux.view_mut(),
-            self.prim.view(),
-            self.cons.view(),
+            self.cent().flux.view_mut(),
+            self.cent().prim.view(),
+            self.cent().cons.view(),
             JRHO,
             JXI,
-            self.c_sound.view(),
+            self.cent().c_sound.view(),
         );
-    }
-
-    #[inline(always)]
-    fn assign_prim_entry(&mut self, j: usize, i: usize, rhs: f64) {
-        self.prim[[j, i]] = rhs;
-    }
-
-    #[inline(always)]
-    fn assign_cons_entry(&mut self, j: usize, i: usize, rhs: f64) {
-        self.cons[[j, i]] = rhs;
-    }
-
-    #[inline(always)]
-    fn assign_prim(&mut self, rhs: &ArrayView2<f64>) {
-        self.prim.assign(rhs);
-    }
-
-    #[inline(always)]
-    fn assign_cons(&mut self, rhs: &ArrayView2<f64>) {
-        self.cons.assign(rhs);
-    }
-
-    #[inline(always)]
-    fn assign_c_sound(&mut self, rhs: &ArrayView1<f64>) {
-        self.c_sound.assign(rhs);
     }
 }
 
@@ -253,13 +189,13 @@ pub fn prim_to_cons(
 
 impl<const S: usize> Collectable for Euler1DIsot<S> {
     fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()> {
-        return super::super::collect_data(self, name, mesh_offset);
+        return self.cent().collect_data(name, mesh_offset);
     }
 }
 
 impl<const S: usize> Validation for Euler1DIsot<S> {
     fn validate(&self) -> Result<()> {
-        super::super::validate(self)?;
+        self.cent().validate()?;
         validate(self, JRHO)?;
         return Ok(());
     }
@@ -268,9 +204,9 @@ impl<const S: usize> Validation for Euler1DIsot<S> {
 #[inline(always)]
 pub fn validate<P: Physics>(u: &P, j_rho: usize) -> Result<()> {
     ensure!(
-        u.prim_row(j_rho).fold(true, |acc, x| acc && x > &0.0),
+        u.cent().prim_row(j_rho).fold(true, |acc, x| acc && x > &0.0),
         "Mass density must be positive! Got: {}",
-        u.prim_row(j_rho)
+        u.cent().prim_row(j_rho)
     );
     return Ok(());
 }
