@@ -87,14 +87,14 @@ impl TimeStep {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    pub fn calc_dt_expl<P: Physics, const S: usize>(
+    pub fn calc_dt_expl<P: Physics<E, S>, const E: usize, const S: usize>(
         &mut self,
         u: &mut P,
         // rhs: &Rhs<S, EQ>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         //TODO: source term time steps
-        self.dt = u.calc_dt_cfl(self.dt_cfl_param, mesh)?;
+        self.dt = u.calc_dt_cfl(&u.cent().eigen_max(), self.dt_cfl_param, mesh)?;
         if self.dt < self.dt_min {
             bail!(
                 "Time step width dt dipped below dt_min! Got dt = {}, dt_min = {}",

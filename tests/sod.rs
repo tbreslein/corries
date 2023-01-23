@@ -96,7 +96,7 @@ fn get_config(mode: NumFluxMode) -> CorriesConfig {
     };
 }
 
-fn init<P: Physics, const E: usize, const S: usize>(u: &mut P) {
+fn init<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::zeros((E, S));
     for i in 0..breakpoint_index {
@@ -107,7 +107,7 @@ fn init<P: Physics, const E: usize, const S: usize>(u: &mut P) {
         prim[[0, i]] = 0.125;
         prim[[E - 1, i]] = 0.1;
     }
-    u.assign_prim(&prim.view());
+    u.cent_mut().prim.assign(&prim.view());
     return;
 }
 
@@ -115,13 +115,13 @@ fn init<P: Physics, const E: usize, const S: usize>(u: &mut P) {
 fn sod_hll() -> Result<()> {
     set_Physics_and_E!(Euler1DAdiabatic);
     type N = Hll;
-    type T = RungeKuttaFehlberg<P>;
+    type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config(NumFluxMode::Hll);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u: P = P::new(&config.physics_config);
-    let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
+    let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init::<P, E, S>(&mut u);

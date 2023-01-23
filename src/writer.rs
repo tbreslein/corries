@@ -78,10 +78,10 @@ impl Writer {
     /// * `u` - Provides data for the state of the simulation
     /// * `time` - Provides data on the time coordinates
     /// * `mesh` - Provides mesh data
-    pub fn update_data<P: Physics + Collectable, T: TimeSolver<P>, const S: usize>(
+    pub fn update_data<P: Physics<E, S> + Collectable, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
         &mut self,
         u: &P,
-        time: &Time<P, T>,
+        time: &Time<P, T, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         self.outputs

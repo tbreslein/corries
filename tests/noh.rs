@@ -134,7 +134,7 @@ fn get_config(mode: usize) -> CorriesConfig {
     };
 }
 
-fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
+fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::ones((E, S));
     for i in breakpoint_index..S {
@@ -143,9 +143,9 @@ fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
     if u.is_adiabatic() {
         prim.row_mut(E - 1).fill(1.0E-5);
     } else {
-        u.assign_c_sound(&Array1::ones(S).view());
+        u.cent_mut().c_sound.assign(&Array1::ones(S).view());
     }
-    u.assign_prim(&prim.view());
+    u.cent_mut().prim.assign(&prim.view());
     return;
 }
 
@@ -153,13 +153,13 @@ fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
 fn noh_euler1d_adiabatic() -> Result<()> {
     set_Physics_and_E!(Euler1DAdiabatic);
     type N = Hll;
-    type T = RungeKuttaFehlberg<P>;
+    type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config(EULER1D_ADIABATIC);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u: P = P::new(&config.physics_config);
-    let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
+    let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init_noh::<P, E, S>(&mut u);
@@ -174,13 +174,13 @@ fn noh_euler1d_adiabatic() -> Result<()> {
 fn noh_euler1d_isot() -> Result<()> {
     set_Physics_and_E!(Euler1DIsot);
     type N = Hll;
-    type T = RungeKuttaFehlberg<P>;
+    type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config(EULER1D_ISOT);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u: P = P::new(&config.physics_config);
-    let mut rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(&config);
-    let mut time: Time<P, T> = Time::new::<E, S>(&config, &u)?;
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
+    let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init_noh::<P, E, S>(&mut u);

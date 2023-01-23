@@ -31,11 +31,7 @@ pub struct Euler1DIsot<const S: usize> {
     pub east: Variables<E, S>,
 }
 
-impl<const S: usize> Physics for Euler1DIsot<S> {
-    const E: usize = E;
-    const S: usize = S;
-    type Vars = Variables<E, S>;
-
+impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
     fn new(physics_config: &PhysicsConfig) -> Self {
         return Self {
             cent: Variables::new(physics_config),
@@ -44,16 +40,28 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
         };
     }
 
-    fn cent<'a>(&self) -> &'a Self::Vars {
+    fn cent(&self) -> &Variables<E, S> {
         &self.cent
     }
 
-    fn west<'a>(&self) -> &'a Self::Vars {
+    fn west(&self) -> &Variables<E, S> {
         &self.west
     }
 
-    fn east<'a>(&self) -> &'a Self::Vars {
+    fn east(&self) -> &Variables<E, S> {
         &self.east
+    }
+
+    fn cent_mut(&mut self) -> &mut Variables<E, S> {
+        &mut self.cent
+    }
+
+    fn west_mut(&mut self) -> &mut Variables<E, S> {
+        &mut self.west
+    }
+
+    fn east_mut(&mut self) -> &mut Variables<E, S> {
+        &mut self.east
     }
 
     fn is_adiabatic(&self) -> bool {
@@ -62,10 +70,10 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
 
     fn update_prim(&mut self) {
         cons_to_prim(
-            &mut self.cent().prim.view_mut(),
+            &mut self.cent.prim.view_mut(),
             JRHO,
             JXI,
-            &self.cent().cons.view(),
+            &self.cent.cons.view(),
             JRHO,
             JXI,
         );
@@ -73,10 +81,10 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
 
     fn update_cons(&mut self) {
         prim_to_cons(
-            &mut self.cent().cons.view_mut(),
+            &mut self.cent.cons.view_mut(),
             JRHO,
             JXI,
-            &self.cent().prim.view(),
+            &self.cent.prim.view(),
             JRHO,
             JXI,
         );
@@ -84,23 +92,33 @@ impl<const S: usize> Physics for Euler1DIsot<S> {
 
     fn update_derived_values(&mut self) {
         update_eigen_vals(
-            self.cent().eigen_vals.view_mut(),
+            self.cent.eigen_vals.view_mut(),
             J_EIGENMIN,
             J_EIGENMAX,
-            self.cent().prim.row(JXI),
-            self.cent().c_sound.view(),
+            self.cent.prim.row(JXI),
+            self.cent.c_sound.view(),
         );
     }
 
     fn update_flux_cent(&mut self) {
         update_flux(
-            self.cent().flux.view_mut(),
-            self.cent().prim.view(),
-            self.cent().cons.view(),
+            self.cent.flux.view_mut(),
+            self.cent.prim.view(),
+            self.cent.cons.view(),
             JRHO,
             JXI,
-            self.cent().c_sound.view(),
+            self.cent.c_sound.view(),
         );
+    }
+
+    fn assign(&mut self, rhs: &Self) {
+        self.assign_cent(rhs);
+        self.west.assign(&rhs.west);
+        self.east.assign(&rhs.east);
+    }
+
+    fn assign_cent(&mut self, rhs: &Self) {
+        self.cent.assign(&rhs.cent);
     }
 }
 
@@ -202,11 +220,11 @@ impl<const S: usize> Validation for Euler1DIsot<S> {
 }
 
 #[inline(always)]
-pub fn validate<P: Physics>(u: &P, j_rho: usize) -> Result<()> {
+pub fn validate<P: Physics<E, S>, const E: usize, const S: usize>(u: &P, j_rho: usize) -> Result<()> {
     ensure!(
-        u.cent().prim_row(j_rho).fold(true, |acc, x| acc && x > &0.0),
+        u.cent().prim.row(j_rho).fold(true, |acc, x| acc && x > &0.0),
         "Mass density must be positive! Got: {}",
-        u.cent().prim_row(j_rho)
+        u.cent().prim.row(j_rho)
     );
     return Ok(());
 }
