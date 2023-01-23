@@ -162,7 +162,7 @@ pub fn noh_run(c: &mut Criterion) {
 
     set_Physics_and_E!(Euler1DAdiabatic);
     let config = get_config(EULER1D_ADIABATIC);
-    type N = Hll;
+    type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
