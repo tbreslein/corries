@@ -101,7 +101,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ti
         });
     }
 
-    fn next_solution<N: NumFlux>(
+    fn next_solution<N: NumFlux<E, S>>(
         &mut self,
         time: &mut TimeStep,
         u: &mut P,
@@ -155,7 +155,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ru
     /// * `u` - Input [Physics] state
     /// * `rhs` - Solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    fn calc_rkf_solution<N: NumFlux>(
+    fn calc_rkf_solution<N: NumFlux<E, S>>(
         &mut self,
         dt_in: f64,
         u: &mut P,

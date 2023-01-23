@@ -11,7 +11,7 @@ use corries::prelude::*;
 
 const S: usize = 10;
 set_Physics_and_E!(Euler1DIsot);
-type N = Hll;
+type N = Hll<E, S>;
 type T = RungeKuttaFehlberg<P, E, S>;
 
 fn main() -> Result<()> {

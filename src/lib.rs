@@ -62,7 +62,7 @@ pub fn init_corries<P, N, T, const E: usize, const S: usize>(
 ) -> Result<(P, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer)>
 where
     P: Physics<E, S> + Collectable + 'static,
-    N: NumFlux,
+    N: NumFlux<E, S>,
     T: TimeSolver<P, E, S>,
 {
     if cfg!(feature = "validation") {
@@ -101,7 +101,7 @@ where
 /// * `writer` - Deals with writing output
 pub fn run_corries<
     P: Physics<E, S> + Collectable,
-    N: NumFlux,
+    N: NumFlux<E, S>,
     T: TimeSolver<P, E, S>,
     const E: usize,
     const S: usize,

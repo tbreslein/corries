@@ -61,7 +61,7 @@ pub trait TimeSolver<P: Physics<E, S>, const E: usize, const S: usize> {
     /// * `u` - The current physical state
     /// * `rhs` - Solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    fn next_solution<N: NumFlux>(
+    fn next_solution<N: NumFlux<E, S>>(
         &mut self,
         time: &mut TimeStep,
         u: &mut P,
@@ -106,7 +106,7 @@ impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> T
     /// * `u` - the [Physics] state being modified to transition between current and next state
     /// * `rhs` - solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    pub fn next_solution<N: NumFlux>(&mut self, u: &mut P, rhs: &mut Rhs<N, E, S>, mesh: &Mesh<S>) -> Result<()> {
+    pub fn next_solution<N: NumFlux<E, S>>(&mut self, u: &mut P, rhs: &mut Rhs<N, E, S>, mesh: &Mesh<S>) -> Result<()> {
         self.solver
             .next_solution::<N>(&mut self.timestep, u, rhs, mesh)
             .context("Calling TimeIntegration::solver.next_solution in TimeIntegration::next_solution")?;

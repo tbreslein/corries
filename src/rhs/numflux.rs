@@ -14,12 +14,12 @@ pub mod hll;
 pub use self::hll::Hll;
 
 /// Trait for structs that can calculate numerical flux
-pub trait NumFlux {
+pub trait NumFlux<const E: usize, const S: usize> {
     /// construct a new trait object
-    fn new<const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> Self;
+    fn new(numerics_config: &NumericsConfig) -> Self;
 
     /// Calculates the numerical derivative along the xi direction
-    fn calc_dflux_dxi<P: Physics<E, S>, const E: usize, const S: usize>(
+    fn calc_dflux_dxi<P: Physics<E, S>>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
         u: &mut P,
@@ -28,8 +28,8 @@ pub trait NumFlux {
 }
 
 /// Constructs an `impl Numflux<S, EQ>`.
-pub fn init_numflux<N: NumFlux, const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> N {
-    return N::new::<E, S>(numerics_config);
+pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> N {
+    return N::new(numerics_config);
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.

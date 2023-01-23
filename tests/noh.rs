@@ -152,7 +152,7 @@ fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
 #[test]
 fn noh_euler1d_adiabatic() -> Result<()> {
     set_Physics_and_E!(Euler1DAdiabatic);
-    type N = Hll;
+    type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config(EULER1D_ADIABATIC);
@@ -173,7 +173,7 @@ fn noh_euler1d_adiabatic() -> Result<()> {
 #[test]
 fn noh_euler1d_isot() -> Result<()> {
     set_Physics_and_E!(Euler1DIsot);
-    type N = Hll;
+    type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config(EULER1D_ISOT);
