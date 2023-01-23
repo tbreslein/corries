@@ -59,11 +59,11 @@ pub use prelude::*;
 /// determines the type of `Physics` used throughout the whole simulation!
 pub fn init_corries<P, N, T, const E: usize, const S: usize>(
     config: &CorriesConfig,
-) -> Result<(P, Rhs<P, N, S>, Time<P, T>, Mesh<S>, Writer)>
+) -> Result<(P, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer)>
 where
-    P: Physics + Collectable + 'static,
+    P: Physics<E, S> + Collectable + 'static,
     N: NumFlux,
-    T: TimeSolver<P>,
+    T: TimeSolver<P, E, S>,
 {
     if cfg!(feature = "validation") {
         config.validate()?;
@@ -71,8 +71,8 @@ where
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let u: P = P::new(&config.physics_config);
-    let rhs: Rhs<P, N, S> = Rhs::<P, N, S>::new::<E>(config);
-    let time: Time<P, T> = Time::new::<E, S>(config, &u)?;
+    let rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(config);
+    let time: Time<P, T, E, S> = Time::new(config, &u)?;
     let mut writer = Writer::new::<S>(config, &mesh)?;
 
     if writer.print_banner {
@@ -99,10 +99,16 @@ where
 /// and the time step
 /// * `mesh` - The mesh the simulation runs on
 /// * `writer` - Deals with writing output
-pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const E: usize, const S: usize>(
+pub fn run_corries<
+    P: Physics<E, S> + Collectable,
+    N: NumFlux,
+    T: TimeSolver<P, E, S>,
+    const E: usize,
+    const S: usize,
+>(
     u: &mut P,
-    rhs: &mut Rhs<P, N, S>,
-    time: &mut Time<P, T>,
+    rhs: &mut Rhs<N, E, S>,
+    time: &mut Time<P, T, E, S>,
     mesh: &Mesh<S>,
     writer: &mut Writer,
 ) -> Result<()> {
@@ -120,7 +126,7 @@ pub fn run_corries<P: Physics + Collectable, N: NumFlux, T: TimeSolver<P>, const
             break;
         }
 
-        if let err @ Err(_) = time.next_solution::<N, E, S>(u, rhs, mesh) {
+        if let err @ Err(_) = time.next_solution(u, rhs, mesh) {
             time.timestep.dt_kind = DtKind::ErrorDump;
             writer
                 .update_data(u, time, mesh)

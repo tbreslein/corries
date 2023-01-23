@@ -44,13 +44,19 @@ impl NumFlux for Hll {
         };
     }
 
-    fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(
+    fn calc_dflux_dxi<P: Physics<E, S>, const E: usize, const S: usize>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
-        u: &P,
+        u: &mut P,
         mesh: &Mesh<S>,
     ) -> Result<()> {
-        // NOTE: Assumes that u.eigen_vals and u.flux are already up to date
+        // NOTE: Assumes that u.eigen_vals are already up to date
+        u.update_flux_cent();
+
+        let uflux = &u.cent().flux;
+        let ucons = &u.cent().cons;
+        let eigen_min = &u.cent().eigen_min();
+        let eigen_max = &u.cent().eigen_max();
         let s = s![(mesh.ixi_in - 1)..=mesh.ixi_out];
         let sp1 = s![mesh.ixi_in..=(mesh.ixi_out + 1)];
 
@@ -59,10 +65,10 @@ impl NumFlux for Hll {
         // were fast enough to outpace the overhead of the joins. Calling the parallel zip as 4
         // sequential calls was the clear benchmark winner on two seperate machines.
         par_azip!((
-                sl in &mut self.sl.slice_mut(s), &ev1 in &u.eigen_min().slice(s), &ev2 in &u.eigen_min().slice(sp1))
+                sl in &mut self.sl.slice_mut(s), &ev1 in &eigen_min.slice(s), &ev2 in &eigen_min.slice(sp1))
                 *sl = 0.0f64.min(ev1.min(ev2)));
         par_azip!((
-                sr in &mut self.sr.slice_mut(s), &ev1 in &u.eigen_max().slice(s), &ev2 in &u.eigen_max().slice(sp1))
+                sr in &mut self.sr.slice_mut(s), &ev1 in &eigen_max.slice(s), &ev2 in &eigen_max.slice(sp1))
                 *sr = 0.0f64.max(ev1.max(ev2)));
         par_azip!((
                 a in &mut self.inv_sr_minus_sl.slice_mut(s), &sr in &self.sr.slice(s), &sl in &self.sl.slice(s))
@@ -79,8 +85,8 @@ impl NumFlux for Hll {
         for j in 0..E {
             self.flux_num.row_mut(j).slice_mut(s).assign(
                 &(&self.inv_sr_minus_sl.slice(s)
-                    * (&self.sr.slice(s) * &u.flux_row(j).slice(s) - &self.sl.slice(s) * &u.flux_row(j).slice(sp1)
-                        + &self.sr_times_sl.slice(s) * (&u.cons_row(j).slice(sp1) - &u.cons_row(j).slice(s)))),
+                    * (&self.sr.slice(s) * &uflux.row(j).slice(s) - &self.sl.slice(s) * &uflux.row(j).slice(sp1)
+                        + &self.sr_times_sl.slice(s) * (&ucons.row(j).slice(sp1) - &ucons.row(j).slice(s)))),
             );
         }
 
@@ -141,7 +147,7 @@ mod tests {
         adiabatic_index: 1.4,
     };
 
-    fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
+    fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
         let breakpoint_index = (S as f64 * 0.5) as usize;
         let mut prim = Array2::zeros((E, S));
         prim.fill(0.0);
@@ -157,9 +163,9 @@ mod tests {
             prim.row_mut(E - 1).fill(1.0E-5)
         } else {
             let c_sound = Array1::ones(S);
-            u.assign_c_sound(&c_sound.view());
+            u.cent_mut().c_sound.assign(&c_sound.view());
         }
-        u.assign_prim(&prim.view());
+        u.cent_mut().prim.assign(&prim.view());
         return;
     }
 

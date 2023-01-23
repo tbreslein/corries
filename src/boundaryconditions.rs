@@ -4,7 +4,7 @@
 
 //! Exports the [BoundaryCondition] trait and [init_boundary_condition] function.
 
-use crate::{mesh::Mesh, BoundaryMode, CorriesConfig, Physics};
+use crate::{mesh::Mesh, variables::Variables, BoundaryMode, CorriesConfig};
 
 use self::custom::CustomBoundaryConditions;
 
@@ -20,16 +20,15 @@ pub enum Direction {
 }
 
 /// Identifies an object that can apply boundary condition to a `Physics` object
-pub trait BoundaryCondition<P, const S: usize> {
-    //<const S: usize, const EQ: usize> {
+pub trait BoundaryCondition<const E: usize, const S: usize> {
     /// Applies the condition
-    fn apply(&mut self, u: &mut P, mesh: &Mesh<S>);
+    fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>);
 }
 
-pub fn init_boundary_condition<P: Physics, const S: usize>(
+pub fn init_boundary_condition<const E: usize, const S: usize>(
     direction: Direction,
     config: &CorriesConfig,
-) -> impl BoundaryCondition<P, S> {
+) -> impl BoundaryCondition<E, S> {
     return match direction {
         Direction::West => match &config.boundary_condition_west {
             BoundaryMode::Custom(v) => CustomBoundaryConditions::new(direction, v),

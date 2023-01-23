@@ -8,7 +8,7 @@ use color_eyre::{
     eyre::{bail, ensure},
     Result,
 };
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ArrayView1};
 
 use crate::{errorhandling::Validation, Collectable, Data, DataName, PhysicsConfig, StructAssociation};
 
@@ -51,6 +51,14 @@ impl<const E: usize, const S: usize> Variables<E, S> {
         self.cons.assign(&rhs.cons);
         self.c_sound.assign(&rhs.c_sound);
     }
+
+    pub fn eigen_min(&self) -> ArrayView1<f64> {
+        self.eigen_vals.row(0)
+    }
+
+    pub fn eigen_max(&self) -> ArrayView1<f64> {
+        self.eigen_vals.row(E - 1)
+    }
 }
 
 impl<const E: usize, const S: usize> Collectable for Variables<E, S> {
@@ -58,7 +66,9 @@ impl<const E: usize, const S: usize> Collectable for Variables<E, S> {
         match (data.association, data.name) {
             (StructAssociation::Physics, DataName::Prim(j)) => self.write_vector(&self.prim.row(j), data, mesh_offset),
             (StructAssociation::Physics, DataName::Cons(j)) => self.write_vector(&self.cons.row(j), data, mesh_offset),
-            (StructAssociation::Physics, DataName::CSound) => self.write_vector(&self.c_sound.view(), data, mesh_offset),
+            (StructAssociation::Physics, DataName::CSound) => {
+                self.write_vector(&self.c_sound.view(), data, mesh_offset)
+            },
             (StructAssociation::Physics, x) => bail!("Tried associating {:?} with Physics!", x),
             (StructAssociation::Mesh, x) | (StructAssociation::TimeStep, x) => {
                 bail!("name.association() for {:?} returned {:?}", x, data.association)

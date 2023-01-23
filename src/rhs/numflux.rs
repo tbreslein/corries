@@ -19,10 +19,10 @@ pub trait NumFlux {
     fn new<const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> Self;
 
     /// Calculates the numerical derivative along the xi direction
-    fn calc_dflux_dxi<P: Physics, const E: usize, const S: usize>(
+    fn calc_dflux_dxi<P: Physics<E, S>, const E: usize, const S: usize>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
-        u: &P,
+        u: &mut P,
         mesh: &Mesh<S>,
     ) -> Result<()>;
 }

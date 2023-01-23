@@ -32,11 +32,7 @@ pub struct Euler1DAdiabatic<const S: usize> {
     pub east: Variables<E, S>,
 }
 
-impl<const S: usize> Physics for Euler1DAdiabatic<S> {
-    const E: usize = E;
-    const S: usize = S;
-    type Vars = Variables<E, S>;
-
+impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
     fn new(physics_config: &PhysicsConfig) -> Self {
         return Self {
             cent: Variables::new(physics_config),
@@ -45,16 +41,28 @@ impl<const S: usize> Physics for Euler1DAdiabatic<S> {
         };
     }
 
-    fn cent<'a>(&self) -> &'a Self::Vars {
+    fn cent(&self) -> &Variables<E, S> {
         &self.cent
     }
 
-    fn west<'a>(&self) -> &'a Self::Vars {
+    fn west(&self) -> &Variables<E, S> {
         &self.west
     }
 
-    fn east<'a>(&self) -> &'a Self::Vars {
+    fn east(&self) -> &Variables<E, S> {
         &self.east
+    }
+
+    fn cent_mut(&mut self) -> &mut Variables<E, S> {
+        &mut self.cent
+    }
+
+    fn west_mut(&mut self) -> &mut Variables<E, S> {
+        &mut self.west
+    }
+
+    fn east_mut(&mut self) -> &mut Variables<E, S> {
+        &mut self.east
     }
 
     fn is_adiabatic(&self) -> bool {
@@ -63,57 +71,67 @@ impl<const S: usize> Physics for Euler1DAdiabatic<S> {
 
     fn update_prim(&mut self) {
         cons_to_prim(
-            &mut self.cent().prim.view_mut(),
+            &mut self.cent.prim.view_mut(),
             JRHO,
             JXI,
             JP,
-            &self.cent().cons.view(),
+            &self.cent.cons.view(),
             JRHO,
             JXI,
             JP,
-            self.cent().gamma,
+            self.cent.gamma,
         );
     }
 
     fn update_cons(&mut self) {
         prim_to_cons(
-            &mut self.cent().cons.view_mut(),
+            &mut self.cent.cons.view_mut(),
             JRHO,
             JXI,
             JP,
-            &self.cent().prim.view(),
+            &self.cent.prim.view(),
             JRHO,
             JXI,
             JP,
-            self.cent().gamma,
+            self.cent.gamma,
         );
     }
 
     fn update_derived_values(&mut self) {
         update_c_sound(
-            self.cent().c_sound.view_mut(),
-            self.cent().gamma,
-            self.cent().prim.row(JP),
-            self.cent().prim.row(JRHO),
+            self.cent.c_sound.view_mut(),
+            self.cent.gamma,
+            self.cent.prim.row(JP),
+            self.cent.prim.row(JRHO),
         );
         super::euler1disot::update_eigen_vals(
-            self.cent().eigen_vals.view_mut(),
+            self.cent.eigen_vals.view_mut(),
             J_EIGENMIN,
             J_EIGENMAX,
-            self.cent().prim.row(JXI),
-            self.cent().c_sound.view(),
+            self.cent.prim.row(JXI),
+            self.cent.c_sound.view(),
         );
     }
 
     fn update_flux_cent(&mut self) {
         update_flux(
-            self.cent().flux.view_mut(),
-            self.cent().prim.view(),
-            self.cent().cons.view(),
+            self.cent.flux.view_mut(),
+            self.cent.prim.view(),
+            self.cent.cons.view(),
             JRHO,
             JXI,
             JP,
         );
+    }
+
+    fn assign(&mut self, rhs: &Self) {
+        self.assign_cent(rhs);
+        self.west.assign(&rhs.west);
+        self.east.assign(&rhs.east);
+    }
+
+    fn assign_cent(&mut self, rhs: &Self) {
+        self.cent.assign(&rhs.cent);
     }
 }
 
@@ -215,11 +233,11 @@ impl<const S: usize> Validation for Euler1DAdiabatic<S> {
 }
 
 #[inline(always)]
-pub fn validate<P: Physics>(u: &P, j_pressure: usize) -> Result<()> {
+pub fn validate<P: Physics<E, S>, const E: usize, const S: usize>(u: &P, j_pressure: usize) -> Result<()> {
     ensure!(
-        u.cent().prim_row(j_pressure).fold(true, |acc, x| acc && x > &0.0),
+        u.cent().prim.row(j_pressure).fold(true, |acc, x| acc && x > &0.0),
         "Pressure must be positive! Got: {}",
-        u.cent().prim_row(j_pressure)
+        u.cent().prim.row(j_pressure)
     );
     return Ok(());
 }

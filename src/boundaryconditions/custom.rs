@@ -5,7 +5,7 @@
 //! Exports [CustomBoundaryConditions] which applies a set of custom boundary conditions to a
 //! `Physics` object.
 
-use crate::{config::CustomBoundaryMode, mesh::Mesh, physics::Physics, variables::Variables};
+use crate::{config::CustomBoundaryMode, mesh::Mesh, variables::Variables};
 
 use super::{BoundaryCondition, Direction};
 
@@ -14,28 +14,28 @@ pub struct CustomBoundaryConditions {
     modes: Vec<(usize, CustomBoundaryMode)>,
 }
 
-impl<P: Physics, const S: usize> BoundaryCondition<P, S> for CustomBoundaryConditions {
-    fn apply(&mut self, u: &mut P, mesh: &Mesh<S>) {
+impl<const E: usize, const S: usize> BoundaryCondition<E, S> for CustomBoundaryConditions {
+    fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>) {
         match self.direction {
             Direction::West => self.modes.iter().for_each(|(j, mode)| match mode {
-                CustomBoundaryMode::Extrapolate => extrapolate_west(*j, u, mesh),
-                CustomBoundaryMode::ExtrapolateDensityKepler => extrapolate_density_kepler_west(*j, u, mesh),
-                CustomBoundaryMode::ExtrapolateEtaVelocityKepler => extrapolate_etavel_kepler_west(*j, u, mesh),
-                CustomBoundaryMode::NearZero => near_zero_west::<P, S>(*j, u),
-                CustomBoundaryMode::NoGradients => no_gradients_west::<P, S>(*j, u),
-                CustomBoundaryMode::OutFlowExtrapolate => outflow_extrapolate_west(*j, u, mesh),
-                CustomBoundaryMode::OutflowNoGradients => outflow_no_gradients_west::<P, S>(*j, u),
-                CustomBoundaryMode::Reflecting => reflecting_west::<P, S>(*j, u),
+                CustomBoundaryMode::Extrapolate => extrapolate_west(*j, vars, mesh),
+                CustomBoundaryMode::ExtrapolateDensityKepler => extrapolate_density_kepler_west(*j, vars, mesh),
+                CustomBoundaryMode::ExtrapolateEtaVelocityKepler => extrapolate_etavel_kepler_west(*j, vars, mesh),
+                CustomBoundaryMode::NearZero => near_zero_west(*j, vars),
+                CustomBoundaryMode::NoGradients => no_gradients_west(*j, vars),
+                CustomBoundaryMode::OutFlowExtrapolate => outflow_extrapolate_west(*j, vars, mesh),
+                CustomBoundaryMode::OutflowNoGradients => outflow_no_gradients_west(*j, vars),
+                CustomBoundaryMode::Reflecting => reflecting_west(*j, vars),
             }),
             Direction::East => self.modes.iter().for_each(|(j, mode)| match mode {
-                CustomBoundaryMode::Extrapolate => extrapolate_east(*j, u, mesh),
-                CustomBoundaryMode::ExtrapolateDensityKepler => extrapolate_density_kepler_east(*j, u, mesh),
-                CustomBoundaryMode::ExtrapolateEtaVelocityKepler => extrapolate_etavel_kepler_east(*j, u, mesh),
-                CustomBoundaryMode::NearZero => near_zero_east::<P, S>(*j, u),
-                CustomBoundaryMode::NoGradients => no_gradients_east::<P, S>(*j, u),
-                CustomBoundaryMode::OutFlowExtrapolate => outflow_extrapolate_east(*j, u, mesh),
-                CustomBoundaryMode::OutflowNoGradients => outflow_no_gradients_east::<P, S>(*j, u),
-                CustomBoundaryMode::Reflecting => reflecting_east::<P, S>(*j, u),
+                CustomBoundaryMode::Extrapolate => extrapolate_east(*j, vars, mesh),
+                CustomBoundaryMode::ExtrapolateDensityKepler => extrapolate_density_kepler_east(*j, vars, mesh),
+                CustomBoundaryMode::ExtrapolateEtaVelocityKepler => extrapolate_etavel_kepler_east(*j, vars, mesh),
+                CustomBoundaryMode::NearZero => near_zero_east(*j, vars),
+                CustomBoundaryMode::NoGradients => no_gradients_east(*j, vars),
+                CustomBoundaryMode::OutFlowExtrapolate => outflow_extrapolate_east(*j, vars, mesh),
+                CustomBoundaryMode::OutflowNoGradients => outflow_no_gradients_east(*j, vars),
+                CustomBoundaryMode::Reflecting => reflecting_east(*j, vars),
             }),
         }
     }
@@ -198,17 +198,15 @@ fn reflecting_east<const E: usize, const S: usize>(j: usize, vars: &mut Variable
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        config::{
-            meshconfig::{MeshConfig, MeshMode},
-            physicsconfig::PhysicsConfig,
-        },
-        set_Physics_and_E, Euler1DAdiabatic,
+    use crate::config::{
+        meshconfig::{MeshConfig, MeshMode},
+        physicsconfig::PhysicsConfig,
     };
 
     use super::*;
     use approx::assert_relative_eq;
     use ndarray::Array2;
+    const E: usize = 3;
     const S: usize = 6;
     const MESHCONFIG: MeshConfig = MeshConfig {
         mode: MeshMode::Cartesian,
@@ -220,14 +218,13 @@ mod tests {
         adiabatic_index: 1.4,
         units_mode: crate::UnitsMode::SI,
     };
-    set_Physics_and_E!(Euler1DAdiabatic);
 
     #[test]
     fn extrapolation_test() {
         // Also test this on log meshes
         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
-        let mut u = P::new(&PHYSICSCONFIG);
-        u.assign_prim(
+        let mut vars: Variables<E, S> = Variables::new(&PHYSICSCONFIG);
+        vars.prim.assign(
             &Array2::from_shape_vec(
                 (E, S),
                 vec![
@@ -237,7 +234,7 @@ mod tests {
             .unwrap()
             .view(),
         );
-        let u_prim_expect = Array2::from_shape_vec(
+        let prim_expect = Array2::from_shape_vec(
             (E, S),
             vec![
                 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -245,16 +242,16 @@ mod tests {
         )
         .unwrap();
         for j in 0..E {
-            extrapolate_west(j, &mut u, &mesh);
-            extrapolate_east(j, &mut u, &mesh);
+            extrapolate_west(j, &mut vars, &mesh);
+            extrapolate_east(j, &mut vars, &mesh);
         }
-        assert_relative_eq!(u.prim(), u_prim_expect, max_relative = 1.0e-12);
+        assert_relative_eq!(vars.prim, prim_expect, max_relative = 1.0e-12);
     }
 
     #[test]
     fn near_zero_test() {
-        let mut u = P::new(&PHYSICSCONFIG);
-        u.assign_prim(
+        let mut vars: Variables<E, S> = Variables::new(&PHYSICSCONFIG);
+        vars.prim.assign(
             &Array2::from_shape_vec(
                 (E, S),
                 vec![
@@ -264,7 +261,7 @@ mod tests {
             .unwrap()
             .view(),
         );
-        let u_prim_expect = Array2::from_shape_vec(
+        let prim_expect = Array2::from_shape_vec(
             (E, S),
             vec![
                 0.25e-10, 0.25e-10, 0.25, 0.25, 0.25e-10, 0.25e-10, -2.0e-10, -2.0e-10, -2.0, -1.5, -1.5e-10, -1.5e-10,
@@ -273,16 +270,16 @@ mod tests {
         )
         .unwrap();
         for j in 0..E {
-            near_zero_west::<P, S>(j, &mut u);
-            near_zero_east::<P, S>(j, &mut u);
+            near_zero_west(j, &mut vars);
+            near_zero_east(j, &mut vars);
         }
-        assert_relative_eq!(u.prim(), u_prim_expect, max_relative = 1.0e-12);
+        assert_relative_eq!(vars.prim, prim_expect, max_relative = 1.0e-12);
     }
 
     #[test]
     fn no_gradients_test() {
-        let mut u = P::new(&PHYSICSCONFIG);
-        u.assign_prim(
+        let mut vars: Variables<E, S> = Variables::new(&PHYSICSCONFIG);
+        vars.prim.assign(
             &Array2::from_shape_vec(
                 (E, S),
                 vec![
@@ -293,7 +290,7 @@ mod tests {
             .view(),
         );
 
-        let u_prim_expect = Array2::from_shape_vec(
+        let prim_expect = Array2::from_shape_vec(
             (E, S),
             vec![
                 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, -2.0, -2.0, -2.0, -1.5, -1.5, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -302,17 +299,17 @@ mod tests {
         .unwrap();
 
         for j in 0..E {
-            no_gradients_west::<P, S>(j, &mut u);
-            no_gradients_east::<P, S>(j, &mut u);
+            no_gradients_west(j, &mut vars);
+            no_gradients_east(j, &mut vars);
         }
 
-        assert_relative_eq!(u.prim(), u_prim_expect, max_relative = 1.0e-12);
+        assert_relative_eq!(vars.prim, prim_expect, max_relative = 1.0e-12);
     }
 
     #[test]
     fn outflow_no_gradients_test() {
-        let mut u = P::new(&PHYSICSCONFIG);
-        u.assign_prim(
+        let mut vars: Variables<E, S> = Variables::new(&PHYSICSCONFIG);
+        vars.prim.assign(
             &Array2::from_shape_vec(
                 (E, S),
                 vec![
@@ -322,7 +319,7 @@ mod tests {
             .unwrap()
             .view(),
         );
-        let u_prim_expect = Array2::from_shape_vec(
+        let prim_expect = Array2::from_shape_vec(
             (E, S),
             vec![
                 -0.25, -0.25, 0.25, 0.25, 0.25, 0.25, -2.0, -2.0, -2.0, -1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -330,18 +327,18 @@ mod tests {
         )
         .unwrap();
         for j in 0..E {
-            outflow_no_gradients_west::<P, S>(j, &mut u);
-            outflow_no_gradients_east::<P, S>(j, &mut u);
+            outflow_no_gradients_west(j, &mut vars);
+            outflow_no_gradients_east(j, &mut vars);
         }
-        assert_relative_eq!(u.prim(), u_prim_expect, max_relative = 1.0e-12);
+        assert_relative_eq!(vars.prim, prim_expect, max_relative = 1.0e-12);
     }
 
     #[test]
     fn outflow_extrapolate_test() {
         // Also test this on log meshes
         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
-        let mut u = P::new(&PHYSICSCONFIG);
-        u.assign_prim(
+        let mut vars: Variables<E, S> = Variables::new(&PHYSICSCONFIG);
+        vars.prim.assign(
             &Array2::from_shape_vec(
                 (E, S),
                 vec![
@@ -351,7 +348,7 @@ mod tests {
             .unwrap()
             .view(),
         );
-        let u_prim_expect = Array2::from_shape_vec(
+        let prim_expect = Array2::from_shape_vec(
             (E, S),
             vec![
                 -0.25, -0.25, 0.25, 0.25, 0.25, 0.25, -3.0, -2.5, -2.0, -1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -359,17 +356,17 @@ mod tests {
         )
         .unwrap();
         for j in 0..E {
-            outflow_extrapolate_west(j, &mut u, &mesh);
-            outflow_extrapolate_east(j, &mut u, &mesh);
+            outflow_extrapolate_west(j, &mut vars, &mesh);
+            outflow_extrapolate_east(j, &mut vars, &mesh);
         }
-        assert_relative_eq!(u.prim(), u_prim_expect, max_relative = 1.0e-12);
+        assert_relative_eq!(vars.prim, prim_expect, max_relative = 1.0e-12);
     }
 
     #[test]
     fn reflecting_test() {
         // Also test this on log meshes
-        let mut u = P::new(&PHYSICSCONFIG);
-        u.assign_prim(
+        let mut vars: Variables<E, S> = Variables::new(&PHYSICSCONFIG);
+        vars.prim.assign(
             &Array2::from_shape_vec(
                 (E, S),
                 vec![
@@ -379,7 +376,7 @@ mod tests {
             .unwrap()
             .view(),
         );
-        let u_prim_expect = Array2::from_shape_vec(
+        let prim_expect = Array2::from_shape_vec(
             (E, S),
             vec![
                 -0.25, -0.25, 0.25, 0.25, -0.25, -0.25, 1.5, 2.0, -2.0, -1.5, 1.5, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -387,9 +384,9 @@ mod tests {
         )
         .unwrap();
         for j in 0..E {
-            reflecting_west::<P, S>(j, &mut u);
-            reflecting_east::<P, S>(j, &mut u);
+            reflecting_west(j, &mut vars);
+            reflecting_east(j, &mut vars);
         }
-        assert_relative_eq!(u.prim(), u_prim_expect, max_relative = 1.0e-12);
+        assert_relative_eq!(vars.prim, prim_expect, max_relative = 1.0e-12);
     }
 }

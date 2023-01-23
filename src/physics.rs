@@ -14,28 +14,36 @@ pub mod variables;
 
 pub use systems::*;
 
+use self::variables::Variables;
+
 /// Trait for Physics objects
-pub trait Physics {
-    /// Number of equations in the system
-    const E: usize;
-
-    /// Number of grid cells in the mesh
-    const S: usize;
-
-    /// The exact type of the generic Variables container
-    type Vars;
+pub trait Physics<const E: usize, const S: usize> {
+    // /// Number of equations in the system
+    // const E: usize;
+    //
+    // /// Number of grid cells in the mesh
+    // const S: usize;
 
     /// construct a new trait object
     fn new(physics_config: &PhysicsConfig) -> Self;
 
     /// Returns a reference to the variables at the center of the mesh's cells
-    fn cent<'a>(&self) -> &'a Self::Vars;
+    fn cent(&self) -> &Variables<E, S>;
 
     /// Returns a reference to the variables at the west border of the mesh's cells
-    fn west<'a>(&self) -> &'a Self::Vars;
+    fn west(&self) -> &Variables<E, S>;
 
     /// Returns a reference to the variables at the east border of the mesh's cells
-    fn east<'a>(&self) -> &'a Self::Vars;
+    fn east(&self) -> &Variables<E, S>;
+
+    /// Returns a mutable reference to the variables at the center of the mesh's cells
+    fn cent_mut(&mut self) -> &mut Variables<E, S>;
+
+    /// Returns a mutable reference to the variables at the west border of the mesh's cells
+    fn west_mut(&mut self) -> &mut Variables<E, S>;
+
+    /// Returns a mutable reference to the variables at the east border of the mesh's cells
+    fn east_mut(&mut self) -> &mut Variables<E, S>;
 
     /// Whether the physics system is adiabatic or not
     fn is_adiabatic(&self) -> bool;
@@ -50,10 +58,17 @@ pub trait Physics {
     /// eigen values, and maybe others
     fn update_derived_values(&mut self);
 
+    /// Updates the physical flux for the ::cent field, i.e. in the centre of the mesh's cells
     fn update_flux_cent(&mut self);
 
+    /// Assign the fields of rhs to this
+    fn assign(&mut self, rhs: &Self);
+
+    /// Assign the mesh central variables of rhs to those of self
+    fn assign_cent(&mut self, rhs: &Self);
+
     /// Calculate the CFL limited time step width
-    fn calc_dt_cfl<const S: usize>(&self, eigen_max: &ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
+    fn calc_dt_cfl(&self, eigen_max: &ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
         let dt = c_cfl
             / Zip::from(eigen_max)
                 .and(&mesh.cell_width_inv)
@@ -66,10 +81,10 @@ pub trait Physics {
 }
 
 /// Update everything assuming that the conservative variables are up-to-date
-pub fn update_everything_from_cons<P: Physics, const S: usize>(
+pub fn update_everything_from_cons<P: Physics<E, S>, const E: usize, const S: usize>(
     u: &mut P,
-    boundary_west: &mut Box<dyn BoundaryCondition<P, S>>,
-    boundary_east: &mut Box<dyn BoundaryCondition<P, S>>,
+    boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+    boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
     mesh: &Mesh<S>,
 ) {
     u.update_prim();
@@ -77,14 +92,14 @@ pub fn update_everything_from_cons<P: Physics, const S: usize>(
 }
 
 /// Update everything assuming that the primitive variables are up-to-date
-pub fn update_everything_from_prim<P: Physics, const S: usize>(
+pub fn update_everything_from_prim<P: Physics<E, S>, const E: usize, const S: usize>(
     u: &mut P,
-    boundary_west: &mut Box<dyn BoundaryCondition<P, S>>,
-    boundary_east: &mut Box<dyn BoundaryCondition<P, S>>,
+    boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+    boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
     mesh: &Mesh<S>,
 ) {
-    boundary_west.apply(u, mesh);
-    boundary_east.apply(u, mesh);
+    boundary_west.apply(u.cent_mut(), mesh);
+    boundary_east.apply(u.cent_mut(), mesh);
     u.update_cons();
     u.update_derived_values();
 }
@@ -120,13 +135,13 @@ mod tests {
             fn conversion(p0 in 0.1f64..10.0, p1 in -10.0f64..10.0, p2 in 0.1f64..10.0) {
                 // converting to cons and back to prim should be idempotent
                 let mut u0 = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-                u0.cent().prim.row_mut(0).fill(p0);
-                u0.cent().prim.row_mut(1).fill(p1);
-                u0.cent().prim.row_mut(2).fill(p2);
+                u0.cent_mut().prim.row_mut(0).fill(p0);
+                u0.cent_mut().prim.row_mut(1).fill(p1);
+                u0.cent_mut().prim.row_mut(2).fill(p2);
                 let mut u = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-                u.cent().prim.row_mut(0).fill(p0);
-                u.cent().prim.row_mut(1).fill(p1);
-                u.cent().prim.row_mut(2).fill(p2);
+                u.cent_mut().prim.row_mut(0).fill(p0);
+                u.cent_mut().prim.row_mut(1).fill(p1);
+                u.cent_mut().prim.row_mut(2).fill(p2);
                 u.update_cons();
                 u.update_prim();
                 assert_relative_eq!(u.cent().prim.row(0), u0.cent().prim.row(0), max_relative = 1.0e-12);
@@ -143,11 +158,11 @@ mod tests {
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
                 // converting to cons and back to prim should be idempotent
                 let mut u0 = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-                u0.cent().prim.row_mut(0).fill(p0);
-                u0.cent().prim.row_mut(1).fill(p1);
+                u0.cent_mut().prim.row_mut(0).fill(p0);
+                u0.cent_mut().prim.row_mut(1).fill(p1);
                 let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-                u.cent().prim.row_mut(0).fill(p0);
-                u.cent().prim.row_mut(1).fill(p1);
+                u.cent_mut().prim.row_mut(0).fill(p0);
+                u.cent_mut().prim.row_mut(1).fill(p1);
                 u.update_cons();
                 u.update_prim();
                 assert_relative_eq!(u.cent().prim, u0.cent().prim, max_relative = 1.0e-12);

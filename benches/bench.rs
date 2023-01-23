@@ -135,7 +135,7 @@ fn get_config(mode: usize) -> CorriesConfig {
     };
 }
 
-fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
+fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::zeros((E, S));
     prim.fill(0.0);
@@ -151,9 +151,9 @@ fn init_noh<P: Physics, const E: usize, const S: usize>(u: &mut P) {
         prim.row_mut(E - 1).fill(1.0E-5)
     } else {
         let c_sound = Array1::ones(S);
-        u.assign_c_sound(&c_sound.view());
+        u.cent_mut().c_sound.assign(&c_sound.view());
     }
-    u.assign_prim(&prim.view());
+    u.cent_mut().prim.assign(&prim.view());
     return;
 }
 
@@ -163,7 +163,7 @@ pub fn noh_run(c: &mut Criterion) {
     set_Physics_and_E!(Euler1DAdiabatic);
     let config = get_config(EULER1D_ADIABATIC);
     type N = Hll;
-    type T = RungeKuttaFehlberg<P>;
+    type T = RungeKuttaFehlberg<P, E, S>;
 
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
     init_noh::<P, E, S>(&mut u);
@@ -186,8 +186,8 @@ pub fn euler1d_isot_conversions(c: &mut Criterion) {
     group.sample_size(1000);
 
     let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-    u.prim.row_mut(0).fill(2.0);
-    u.prim.row_mut(1).fill(3.0);
+    u.cent_mut().prim.row_mut(0).fill(2.0);
+    u.cent_mut().prim.row_mut(1).fill(3.0);
     group.bench_function("from prim to cons and back; euler 1d isot", |b| {
         b.iter(|| {
             u.update_cons();
@@ -196,9 +196,9 @@ pub fn euler1d_isot_conversions(c: &mut Criterion) {
     });
 
     let mut u = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-    u.prim.row_mut(0).fill(2.0);
-    u.prim.row_mut(1).fill(3.0);
-    u.prim.row_mut(2).fill(4.0);
+    u.cent_mut().prim.row_mut(0).fill(2.0);
+    u.cent_mut().prim.row_mut(1).fill(3.0);
+    u.cent_mut().prim.row_mut(2).fill(4.0);
     group.bench_function("from prim to cons and back; euler 1d adiabatic", |b| {
         b.iter(|| {
             u.update_cons();
