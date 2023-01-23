@@ -21,7 +21,7 @@ pub mod numflux;
 pub use self::numflux::{hll::Hll, init_numflux, NumFlux};
 
 /// Carries objects and methods for solving the right-hand side of a set of equations.
-pub struct Rhs<N: NumFlux, const E: usize, const S: usize> {
+pub struct Rhs<N: NumFlux<E, S>, const E: usize, const S: usize> {
     /// Full summed up rhs
     pub full_rhs: Array2<f64>,
 
@@ -35,7 +35,7 @@ pub struct Rhs<N: NumFlux, const E: usize, const S: usize> {
     pub boundary_east: Box<dyn BoundaryCondition<E, S>>,
 }
 
-impl<N: NumFlux, const E: usize, const S: usize> Rhs<N, E, S> {
+impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// Constructs a new [Rhs] object.
     ///
     /// # Arguments
@@ -62,13 +62,13 @@ impl<N: NumFlux, const E: usize, const S: usize> Rhs<N, E, S> {
         // this assumes that u.cons is up-to-date
         update_everything_from_cons(u, &mut self.boundary_west, &mut self.boundary_east, mesh);
         self.numflux
-            .calc_dflux_dxi::<P, E, S>(&mut self.full_rhs, u, mesh)
+            .calc_dflux_dxi(&mut self.full_rhs, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
         return Ok(());
     }
 }
 
-impl<N: NumFlux, const E: usize, const S: usize> Validation for Rhs<N, E, S> {
+impl<N: NumFlux<E, S>, const E: usize, const S: usize> Validation for Rhs<N, E, S> {
     fn validate(&self) -> Result<()> {
         ensure!(
             self.full_rhs.fold(true, |acc, x| acc && x.is_finite()),

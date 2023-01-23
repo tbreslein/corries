@@ -16,7 +16,7 @@ use super::calc_dflux_xi_generic;
 use super::NumFlux;
 
 /// Handles calculating numerical flux using the HLL scheme
-pub struct Hll {
+pub struct Hll<const E: usize, const S: usize> {
     /// Left-side characteristics
     sl: Array1<f64>,
 
@@ -33,8 +33,8 @@ pub struct Hll {
     flux_num: Array2<f64>,
 }
 
-impl NumFlux for Hll {
-    fn new<const E: usize, const S: usize>(_: &NumericsConfig) -> Self {
+impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
+    fn new(_: &NumericsConfig) -> Self {
         return Self {
             sl: Array1::zeros(S),
             sr: Array1::zeros(S),
@@ -44,7 +44,7 @@ impl NumFlux for Hll {
         };
     }
 
-    fn calc_dflux_dxi<P: Physics<E, S>, const E: usize, const S: usize>(
+    fn calc_dflux_dxi<P: Physics<E, S>>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
         u: &mut P,
@@ -99,7 +99,7 @@ impl NumFlux for Hll {
     }
 }
 
-impl Validation for Hll {
+impl<const E: usize, const S: usize> Validation for Hll<E, S> {
     fn validate(&self) -> Result<()> {
         ensure!(
             self.sl.fold(true, |acc, x| acc && x.is_finite()),
@@ -169,16 +169,17 @@ mod tests {
         return;
     }
 
+    set_Physics_and_E!(Euler1DIsot);
+
     #[test]
     fn hll_test() {
-        set_Physics_and_E!(Euler1DIsot);
         // Also test this on log meshes
         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
         let mut u: P = P::new(&PHYSICSCONFIG);
         init_noh::<P, E, S>(&mut u);
         u.update_cons();
         u.update_derived_values();
-        let mut hll = Hll::new::<E, S>(&NumericsConfig {
+        let mut hll: Hll<E, S> = Hll::new(&NumericsConfig {
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::SSPRK5,
                 asc: false,
@@ -203,7 +204,7 @@ mod tests {
         .unwrap();
 
         let mut dflux_dxi = Array2::zeros((EQ, S));
-        hll.calc_dflux_dxi::<P, E, S>(&mut dflux_dxi, &mut u, &mesh).unwrap();
+        hll.calc_dflux_dxi(&mut dflux_dxi, &mut u, &mesh).unwrap();
         assert_relative_eq!(dflux_dxi, dflux_dxi_prim_expect, max_relative = 1.0e-12);
     }
 }

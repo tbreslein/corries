@@ -114,7 +114,7 @@ fn init<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
 #[test]
 fn sod_hll() -> Result<()> {
     set_Physics_and_E!(Euler1DAdiabatic);
-    type N = Hll;
+    type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config(NumFluxMode::Hll);
