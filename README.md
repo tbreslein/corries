@@ -123,8 +123,15 @@ As the simulation progresses, we see the fluid bunching up in the middle as more
 
 ## TODO
 
-- more detailed README
-- Add Sod test
+- Restructure traits:
+  - I'm trying to force OO into Rust, which is not what it's designed for
+  - This results in having to write getter functions, to get to the `Variables` fields in the physics structs
+  - Instead I should have strictly different structs for state and methods, and compose those into a wrapper class
+  - For example, how I should fix `Physics`:
+    - Add a wrapper class `State` that holds the `Variables`
+    - That class also holds an extension field, which fulfills the `Physics` trait, and that adds the methods to the wrapper
+  - I might not have to do this for the other traits, since I do not need to access their fields, so my current approach is fine there
+  - sources might need a similar treatment to physics later down the line
 - Add KT solver
 - Add Euler2DAdiabatic
 - Add NavStoIsot + NavStoAdiabatic
