@@ -3,12 +3,17 @@
 // License: MIT
 
 //! Exports [CustomBoundaryConditions] which applies a set of custom boundary conditions to a
-//! `Physics` object.
+//! [Variables] object.
 
 use crate::{config::CustomBoundaryMode, mesh::Mesh, variables::Variables};
 
 use super::{BoundaryCondition, Direction};
 
+/// This is a set of boundary conditions, where the exact condition is set for each equation
+/// separately. This is useful, where you use generic boundary conditions and want to swap them out
+/// quickly, whithout defining a new boundary condition set each time.
+///
+/// Check [CustomBoundaryMode] for the types of boundary conditions available.
 pub struct CustomBoundaryConditions {
     direction: Direction,
     modes: Vec<(usize, CustomBoundaryMode)>,
@@ -42,6 +47,7 @@ impl<const E: usize, const S: usize> BoundaryCondition<E, S> for CustomBoundaryC
 }
 
 impl CustomBoundaryConditions {
+    /// Constructs a new [CustomBoundaryConditions] object
     pub fn new(direction: Direction, modes: &[(usize, CustomBoundaryMode)]) -> Self {
         return Self {
             direction,

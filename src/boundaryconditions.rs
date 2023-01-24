@@ -19,12 +19,13 @@ pub enum Direction {
     East,
 }
 
-/// Identifies an object that can apply boundary condition to a `Physics` object
+/// Identifies an object that can apply boundary condition to a [Variables] object
 pub trait BoundaryCondition<const E: usize, const S: usize> {
-    /// Applies the condition
+    /// Applies the boundary condition to the primitive variables.
     fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>);
 }
 
+/// Initialises a [BoundaryCondition] object
 pub fn init_boundary_condition<const E: usize, const S: usize>(
     direction: Direction,
     config: &CorriesConfig,

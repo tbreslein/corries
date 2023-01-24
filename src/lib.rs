@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 
 //! Corries - CORrosive RIEman Solver
 //!

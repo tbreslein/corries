@@ -2,7 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [Euler1DIsot] struct, which is an implementer for [Physics] for 1-dimensional
+//! isothermal Euler equations
 
 use color_eyre::{eyre::ensure, Result};
 use ndarray::{ArrayView1, ArrayView2, ArrayViewMut2, Zip};
@@ -127,6 +128,7 @@ pub fn prim_to_cons(
         .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel * rho_cons);
 }
 
+/// Checks vars for inconsistency, like mass density
 #[inline(always)]
 pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_rho: usize) -> Result<()> {
     ensure!(

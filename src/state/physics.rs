@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [Physics] trait which defines the behavior embedded in [State] objects
 
 use color_eyre::{eyre::bail, Result};
 use ndarray::{ArrayView1, Zip};

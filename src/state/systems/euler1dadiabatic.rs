@@ -2,7 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [Euler1DAdiabatic] struct, which is an implementer for [Physics] for 1-dimensional
+//! adiabatic Euler equations
 
 use color_eyre::{eyre::ensure, Result};
 use ndarray::{ArrayView2, ArrayViewMut2, Zip};
@@ -148,6 +149,7 @@ pub fn prim_to_cons(
         });
 }
 
+/// Checks vars for inconsistency, like negative pressure
 #[inline(always)]
 pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_pressure: usize) -> Result<()> {
     ensure!(

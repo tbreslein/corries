@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [Variables] struct
 
 use color_eyre::{
     eyre::{bail, ensure},
@@ -35,6 +35,7 @@ pub struct Variables<const E: usize, const S: usize> {
 }
 
 impl<const E: usize, const S: usize> Variables<E, S> {
+    /// Constructs a new [Variables] object
     pub fn new(physics_config: &PhysicsConfig) -> Self {
         return Variables {
             prim: Array2::zeros((E, S)),
@@ -46,16 +47,19 @@ impl<const E: usize, const S: usize> Variables<E, S> {
         };
     }
 
+    /// Assign the fields of rhs to self.
     pub fn assign(&mut self, rhs: &Self) {
         self.prim.assign(&rhs.prim);
         self.cons.assign(&rhs.cons);
         self.c_sound.assign(&rhs.c_sound);
     }
 
+    /// Return a view to the vector of minimal eigen values.
     pub fn eigen_min(&self) -> ArrayView1<f64> {
         self.eigen_vals.row(0)
     }
 
+    /// Return a view to the vector of maximal eigen values.
     pub fn eigen_max(&self) -> ArrayView1<f64> {
         self.eigen_vals.row(E - 1)
     }

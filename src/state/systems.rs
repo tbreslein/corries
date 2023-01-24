@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the modules and contents for implementers of `Physics`
 
 pub mod euler1dadiabatic;
 pub use euler1dadiabatic::*;
