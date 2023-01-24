@@ -9,14 +9,9 @@ use color_eyre::{eyre::bail, Result};
 use crate::{
     config::numericsconfig::NumericsConfig,
     data::{Data, DataName, StructAssociation},
-    // writer::{
-    //     data::{Data, DataName, StructAssociation},
-    //     Collectable, DataValue,
-    // },
     mesh::Mesh,
-    physics::Physics,
-    Collectable,
-    DataValue,
+    state::Physics,
+    Collectable, DataValue,
 };
 
 use super::DtKind;

@@ -8,8 +8,8 @@ use color_eyre::{eyre::ensure, Result};
 use ndarray::{ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
 use crate::{
-    config::physicsconfig::PhysicsConfig, data::Data, errorhandling::Validation, physics::Physics,
-    variables::Variables, Collectable,
+    config::physicsconfig::PhysicsConfig, data::Data, errorhandling::Validation, state::Physics, variables::Variables,
+    Collectable,
 };
 
 const E: usize = 2;
