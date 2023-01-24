@@ -10,7 +10,7 @@ use ndarray::{par_azip, s, Array1, Array2};
 
 use crate::errorhandling::Validation;
 use crate::numericsconfig::NumericsConfig;
-use crate::{mesh::Mesh, physics::Physics};
+use crate::{mesh::Mesh, state::Physics};
 
 use super::calc_dflux_xi_generic;
 use super::NumFlux;

@@ -8,7 +8,7 @@
 use color_eyre::Result;
 use ndarray::{s, Array2};
 
-use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, physics::Physics};
+use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, state::Physics};
 
 pub mod hll;
 pub use self::hll::Hll;

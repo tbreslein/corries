@@ -12,7 +12,7 @@ use color_eyre::{
     Result,
 };
 
-use crate::{config::CorriesConfig, mesh::Mesh, physics::Physics, rhs::Rhs, NumFlux};
+use crate::{config::CorriesConfig, mesh::Mesh, rhs::Rhs, state::Physics, NumFlux};
 
 pub mod rkf;
 pub mod timestep;

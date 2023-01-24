@@ -19,8 +19,8 @@ mod errorhandling;
 #[macro_use]
 pub mod macros;
 pub mod mesh;
-pub mod physics;
 pub mod rhs;
+pub mod state;
 pub mod time;
 pub mod units;
 pub mod writer;
@@ -40,10 +40,10 @@ pub mod prelude {
     pub use crate::config::*;
     pub use crate::init_corries;
     pub use crate::mesh::*;
-    pub use crate::physics::*;
     pub use crate::rhs::*;
     pub use crate::run_corries;
     pub use crate::set_Physics_and_E;
+    pub use crate::state::*;
     pub use crate::time::*;
     pub use crate::units::*;
     pub use crate::writer::*;
