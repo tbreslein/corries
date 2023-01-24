@@ -17,8 +17,8 @@ use crate::{
     mesh::Mesh,
     rhs::Rhs,
     state::Physics,
-    update_everything_from_cons,
     NumFlux,
+    State,
     TimeIntegrationConfig,
 };
 
@@ -29,7 +29,7 @@ use super::{timestep::TimeStep, TimeSolver};
 mod butchertableau;
 
 /// Struct for solving the time integration step using Runge-Kutta-Fehlberg methods.
-pub struct RungeKuttaFehlberg<P: Physics<E, S> + Validation, const E: usize, const S: usize> {
+pub struct RungeKuttaFehlberg<P: Physics<E, S>, const E: usize, const S: usize> {
     /// Butcher Tableau for the Runge-Kutta method
     bt: ButcherTableau,
 
@@ -61,19 +61,17 @@ pub struct RungeKuttaFehlberg<P: Physics<E, S> + Validation, const E: usize, con
     u_cons_low: Array2<f64>,
 
     /// Stores the full intermediate solution
-    utilde: P,
+    utilde: State<P, E, S>,
 }
 
-impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> TimeSolver<P, E, S>
-    for RungeKuttaFehlberg<P, E, S>
-{
+impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E, S> for RungeKuttaFehlberg<P, E, S> {
     /// Constructs a new [RungeKuttaFehlberg] object
     ///
     /// # Arguments
     ///
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    fn new(config: &CorriesConfig, u: &P) -> Result<Self> {
+    fn new(config: &CorriesConfig, u: &State<P, E, S>) -> Result<Self> {
         let (bt, asc_relative_tolerance, asc_absolute_tolerance, asc_timestep_friction) =
             match &config.numerics_config.time_integration_config {
                 TimeIntegrationConfig::Rkf(rkf_config) => (
@@ -84,7 +82,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ti
                 ),
             };
         let order = bt.order;
-        let mut utilde = P::new(&config.physics_config);
+        let mut utilde = State::new(&config.physics_config);
         utilde.assign(u);
         return Ok(Self {
             bt,
@@ -104,7 +102,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ti
     fn next_solution<N: NumFlux<E, S>>(
         &mut self,
         time: &mut TimeStep,
-        u: &mut P,
+        u: &mut State<P, E, S>,
         rhs: &mut Rhs<N, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
@@ -134,8 +132,8 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ti
             .calc_rkf_solution(time.dt, u, rhs, mesh)
             .context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
 
-        u.cent_mut().cons.assign(&self.utilde.cent().cons);
-        update_everything_from_cons(u, &mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
+        u.cent.cons.assign(&self.utilde.cent.cons);
+        u.update_cent_from_cons(&mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
         if cfg!(feature = "validation") {
             u.validate()
                 .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
@@ -146,7 +144,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ti
     }
 }
 
-impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> RungeKuttaFehlberg<P, E, S> {
+impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> RungeKuttaFehlberg<P, E, S> {
     /// Calculates a single solution with an RKF method.
     ///
     /// # Arguments
@@ -158,7 +156,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ru
     fn calc_rkf_solution<N: NumFlux<E, S>>(
         &mut self,
         dt_in: f64,
-        u: &mut P,
+        u: &mut State<P, E, S>,
         rhs: &mut Rhs<N, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<f64> {
@@ -168,9 +166,8 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ru
         for q in 0..self.bt.order {
             self.utilde.assign(u);
             for p in 0..q {
-                let utilde_cons = &mut self.utilde.cent_mut().cons;
-                utilde_cons.assign(
-                    &(&utilde_cons.view()
+                self.utilde.cent.cons.assign(
+                    &(&self.utilde.cent.cons.view()
                         - &(dt_out * self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)).view()),
                 );
             }
@@ -180,19 +177,19 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ru
         }
 
         // calculate high order solution
-        self.utilde.cent_mut().cons.assign(&u.cent().cons);
+        self.utilde.cent.cons.assign(&u.cent.cons);
         for q in 0..self.bt.order {
-            let utilde_cons = &mut self.utilde.cent_mut().cons;
-            utilde_cons.assign(
-                &(&utilde_cons.view() - dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q)).view(),
+            self.utilde.cent.cons.assign(
+                &(&self.utilde.cent.cons.view() - dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q))
+                    .view(),
             );
         }
 
         if !self.solution_accepted {
             // calculate low order solution
-            self.u_cons_low.assign(&u.cent().cons);
+            self.u_cons_low.assign(&u.cent.cons);
             for q in 0..self.bt.order {
-                self.utilde.cent_mut().cons.assign(
+                self.utilde.cent.cons.assign(
                     &(&self.u_cons_low - dt_out * self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)).view(),
                 );
             }
@@ -203,9 +200,9 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ru
                 for j in 0..E {
                     for i in 2..S - 2 {
                         err_max = err_max.max(
-                            ((self.utilde.cent().cons[[j, i]] - self.u_cons_low[[j, i]])
+                            ((self.utilde.cent.cons[[j, i]] - self.u_cons_low[[j, i]])
                                 / (self.asc_relative_tolerance
-                                    * (self.utilde.cent().cons[[j, i]] + self.asc_absolute_tolerance)))
+                                    * (self.utilde.cent.cons[[j, i]] + self.asc_absolute_tolerance)))
                                 .abs(),
                         );
                     }
@@ -266,7 +263,7 @@ impl<P: Physics<E, S> + Validation + 'static, const E: usize, const S: usize> Ru
     }
 }
 
-impl<P: Physics<E, S> + Validation, const E: usize, const S: usize> Validation for RungeKuttaFehlberg<P, E, S> {
+impl<P: Physics<E, S>, const E: usize, const S: usize> Validation for RungeKuttaFehlberg<P, E, S> {
     fn validate(&self) -> Result<()> {
         ensure!(
             self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),

@@ -59,9 +59,9 @@ pub use prelude::*;
 /// determines the type of `Physics` used throughout the whole simulation!
 pub fn init_corries<P, N, T, const E: usize, const S: usize>(
     config: &CorriesConfig,
-) -> Result<(P, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer)>
+) -> Result<(State<P, E, S>, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer)>
 where
-    P: Physics<E, S> + Collectable + 'static,
+    P: Physics<E, S> + 'static,
     N: NumFlux<E, S>,
     T: TimeSolver<P, E, S>,
 {
@@ -70,7 +70,7 @@ where
     }
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
-    let u: P = P::new(&config.physics_config);
+    let u: State<P, E, S> = State::new(&config.physics_config);
     let rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(config);
     let time: Time<P, T, E, S> = Time::new(config, &u)?;
     let mut writer = Writer::new::<S>(config, &mesh)?;
@@ -99,14 +99,8 @@ where
 /// and the time step
 /// * `mesh` - The mesh the simulation runs on
 /// * `writer` - Deals with writing output
-pub fn run_corries<
-    P: Physics<E, S> + Collectable,
-    N: NumFlux<E, S>,
-    T: TimeSolver<P, E, S>,
-    const E: usize,
-    const S: usize,
->(
-    u: &mut P,
+pub fn run_corries<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
+    u: &mut State<P, E, S>,
     rhs: &mut Rhs<N, E, S>,
     time: &mut Time<P, T, E, S>,
     mesh: &Mesh<S>,
@@ -116,7 +110,7 @@ pub fn run_corries<
         if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
             time.timestep.t_next_output += time.timestep.dt_output;
             writer
-                .update_data(u, time, mesh)
+                .update_data(&u.cent, &time.timestep, mesh)
                 .context("Calling writer.update_data_matrices in run_corries")?;
             writer
                 .write_output()
@@ -129,7 +123,7 @@ pub fn run_corries<
         if let err @ Err(_) = time.next_solution(u, rhs, mesh) {
             time.timestep.dt_kind = DtKind::ErrorDump;
             writer
-                .update_data(u, time, mesh)
+                .update_data(&u.cent, &time.timestep, mesh)
                 .context("Calling writer.update_data_matrices during the error dump in run_corries")?;
             writer
                 .write_output()

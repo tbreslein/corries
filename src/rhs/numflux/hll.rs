@@ -10,6 +10,7 @@ use ndarray::{par_azip, s, Array1, Array2};
 
 use crate::errorhandling::Validation;
 use crate::numericsconfig::NumericsConfig;
+use crate::State;
 use crate::{mesh::Mesh, state::Physics};
 
 use super::calc_dflux_xi_generic;
@@ -47,16 +48,16 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
     fn calc_dflux_dxi<P: Physics<E, S>>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
-        u: &mut P,
+        u: &mut State<P, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<()> {
         // NOTE: Assumes that u.eigen_vals are already up to date
         u.update_flux_cent();
 
-        let uflux = &u.cent().flux;
-        let ucons = &u.cent().cons;
-        let eigen_min = &u.cent().eigen_min();
-        let eigen_max = &u.cent().eigen_max();
+        let uflux = &u.cent.flux;
+        let ucons = &u.cent.cons;
+        let eigen_min = &u.cent.eigen_min();
+        let eigen_max = &u.cent.eigen_max();
         let s = s![(mesh.ixi_in - 1)..=mesh.ixi_out];
         let sp1 = s![mesh.ixi_in..=(mesh.ixi_out + 1)];
 
@@ -147,7 +148,7 @@ mod tests {
         adiabatic_index: 1.4,
     };
 
-    fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
+    fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E, S>) {
         let breakpoint_index = (S as f64 * 0.5) as usize;
         let mut prim = Array2::zeros((E, S));
         prim.fill(0.0);
@@ -163,9 +164,9 @@ mod tests {
             prim.row_mut(E - 1).fill(1.0E-5)
         } else {
             let c_sound = Array1::ones(S);
-            u.cent_mut().c_sound.assign(&c_sound.view());
+            u.cent.c_sound.assign(&c_sound.view());
         }
-        u.cent_mut().prim.assign(&prim.view());
+        u.cent.prim.assign(&prim.view());
         return;
     }
 
@@ -175,10 +176,10 @@ mod tests {
     fn hll_test() {
         // Also test this on log meshes
         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
-        let mut u: P = P::new(&PHYSICSCONFIG);
-        init_noh::<P, E, S>(&mut u);
-        u.update_cons();
-        u.update_derived_values();
+        let mut u = State::<P, E, S>::new(&PHYSICSCONFIG);
+        init_noh(&mut u);
+        u.update_cons_cent();
+        u.update_derived_variables_cent();
         let mut hll: Hll<E, S> = Hll::new(&NumericsConfig {
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::SSPRK5,

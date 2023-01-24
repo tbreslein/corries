@@ -96,7 +96,7 @@ fn get_config(mode: NumFluxMode) -> CorriesConfig {
     };
 }
 
-fn init<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
+fn init<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E, S>) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::zeros((E, S));
     for i in 0..breakpoint_index {
@@ -107,7 +107,7 @@ fn init<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
         prim[[0, i]] = 0.125;
         prim[[E - 1, i]] = 0.1;
     }
-    u.cent_mut().prim.assign(&prim.view());
+    u.cent.prim.assign(&prim.view());
     return;
 }
 
@@ -119,13 +119,13 @@ fn sod_hll() -> Result<()> {
 
     let config = get_config(NumFluxMode::Hll);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
-    let mut u: P = P::new(&config.physics_config);
+    let mut u = State::<P, E, S>::new(&config.physics_config);
     let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
     let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init::<P, E, S>(&mut u);
-    update_everything_from_prim(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
         .context("Calling run_loop in noh test")?;

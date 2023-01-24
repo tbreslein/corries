@@ -21,6 +21,7 @@ pub mod numflux;
 pub use self::numflux::{hll::Hll, init_numflux, NumFlux};
 
 /// Carries objects and methods for solving the right-hand side of a set of equations.
+// pub struct Rhs<N: NumFlux<P,E,S>, P: Physics<E,S>, const E: usize, const S: usize> {
 pub struct Rhs<N: NumFlux<E, S>, const E: usize, const S: usize> {
     /// Full summed up rhs
     pub full_rhs: Array2<f64>,
@@ -58,9 +59,9 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
-    pub fn update<P: Physics<E, S>>(&mut self, u: &mut P, mesh: &Mesh<S>) -> Result<()> {
+    pub fn update<P: Physics<E, S>>(&mut self, u: &mut State<P, E, S>, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date
-        update_everything_from_cons(u, &mut self.boundary_west, &mut self.boundary_east, mesh);
+        u.update_cent_from_cons(&mut self.boundary_west, &mut self.boundary_east, mesh);
         self.numflux
             .calc_dflux_dxi(&mut self.full_rhs, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;

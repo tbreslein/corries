@@ -7,143 +7,65 @@
 use color_eyre::{eyre::ensure, Result};
 use ndarray::{ArrayView1, ArrayView2, ArrayViewMut2, Zip};
 
-use crate::{
-    config::physicsconfig::PhysicsConfig, data::Data, errorhandling::Validation, state::Physics, variables::Variables,
-    Collectable,
-};
+use crate::{state::Physics, variables::Variables};
 
 const E: usize = 2;
-const JRHO: usize = 0;
-const JXI: usize = 1;
-const J_EIGENMIN: usize = 0;
-const J_EIGENMAX: usize = 1;
 
 /// Test struct for using a trait for Physics
 #[derive(Debug)]
-pub struct Euler1DIsot<const S: usize> {
-    /// Variables at the centre of the mesh's cells
-    pub cent: Variables<E, S>,
-
-    /// Variables at the centre of the mesh's cells
-    pub west: Variables<E, S>,
-
-    /// Variables at the centre of the mesh's cells
-    pub east: Variables<E, S>,
-}
+pub struct Euler1DIsot<const S: usize>;
 
 impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
-    fn new(physics_config: &PhysicsConfig) -> Self {
-        return Self {
-            cent: Variables::new(physics_config),
-            west: Variables::new(physics_config),
-            east: Variables::new(physics_config),
-        };
+    const IS_ADIABATIC: bool = false;
+    const JRHO: usize = 0;
+    const JXI: usize = 1;
+    const JETA: usize = std::usize::MAX;
+    const JPRESSURE: usize = std::usize::MAX;
+
+    fn new() -> Self {
+        return Self;
     }
 
-    fn cent(&self) -> &Variables<E, S> {
-        &self.cent
-    }
-
-    fn west(&self) -> &Variables<E, S> {
-        &self.west
-    }
-
-    fn east(&self) -> &Variables<E, S> {
-        &self.east
-    }
-
-    fn cent_mut(&mut self) -> &mut Variables<E, S> {
-        &mut self.cent
-    }
-
-    fn west_mut(&mut self) -> &mut Variables<E, S> {
-        &mut self.west
-    }
-
-    fn east_mut(&mut self) -> &mut Variables<E, S> {
-        &mut self.east
-    }
-
-    fn is_adiabatic(&self) -> bool {
-        return false;
-    }
-
-    fn update_prim(&mut self) {
+    #[inline(always)]
+    fn update_prim(vars: &mut Variables<E, S>) {
         cons_to_prim(
-            &mut self.cent.prim.view_mut(),
-            JRHO,
-            JXI,
-            &self.cent.cons.view(),
-            JRHO,
-            JXI,
+            &mut vars.prim.view_mut(),
+            Self::JRHO,
+            Self::JXI,
+            &vars.cons.view(),
+            Self::JRHO,
+            Self::JXI,
         );
     }
 
-    fn update_cons(&mut self) {
+    #[inline(always)]
+    fn update_cons(vars: &mut Variables<E, S>) {
         prim_to_cons(
-            &mut self.cent.cons.view_mut(),
-            JRHO,
-            JXI,
-            &self.cent.prim.view(),
-            JRHO,
-            JXI,
+            &mut vars.cons.view_mut(),
+            Self::JRHO,
+            Self::JXI,
+            &vars.prim.view(),
+            Self::JRHO,
+            Self::JXI,
         );
     }
 
-    fn update_derived_values(&mut self) {
-        update_eigen_vals(
-            self.cent.eigen_vals.view_mut(),
-            J_EIGENMIN,
-            J_EIGENMAX,
-            self.cent.prim.row(JXI),
-            self.cent.c_sound.view(),
-        );
-    }
-
-    fn update_flux_cent(&mut self) {
+    #[inline(always)]
+    fn update_flux(vars: &mut Variables<E, S>) {
         update_flux(
-            self.cent.flux.view_mut(),
-            self.cent.prim.view(),
-            self.cent.cons.view(),
-            JRHO,
-            JXI,
-            self.cent.c_sound.view(),
+            vars.flux.view_mut(),
+            vars.prim.view(),
+            vars.cons.view(),
+            Self::JRHO,
+            Self::JXI,
+            vars.c_sound.view(),
         );
     }
 
-    fn assign(&mut self, rhs: &Self) {
-        self.assign_cent(rhs);
-        self.west.assign(&rhs.west);
-        self.east.assign(&rhs.east);
+    #[inline(always)]
+    fn validate(vars: &Variables<E, S>) -> Result<()> {
+        return validate(vars, Self::JRHO);
     }
-
-    fn assign_cent(&mut self, rhs: &Self) {
-        self.cent.assign(&rhs.cent);
-    }
-}
-
-/// Updates eigen values
-#[inline(always)]
-pub fn update_eigen_vals(
-    mut eigen_vals: ArrayViewMut2<f64>,
-    j_eigen_min: usize,
-    j_eigen_max: usize,
-    xi_vel: ArrayView1<f64>,
-    c_sound: ArrayView1<f64>,
-) {
-    Zip::from(eigen_vals.row_mut(j_eigen_min))
-        .and(xi_vel)
-        .and(c_sound)
-        .for_each(|e, &v, &cs| *e = v - cs);
-
-    for j in j_eigen_min + 1..j_eigen_max {
-        eigen_vals.row_mut(j).assign(&xi_vel);
-    }
-
-    Zip::from(eigen_vals.row_mut(j_eigen_max))
-        .and(xi_vel)
-        .and(c_sound)
-        .for_each(|e, &v, &cs| *e = v + cs);
 }
 
 /// Updates physical flux
@@ -205,26 +127,12 @@ pub fn prim_to_cons(
         .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel * rho_cons);
 }
 
-impl<const S: usize> Collectable for Euler1DIsot<S> {
-    fn collect_data(&self, name: &mut Data, mesh_offset: usize) -> Result<()> {
-        return self.cent().collect_data(name, mesh_offset);
-    }
-}
-
-impl<const S: usize> Validation for Euler1DIsot<S> {
-    fn validate(&self) -> Result<()> {
-        self.cent().validate()?;
-        validate(self, JRHO)?;
-        return Ok(());
-    }
-}
-
 #[inline(always)]
-pub fn validate<P: Physics<E, S>, const E: usize, const S: usize>(u: &P, j_rho: usize) -> Result<()> {
+pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_rho: usize) -> Result<()> {
     ensure!(
-        u.cent().prim.row(j_rho).fold(true, |acc, x| acc && x > &0.0),
+        vars.prim.row(j_rho).fold(true, |acc, x| acc && x > &0.0),
         "Mass density must be positive! Got: {}",
-        u.cent().prim.row(j_rho)
+        vars.prim.row(j_rho)
     );
     return Ok(());
 }

@@ -4,120 +4,216 @@
 
 //! TODO
 
-use color_eyre::{eyre::bail, Result};
-use ndarray::{ArrayView1, Zip};
-
-use crate::{boundaryconditions::BoundaryCondition, config::physicsconfig::PhysicsConfig, Mesh};
-
+pub mod physics;
 pub mod systems;
 pub mod variables;
 
-pub use systems::*;
+use std::marker::PhantomData;
+
+use color_eyre::Result;
+
+use crate::{boundaryconditions::BoundaryCondition, errorhandling::Validation, Mesh, PhysicsConfig};
+
+pub use self::{physics::Physics, systems::*};
 
 use self::variables::Variables;
 
-/// Trait for Physics objects
-pub trait Physics<const E: usize, const S: usize> {
-    // /// Number of equations in the system
-    // const E: usize;
-    //
-    // /// Number of grid cells in the mesh
-    // const S: usize;
+pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
+    pub cent: Variables<E, S>,
+    pub west: Variables<E, S>,
+    pub east: Variables<E, S>,
+    methods: PhantomData<P>,
+}
 
-    /// construct a new trait object
-    fn new(physics_config: &PhysicsConfig) -> Self;
+impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
+    pub fn new(physics_config: &PhysicsConfig) -> Self {
+        return Self {
+            cent: Variables::new(physics_config),
+            west: Variables::new(physics_config),
+            east: Variables::new(physics_config),
+            methods: PhantomData,
+        };
+    }
 
-    /// Returns a reference to the variables at the center of the mesh's cells
-    fn cent(&self) -> &Variables<E, S>;
+    pub const fn is_adiabatic(&self) -> bool {
+        P::IS_ADIABATIC
+    }
 
-    /// Returns a reference to the variables at the west border of the mesh's cells
-    fn west(&self) -> &Variables<E, S>;
+    pub fn update_prim_cent(&mut self) {
+        P::update_prim(&mut self.cent);
+    }
 
-    /// Returns a reference to the variables at the east border of the mesh's cells
-    fn east(&self) -> &Variables<E, S>;
+    pub fn update_prim_west(&mut self) {
+        P::update_prim(&mut self.west);
+    }
 
-    /// Returns a mutable reference to the variables at the center of the mesh's cells
-    fn cent_mut(&mut self) -> &mut Variables<E, S>;
+    pub fn update_prim_east(&mut self) {
+        P::update_prim(&mut self.east);
+    }
 
-    /// Returns a mutable reference to the variables at the west border of the mesh's cells
-    fn west_mut(&mut self) -> &mut Variables<E, S>;
+    pub fn update_cons_cent(&mut self) {
+        P::update_cons(&mut self.cent);
+    }
 
-    /// Returns a mutable reference to the variables at the east border of the mesh's cells
-    fn east_mut(&mut self) -> &mut Variables<E, S>;
+    pub fn update_cons_west(&mut self) {
+        P::update_cons(&mut self.west);
+    }
 
-    /// Whether the physics system is adiabatic or not
-    fn is_adiabatic(&self) -> bool;
+    pub fn update_cons_east(&mut self) {
+        P::update_cons(&mut self.east);
+    }
 
-    /// Update primitive variables
-    fn update_prim(&mut self);
+    pub fn update_derived_variables_cent(&mut self) {
+        P::update_derived_variables(&mut self.cent);
+    }
 
-    /// Update conservative variables
-    fn update_cons(&mut self);
+    pub fn update_derived_variables_west(&mut self) {
+        P::update_derived_variables(&mut self.west);
+    }
 
-    /// Update values not part of the primitive and conservative variables, i.e. speed of sound,
-    /// eigen values, and maybe others
-    fn update_derived_values(&mut self);
+    pub fn update_derived_variables_east(&mut self) {
+        P::update_derived_variables(&mut self.east);
+    }
 
-    /// Updates the physical flux for the ::cent field, i.e. in the centre of the mesh's cells
-    fn update_flux_cent(&mut self);
+    pub fn update_c_sound_cent(&mut self) {
+        P::update_c_sound(&mut self.cent);
+    }
 
-    /// Assign the fields of rhs to this
-    fn assign(&mut self, rhs: &Self);
+    pub fn update_c_sound_west(&mut self) {
+        P::update_c_sound(&mut self.west);
+    }
 
-    /// Assign the mesh central variables of rhs to those of self
-    fn assign_cent(&mut self, rhs: &Self);
+    pub fn update_c_sound_east(&mut self) {
+        P::update_c_sound(&mut self.east);
+    }
 
-    /// Calculate the CFL limited time step width
-    fn calc_dt_cfl(&self, eigen_max: &ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
-        let dt = c_cfl
-            / Zip::from(eigen_max)
-                .and(&mesh.cell_width_inv)
-                .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
-        if !dt.is_finite() {
-            bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
-        }
-        return Ok(dt);
+    pub fn update_eigen_vals_cent(&mut self) {
+        P::update_eigen_vals(&mut self.cent);
+    }
+
+    pub fn update_eigen_vals_west(&mut self) {
+        P::update_eigen_vals(&mut self.west);
+    }
+
+    pub fn update_eigen_vals_east(&mut self) {
+        P::update_eigen_vals(&mut self.east);
+    }
+
+    pub fn update_eigen_vals_min_cent(&mut self) {
+        P::update_eigen_vals_min(&mut self.cent);
+    }
+
+    pub fn update_eigen_vals_min_west(&mut self) {
+        P::update_eigen_vals_min(&mut self.west);
+    }
+
+    pub fn update_eigen_vals_min_east(&mut self) {
+        P::update_eigen_vals_min(&mut self.east);
+    }
+
+    pub fn update_eigen_vals_max_cent(&mut self) {
+        P::update_eigen_vals_max(&mut self.cent);
+    }
+
+    pub fn update_eigen_vals_max_west(&mut self) {
+        P::update_eigen_vals_max(&mut self.west);
+    }
+
+    pub fn update_eigen_vals_max_east(&mut self) {
+        P::update_eigen_vals_max(&mut self.east);
+    }
+
+    pub fn update_flux_cent(&mut self) {
+        P::update_flux(&mut self.cent);
+    }
+
+    pub fn update_flux_west(&mut self) {
+        P::update_flux(&mut self.west);
+    }
+
+    pub fn update_flux_east(&mut self) {
+        P::update_flux(&mut self.east);
+    }
+
+    pub fn update_cent_from_prim(
+        &mut self,
+        boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+        boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
+        mesh: &Mesh<S>,
+    ) {
+        P::update_vars_from_prim(&mut self.cent, boundary_west, boundary_east, mesh);
+    }
+
+    pub fn update_west_from_prim(
+        &mut self,
+        boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+        boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
+        mesh: &Mesh<S>,
+    ) {
+        P::update_vars_from_prim(&mut self.west, boundary_west, boundary_east, mesh);
+    }
+
+    pub fn update_east_from_prim(
+        &mut self,
+        boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+        boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
+        mesh: &Mesh<S>,
+    ) {
+        P::update_vars_from_prim(&mut self.east, boundary_west, boundary_east, mesh);
+    }
+
+    pub fn update_cent_from_cons(
+        &mut self,
+        boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+        boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
+        mesh: &Mesh<S>,
+    ) {
+        P::update_vars_from_cons(&mut self.cent, boundary_west, boundary_east, mesh);
+    }
+
+    pub fn update_west_from_cons(
+        &mut self,
+        boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+        boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
+        mesh: &Mesh<S>,
+    ) {
+        P::update_vars_from_cons(&mut self.west, boundary_west, boundary_east, mesh);
+    }
+
+    pub fn update_east_from_cons(
+        &mut self,
+        boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
+        boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
+        mesh: &Mesh<S>,
+    ) {
+        P::update_vars_from_cons(&mut self.east, boundary_west, boundary_east, mesh);
+    }
+
+    pub fn assign(&mut self, rhs: &Self) {
+        self.assign_cent(rhs);
+        self.west.assign(&rhs.west);
+        self.east.assign(&rhs.east);
+    }
+
+    pub fn assign_cent(&mut self, rhs: &Self) {
+        self.cent.assign(&rhs.cent);
+    }
+
+    pub fn calc_dt_cfl(&self, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
+        return P::calc_dt_cfl(&self.cent.eigen_max(), c_cfl, mesh);
     }
 }
 
-/// Update everything assuming that the conservative variables are up-to-date
-pub fn update_everything_from_cons<P: Physics<E, S>, const E: usize, const S: usize>(
-    u: &mut P,
-    boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
-    boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
-    mesh: &Mesh<S>,
-) {
-    u.update_prim();
-    update_everything_from_prim(u, boundary_west, boundary_east, mesh);
-}
-
-/// Update everything assuming that the primitive variables are up-to-date
-pub fn update_everything_from_prim<P: Physics<E, S>, const E: usize, const S: usize>(
-    u: &mut P,
-    boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
-    boundary_east: &mut Box<dyn BoundaryCondition<E, S>>,
-    mesh: &Mesh<S>,
-) {
-    boundary_west.apply(u.cent_mut(), mesh);
-    boundary_east.apply(u.cent_mut(), mesh);
-    u.update_cons();
-    u.update_derived_values();
-}
-
-pub fn calc_dt_cfl_generic<const S: usize>(eigen_max: ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
-    let dt = c_cfl
-        / Zip::from(eigen_max)
-            .and(&mesh.cell_width_inv)
-            .fold(0.0f64, |acc, eigenval, cw| acc.max(f64::abs(eigenval * cw)));
-    if !dt.is_finite() {
-        bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
+impl<P: Physics<E, S>, const E: usize, const S: usize> Validation for State<P, E, S> {
+    fn validate(&self) -> Result<()> {
+        self.cent.validate()?;
+        return Ok(());
     }
-    return Ok(dt);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::UnitsMode;
+    use crate::{PhysicsConfig, UnitsMode};
 
     use super::*;
     use proptest::prelude::*;
@@ -130,42 +226,44 @@ mod tests {
     mod euler1dadiabatic {
         use super::*;
         use approx::assert_relative_eq;
+        set_Physics_and_E!(Euler1DAdiabatic);
         proptest! {
             #[test]
             fn conversion(p0 in 0.1f64..10.0, p1 in -10.0f64..10.0, p2 in 0.1f64..10.0) {
                 // converting to cons and back to prim should be idempotent
-                let mut u0 = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-                u0.cent_mut().prim.row_mut(0).fill(p0);
-                u0.cent_mut().prim.row_mut(1).fill(p1);
-                u0.cent_mut().prim.row_mut(2).fill(p2);
-                let mut u = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-                u.cent_mut().prim.row_mut(0).fill(p0);
-                u.cent_mut().prim.row_mut(1).fill(p1);
-                u.cent_mut().prim.row_mut(2).fill(p2);
-                u.update_cons();
-                u.update_prim();
-                assert_relative_eq!(u.cent().prim.row(0), u0.cent().prim.row(0), max_relative = 1.0e-12);
-                assert_relative_eq!(u.cent().prim.row(1), u0.cent().prim.row(1), max_relative = 1.0e-12);
-                assert_relative_eq!(u.cent().prim.row(2), u0.cent().prim.row(2), max_relative = 1.0e-8);
+                let mut u0 = State::<P, E, S>::new(&PHYSICS_CONFIG);
+                u0.cent.prim.row_mut(0).fill(p0);
+                u0.cent.prim.row_mut(1).fill(p1);
+                u0.cent.prim.row_mut(2).fill(p2);
+                let mut u = State::<P,E,S>::new(&PHYSICS_CONFIG);
+                u.cent.prim.row_mut(0).fill(p0);
+                u.cent.prim.row_mut(1).fill(p1);
+                u.cent.prim.row_mut(2).fill(p2);
+                u.update_cons_cent();
+                u.update_prim_cent();
+                assert_relative_eq!(u.cent.prim.row(0), u0.cent.prim.row(0), max_relative = 1.0e-12);
+                assert_relative_eq!(u.cent.prim.row(1), u0.cent.prim.row(1), max_relative = 1.0e-12);
+                assert_relative_eq!(u.cent.prim.row(2), u0.cent.prim.row(2), max_relative = 1.0e-8);
             }
         }
     }
     mod euler1disot {
         use super::*;
         use approx::assert_relative_eq;
+        set_Physics_and_E!(Euler1DIsot);
         proptest! {
             #[test]
             fn conversion(p0 in 0.1f64..100_000.0, p1 in -100_000.0f64..100_000.0) {
                 // converting to cons and back to prim should be idempotent
-                let mut u0 = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-                u0.cent_mut().prim.row_mut(0).fill(p0);
-                u0.cent_mut().prim.row_mut(1).fill(p1);
-                let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-                u.cent_mut().prim.row_mut(0).fill(p0);
-                u.cent_mut().prim.row_mut(1).fill(p1);
-                u.update_cons();
-                u.update_prim();
-                assert_relative_eq!(u.cent().prim, u0.cent().prim, max_relative = 1.0e-12);
+                let mut u0 = State::<P, E, S>::new(&PHYSICS_CONFIG);
+                u0.cent.prim.row_mut(0).fill(p0);
+                u0.cent.prim.row_mut(1).fill(p1);
+                let mut u = State::<P, E, S>::new(&PHYSICS_CONFIG);
+                u.cent.prim.row_mut(0).fill(p0);
+                u.cent.prim.row_mut(1).fill(p1);
+                u.update_cons_cent();
+                u.update_prim_cent();
+                assert_relative_eq!(u.cent.prim, u0.cent.prim, max_relative = 1.0e-12);
             }
         }
     }

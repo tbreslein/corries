@@ -12,7 +12,7 @@ use color_eyre::{
     Result,
 };
 
-use crate::{config::CorriesConfig, mesh::Mesh, rhs::Rhs, state::Physics, NumFlux};
+use crate::{config::CorriesConfig, mesh::Mesh, rhs::Rhs, state::Physics, NumFlux, State};
 
 pub mod rkf;
 pub mod timestep;
@@ -49,7 +49,7 @@ pub trait TimeSolver<P: Physics<E, S>, const E: usize, const S: usize> {
     ///
     /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
     /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    fn new(config: &CorriesConfig, u: &P) -> Result<Self>
+    fn new(config: &CorriesConfig, u: &State<P, E, S>) -> Result<Self>
     where
         Self: Sized;
 
@@ -64,7 +64,7 @@ pub trait TimeSolver<P: Physics<E, S>, const E: usize, const S: usize> {
     fn next_solution<N: NumFlux<E, S>>(
         &mut self,
         time: &mut TimeStep,
-        u: &mut P,
+        u: &mut State<P, E, S>,
         rhs: &mut Rhs<N, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<()>;
@@ -90,7 +90,7 @@ impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> T
     /// # Arguments
     ///
     /// * `config` - a [CorriesConfig] configuration object
-    pub fn new(config: &CorriesConfig, u: &P) -> Result<Self> {
+    pub fn new(config: &CorriesConfig, u: &State<P, E, S>) -> Result<Self> {
         let solver = T::new(config, u)?;
         return Ok(Self {
             timestep: TimeStep::new(&config.numerics_config, config.output_counter_max),
@@ -106,7 +106,12 @@ impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> T
     /// * `u` - the [Physics] state being modified to transition between current and next state
     /// * `rhs` - solves the right-hand side
     /// * `mesh` - Information about spatial properties
-    pub fn next_solution<N: NumFlux<E, S>>(&mut self, u: &mut P, rhs: &mut Rhs<N, E, S>, mesh: &Mesh<S>) -> Result<()> {
+    pub fn next_solution<N: NumFlux<E, S>>(
+        &mut self,
+        u: &mut State<P, E, S>,
+        rhs: &mut Rhs<N, E, S>,
+        mesh: &Mesh<S>,
+    ) -> Result<()> {
         self.solver
             .next_solution::<N>(&mut self.timestep, u, rhs, mesh)
             .context("Calling TimeIntegration::solver.next_solution in TimeIntegration::next_solution")?;
