@@ -8,7 +8,7 @@
 use color_eyre::Result;
 use ndarray::{s, Array2};
 
-use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, state::Physics};
+use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, state::Physics, State};
 
 pub mod hll;
 pub use self::hll::Hll;
@@ -22,7 +22,7 @@ pub trait NumFlux<const E: usize, const S: usize> {
     fn calc_dflux_dxi<P: Physics<E, S>>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
-        u: &mut P,
+        u: &mut State<P, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<()>;
 }

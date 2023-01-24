@@ -135,7 +135,7 @@ fn get_config(mode: usize) -> CorriesConfig {
     };
 }
 
-fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
+fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E, S>) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::zeros((E, S));
     prim.fill(0.0);
@@ -151,9 +151,9 @@ fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut P) {
         prim.row_mut(E - 1).fill(1.0E-5)
     } else {
         let c_sound = Array1::ones(S);
-        u.cent_mut().c_sound.assign(&c_sound.view());
+        u.cent.c_sound.assign(&c_sound.view());
     }
-    u.cent_mut().prim.assign(&prim.view());
+    u.cent.prim.assign(&prim.view());
     return;
 }
 
@@ -167,7 +167,7 @@ pub fn noh_run(c: &mut Criterion) {
 
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
     init_noh::<P, E, S>(&mut u);
-    update_everything_from_prim(&mut u, &mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 
     group.bench_function("noh test run", |b| {
         b.iter(|| {
@@ -185,24 +185,24 @@ pub fn euler1d_isot_conversions(c: &mut Criterion) {
     let mut group = c.benchmark_group("physics_conversions");
     group.sample_size(1000);
 
-    let mut u = Euler1DIsot::<S>::new(&PHYSICS_CONFIG);
-    u.cent_mut().prim.row_mut(0).fill(2.0);
-    u.cent_mut().prim.row_mut(1).fill(3.0);
+    let mut u = State::<Euler1DIsot<S>, 2, S>::new(&PHYSICS_CONFIG);
+    u.cent.prim.row_mut(0).fill(2.0);
+    u.cent.prim.row_mut(1).fill(3.0);
     group.bench_function("from prim to cons and back; euler 1d isot", |b| {
         b.iter(|| {
-            u.update_cons();
-            u.update_prim();
+            u.update_cons_cent();
+            u.update_prim_cent();
         })
     });
 
-    let mut u = Euler1DAdiabatic::<S>::new(&PHYSICS_CONFIG);
-    u.cent_mut().prim.row_mut(0).fill(2.0);
-    u.cent_mut().prim.row_mut(1).fill(3.0);
-    u.cent_mut().prim.row_mut(2).fill(4.0);
+    let mut u = State::<Euler1DAdiabatic<S>, 3, S>::new(&PHYSICS_CONFIG);
+    u.cent.prim.row_mut(0).fill(2.0);
+    u.cent.prim.row_mut(1).fill(3.0);
+    u.cent.prim.row_mut(2).fill(4.0);
     group.bench_function("from prim to cons and back; euler 1d adiabatic", |b| {
         b.iter(|| {
-            u.update_cons();
-            u.update_prim();
+            u.update_cons_cent();
+            u.update_prim_cent();
         })
     });
 

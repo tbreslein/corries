@@ -152,18 +152,18 @@ impl Output {
     /// # Arguments
     ///
     /// * `u` - Provides data for the state of the simulation
-    /// * `time` - Provides data on the time coordinates
+    /// * `timestep` - Provides data on the time coordinates
     /// * `mesh` - Provides mesh data
-    pub fn update_data<P: Physics<E, S> + Collectable, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
+    pub fn update_data(
         &mut self,
-        u: &P,
-        time: &Time<P, T, E, S>,
-        mesh: &Mesh<S>,
+        u: &impl Collectable,
+        timestep: &impl Collectable,
+        mesh: &impl Collectable,
     ) -> Result<()> {
         self.data.iter_mut().try_for_each(|data| match data.association {
             StructAssociation::Mesh => mesh.collect_data(data, self.mesh_offset),
             StructAssociation::Physics => u.collect_data(data, self.mesh_offset),
-            StructAssociation::TimeStep => time.timestep.collect_data(data, self.mesh_offset),
+            StructAssociation::TimeStep => timestep.collect_data(data, self.mesh_offset),
         })?;
         return Ok(());
     }
