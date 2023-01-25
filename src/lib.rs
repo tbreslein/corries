@@ -71,7 +71,7 @@ where
 
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let u: State<P, E, S> = State::new(&config.physics_config);
-    let rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(config);
+    let rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(config, &mesh)?;
     let time: Time<P, T, E, S> = Time::new(config, &u)?;
     let mut writer = Writer::new::<S>(config, &mesh)?;
 
