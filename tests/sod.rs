@@ -7,11 +7,7 @@ use corries::prelude::*;
 use ndarray::Array2;
 const S: usize = 100;
 
-enum NumFluxMode {
-    Hll,
-}
-
-fn get_config(mode: NumFluxMode) -> CorriesConfig {
+fn get_config(numflux_config: NumFluxConfig) -> CorriesConfig {
     let boundary_conditions_west = BoundaryMode::Custom(vec![
         (0, CustomBoundaryMode::NoGradients),
         (1, CustomBoundaryMode::NoGradients),
@@ -25,8 +21,9 @@ fn get_config(mode: NumFluxMode) -> CorriesConfig {
     ]);
 
     let file_name = "sod_".to_owned()
-        + match mode {
-            NumFluxMode::Hll => "hll",
+        + match numflux_config {
+            NumFluxConfig::Hll => "hll",
+            NumFluxConfig::Kt { limiter_mode: _ } => "kt",
         };
     let folder_name = "results/integrationtests/".to_owned() + &file_name;
     let data_names_vector = vec![
@@ -52,6 +49,7 @@ fn get_config(mode: NumFluxMode) -> CorriesConfig {
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
         numerics_config: NumericsConfig {
+            numflux_config,
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::SSPRK5,
                 asc: false,
@@ -117,10 +115,33 @@ fn sod_hll() -> Result<()> {
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config(NumFluxMode::Hll);
+    let config = get_config(NumFluxConfig::Hll);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u = State::<P, E, S>::new(&config.physics_config);
-    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
+    let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
+    let mut writer = Writer::new::<S>(&config, &mesh)?;
+
+    init::<P, E, S>(&mut u);
+    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+
+    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
+        .context("Calling run_loop in noh test")?;
+    return Ok(());
+}
+
+#[test]
+fn sod_kt() -> Result<()> {
+    set_Physics_and_E!(Euler1DAdiabatic);
+    type N = Kt<E, S>;
+    type T = RungeKuttaFehlberg<P, E, S>;
+
+    let config = get_config(NumFluxConfig::Kt {
+        limiter_mode: LimiterMode::Monocent(1.2),
+    });
+    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
+    let mut u = State::<P, E, S>::new(&config.physics_config);
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
     let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 

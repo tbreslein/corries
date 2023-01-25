@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub mod numflux;
-pub use self::numflux::{hll::Hll, init_numflux, NumFlux};
+pub use self::numflux::{hll::Hll, init_numflux, kt::Kt, NumFlux};
 
 /// Carries objects and methods for solving the right-hand side of a set of equations.
 // pub struct Rhs<N: NumFlux<P,E,S>, P: Physics<E,S>, const E: usize, const S: usize> {
@@ -44,13 +44,14 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// * `config` - Configuration for the whole simulation
     /// * `u` - The main [Physics] object for this simulation
     /// * `numflux` - The [dyn NumFlux] object about to be stored in this [Rhs] object
-    pub fn new(config: &CorriesConfig) -> Self {
-        return Rhs {
+    pub fn new(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
+        let numflux = init_numflux(&config.numerics_config.numflux_config, mesh)?;
+        return Ok(Rhs {
             full_rhs: Array2::zeros((E, S)),
-            numflux: init_numflux::<N, E, S>(&config.numerics_config),
+            numflux,
             boundary_west: Box::new(init_boundary_condition::<E, S>(Direction::West, config)),
             boundary_east: Box::new(init_boundary_condition::<E, S>(Direction::East, config)),
-        };
+        });
     }
 
     /// Solves the right-hand side and updates the `full_rhs` field

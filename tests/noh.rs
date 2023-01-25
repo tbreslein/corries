@@ -90,6 +90,7 @@ fn get_config(mode: usize) -> CorriesConfig {
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
         numerics_config: NumericsConfig {
+            numflux_config: NumFluxConfig::Hll,
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::SSPRK5,
                 asc: false,
@@ -158,7 +159,7 @@ fn noh_euler1d_adiabatic() -> Result<()> {
     let config = get_config(EULER1D_ADIABATIC);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u = State::<P, E, S>::new(&config.physics_config);
-    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
     let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
@@ -179,7 +180,7 @@ fn noh_euler1d_isot() -> Result<()> {
     let config = get_config(EULER1D_ISOT);
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u = State::<P, E, S>::new(&config.physics_config);
-    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config);
+    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
     let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 

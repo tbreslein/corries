@@ -36,6 +36,9 @@ fn main() -> Result<()> {
             (1, CustomBoundaryMode::NoGradients),
         ]),
         numerics_config: NumericsConfig {
+            numflux_config: NumFluxConfig::Kt {
+                limiter_mode: LimiterMode::Monocent(1.2),
+            },
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::RK4,
                 asc: false,

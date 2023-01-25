@@ -8,15 +8,18 @@
 use color_eyre::Result;
 use ndarray::{s, Array2};
 
-use crate::{config::numericsconfig::NumericsConfig, mesh::Mesh, state::Physics, State};
+use crate::{mesh::Mesh, state::Physics, NumFluxConfig, State};
 
 pub mod hll;
-pub use self::hll::Hll;
+pub mod kt;
+pub use self::{hll::Hll, kt::Kt};
 
 /// Trait for structs that can calculate numerical flux
 pub trait NumFlux<const E: usize, const S: usize> {
     /// construct a new trait object
-    fn new(numerics_config: &NumericsConfig) -> Self;
+    fn new(numflux_config: &NumFluxConfig, mesh: &Mesh<S>) -> Result<Self>
+    where
+        Self: Sized;
 
     /// Calculates the numerical derivative along the xi direction
     fn calc_dflux_dxi<P: Physics<E, S>>(
@@ -28,8 +31,11 @@ pub trait NumFlux<const E: usize, const S: usize> {
 }
 
 /// Constructs an `impl Numflux<S, EQ>`.
-pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(numerics_config: &NumericsConfig) -> N {
-    return N::new(numerics_config);
+pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(
+    numflux_config: &NumFluxConfig,
+    mesh: &Mesh<S>,
+) -> Result<N> {
+    return N::new(numflux_config, mesh);
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.

@@ -10,6 +10,9 @@ use color_eyre::{
 };
 use serde::Serialize;
 
+mod numfluxconfig;
+pub use numfluxconfig::*;
+
 use crate::errorhandling::Validation;
 
 /// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
@@ -44,6 +47,8 @@ pub enum RKFMode {
 }
 
 /// Enumerates the different types of configuration for time integration schemes
+///
+/// TODO: Export this into its own module
 #[derive(Debug, Serialize)]
 pub enum TimeIntegrationConfig {
     /// Runge-Kutta-Fehlberg
@@ -80,6 +85,9 @@ pub struct RkfConfig {
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize)]
 pub struct NumericsConfig {
+    /// todo
+    pub numflux_config: NumFluxConfig,
+
     /// The type of time integration scheme to use
     pub time_integration_config: TimeIntegrationConfig,
 
@@ -104,6 +112,7 @@ pub struct NumericsConfig {
 
 impl Validation for NumericsConfig {
     fn validate(&self) -> Result<()> {
+        self.numflux_config.validate()?;
         ensure!(
             self.iter_max > 0,
             "This must hold: iter_max > 0 ! Got {}",

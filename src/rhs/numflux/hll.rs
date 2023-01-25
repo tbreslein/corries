@@ -4,14 +4,13 @@
 
 //! Exports the [Hll] struct.
 
-use color_eyre::eyre::{ensure, Context};
+use color_eyre::eyre::{bail, ensure, Context};
 use color_eyre::Result;
 use ndarray::{par_azip, s, Array1, Array2};
 
 use crate::errorhandling::Validation;
-use crate::numericsconfig::NumericsConfig;
-use crate::State;
 use crate::{mesh::Mesh, state::Physics};
+use crate::{NumFluxConfig, State};
 
 use super::calc_dflux_xi_generic;
 use super::NumFlux;
@@ -35,13 +34,16 @@ pub struct Hll<const E: usize, const S: usize> {
 }
 
 impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
-    fn new(_: &NumericsConfig) -> Self {
-        return Self {
-            sl: Array1::zeros(S),
-            sr: Array1::zeros(S),
-            inv_sr_minus_sl: Array1::zeros(S),
-            sr_times_sl: Array1::zeros(S),
-            flux_num: Array2::zeros((E, S)),
+    fn new(numflux_config: &NumFluxConfig, _: &Mesh<S>) -> Result<Self> {
+        return match numflux_config {
+            NumFluxConfig::Hll => Ok(Self {
+                sl: Array1::zeros(S),
+                sr: Array1::zeros(S),
+                inv_sr_minus_sl: Array1::zeros(S),
+                sr_times_sl: Array1::zeros(S),
+                flux_num: Array2::zeros((E, S)),
+            }),
+            _ => bail!("Tried constructing Hll, but numflux_config does not contain NumFluxConfig::Hll!"),
         };
     }
 
@@ -180,21 +182,7 @@ mod tests {
         init_noh(&mut u);
         u.update_cons_cent();
         u.update_derived_variables_cent();
-        let mut hll: Hll<E, S> = Hll::new(&NumericsConfig {
-            time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
-                rkf_mode: RKFMode::SSPRK5,
-                asc: false,
-                asc_relative_tolerance: 0.001,
-                asc_absolute_tolerance: 0.001,
-                asc_timestep_friction: 0.08,
-            }),
-            iter_max: usize::MAX - 2,
-            t0: 0.0,
-            t_end: 0.5,
-            dt_min: 1.0e-12,
-            dt_max: f64::MAX,
-            dt_cfl_param: 0.4,
-        });
+        let mut hll: Hll<E, S> = Hll::new(&NumFluxConfig::Hll, &mesh).unwrap();
 
         let dflux_dxi_prim_expect = Array2::from_shape_vec(
             (EQ, S),
