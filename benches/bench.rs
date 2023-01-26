@@ -91,6 +91,9 @@ fn get_config(mode: usize) -> CorriesConfig {
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
         numerics_config: NumericsConfig {
+            numflux_config: NumFluxConfig::Kt {
+                limiter_mode: LimiterMode::VanLeer,
+            },
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::SSPRK5,
                 asc: false,

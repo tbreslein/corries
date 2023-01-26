@@ -34,17 +34,21 @@ impl Validation for NumFluxConfig {
 #[derive(Debug, Serialize, Copy, Clone)]
 pub enum LimiterMode {
     /// todo
+    NoLimiter,
+    /// todo
     MinMod,
     /// todo
     Superbee,
     /// todo
     Monocent(f64),
+    /// todo
+    VanLeer,
 }
 
 impl Validation for LimiterMode {
     fn validate(&self) -> Result<()> {
         return match self {
-            Self::MinMod | Self::Superbee => Ok(()),
+            Self::NoLimiter | Self::MinMod | Self::Superbee | Self::VanLeer => Ok(()),
             Self::Monocent(p) => {
                 if p > &1.0 {
                     Ok(())

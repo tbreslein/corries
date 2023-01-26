@@ -33,6 +33,17 @@ macro_rules! max {
         }
     };
 }
+macro_rules! signum {
+    ($a:expr) => {
+        if $a < 0.0 {
+            -1.0
+        } else if $a > 0.0 {
+            1.0
+        } else {
+            0.0
+        }
+    };
+}
 
 /// Handles calculating numerical flux using the HLL scheme
 pub struct Kt<const E: usize, const S: usize> {
@@ -181,48 +192,67 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
     }
 }
 
+fn signum(a: f64) -> i32 {
+    if a > 0.0 {
+        1
+    } else {
+        -1
+    }
+}
+
 impl<const E: usize, const S: usize> Kt<E, S> {
     fn reconstruct<P: Physics<E, S>>(&self, u: &mut State<P, E, S>) {
         let slope_fn = match self.limiter_mode {
+            LimiterMode::NoLimiter => |a: f64, b: f64, _: f64, _: f64| 0.5 * (a + b),
             LimiterMode::MinMod => |a: f64, b: f64, _: f64, _: f64| {
-                if a.signum() * b.signum() > 0.0 {
-                    a.signum() * min!(a.abs(), b.abs())
+                // if signum!(a) * signum!(b) > 0.0 {
+                if signum(a) * signum(b) > 0 {
+                    dbg!("foo");
+                    signum(a) as f64 * min!(a.abs(), b.abs())
                 } else {
                     0.0
                 }
             },
             LimiterMode::Superbee => |a: f64, b: f64, _: f64, _: f64| {
                 if a * b > 0.0 {
-                    a.signum() * min!(min!(a.abs(), b.abs()), 0.5 * max!(a.abs(), b.abs()))
+                    signum!(a) * min!(min!(a.abs(), b.abs()), 0.5 * max!(a.abs(), b.abs()))
                 } else {
                     0.0
                 }
             },
             LimiterMode::Monocent(_) => |a: f64, b: f64, c: f64, p: f64| {
-                if a.signum() * b.signum() > 0.0 && b.signum() * c.signum() > 0.0 {
-                    a.signum() * min!((p * a).abs(), min!((p * b).abs(), (0.5 * c).abs()))
+                dbg!(a);
+                dbg!(b);
+                dbg!(c);
+                if signum(a) * signum(b) > 0 && signum(b) * signum(c) > 0 {
+                    signum(a) as f64 * min!((p * a).abs(), min!((p * b).abs(), (0.5 * c).abs()))
                 } else {
                     0.0
                 }
             },
+            LimiterMode::VanLeer => |a: f64, b: f64, _: f64, _: f64| {
+                let abs_a = a.abs();
+                let abs_b = b.abs();
+                (a * abs_b + b * abs_a) / (abs_a + abs_b + f64::MIN)
+            },
         };
         dbg!(self.inv_dxi);
+        dbg!(self.theta);
         dbg!(&self.dist_west);
         dbg!(&self.dist_east);
         for j in 0..E {
             for i in 1..S - 1 {
-                let slope = self.inv_dxi
-                    * slope_fn(
-                        u.cent.cons[[j, i]] - u.cent.cons[[j, i - 1]],
-                        u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i]],
-                        u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i - 1]],
-                        self.theta,
-                    );
+                let slope = slope_fn(
+                    u.cent.cons[[j, i]] - u.cent.cons[[j, i - 1]],
+                    u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i]],
+                    u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i - 1]],
+                    self.theta,
+                );
                 dbg!(j);
                 dbg!(i);
                 dbg!(slope);
-                u.west.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.dist_west[i];
-                u.east.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.dist_east[i];
+                u.west.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.inv_dxi * self.dist_west[i];
+                u.east.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.inv_dxi * self.dist_east[i];
             }
         }
     }
@@ -310,7 +340,7 @@ mod tests {
         u.update_derived_variables_cent();
         let mut kt = Kt::new(
             &NumFluxConfig::Kt {
-                limiter_mode: LimiterMode::Monocent(1.2),
+                limiter_mode: LimiterMode::NoLimiter,
             },
             &mesh,
         )
