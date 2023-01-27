@@ -130,7 +130,7 @@ In this case, the initial conditions are:
 - There is a density and pressure shock at the horizontal centre of the tube
 
 This test is going to be used to test different numerical flux schemes.
-Currently, the only implemented one is the HLL scheme, and here is the simulation:
+Here is a plot of the test run using the HLL scheme with 0-order reconstruction:
 
 <img
   src="https://www.dropbox.com/s/8jsltfyhl2ek2nu/sod_hll.png?raw=1"
@@ -138,13 +138,20 @@ Currently, the only implemented one is the HLL scheme, and here is the simulatio
   title="Sod test using the HLL scheme"
   style="display: inline-block; margin: 0 auto; max-width: 300px">
 
+And this is the simulation run with the KT (Kurganov-Tadmor) numerical flux scheme using linear reconstruction:
+
+<img
+  src="https://www.dropbox.com/s/8jsltfyhl2ek2nu/sod_kt.png?raw=1"
+  alt="A plot showing the results of the Sod test using 1d Euler equations and the KT numerical flux scheme"
+  title="Sod test using the KT scheme"
+  style="display: inline-block; margin: 0 auto; max-width: 300px">
+
 ## TODO
 
-- Add KT solver
-- Add Euler2DAdiabatic
-- Add NavStoIsot + NavStoAdiabatic
 - Add cylindrical geometry + Source + GeometricSource + Sedov test
 - Add spherical geometry + new Sedov case
+- Add Euler2DAdiabatic
+- Add NavStoIsot + NavStoAdiabatic
 - Add logcylindrical geometry + Vortex test
 - Add gravitational source + Bondi test
 - Add viscosity source + Pringle test
