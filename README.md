@@ -141,7 +141,7 @@ Here is a plot of the test run using the HLL scheme with 0-order reconstruction:
 And this is the simulation run with the KT (Kurganov-Tadmor) numerical flux scheme using linear reconstruction:
 
 <img
-  src="https://www.dropbox.com/s/8jsltfyhl2ek2nu/sod_kt.png?raw=1"
+  src="https://www.dropbox.com/s/qjs5v53abdq21k2/sod_kt.png?raw=1"
   alt="A plot showing the results of the Sod test using 1d Euler equations and the KT numerical flux scheme"
   title="Sod test using the KT scheme"
   style="display: inline-block; margin: 0 auto; max-width: 300px">
