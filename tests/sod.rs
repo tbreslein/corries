@@ -147,6 +147,7 @@ fn sod_kt() -> Result<()> {
 
     init::<P, E, S>(&mut u);
     u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.init_west_east();
 
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
         .context("Calling run_loop in noh test")?;
