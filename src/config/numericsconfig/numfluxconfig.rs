@@ -9,14 +9,14 @@ use serde::Serialize;
 
 use crate::errorhandling::Validation;
 
-/// todo
+/// Enumerates the different configurations for the different types of numerical flux schemes
 #[derive(Debug, Serialize)]
 pub enum NumFluxConfig {
-    /// todo
+    /// Hll configuration (i.e., no configuration)
     Hll,
-    /// todo
+    /// Kt configuration
     Kt {
-        /// todo
+        /// The type of limiter to be used in reconstruction in the Kt scheme
         limiter_mode: LimiterMode,
     },
 }
@@ -30,18 +30,21 @@ impl Validation for NumFluxConfig {
     }
 }
 
-/// todo
+/// Enumerates the different kinds of limiter functions used during reconstruction of cell boundary
+/// values
 #[derive(Debug, Serialize, Copy, Clone)]
 pub enum LimiterMode {
-    /// todo
+    /// No limiter function, just average the differences between the cells
     NoLimiter,
-    /// todo
+    /// First order MinMod limiter
     MinMod,
-    /// todo
+    /// Superbee limiter function
     Superbee,
-    /// todo
+    /// Monocentric limiter (aka MinMod3); needs a parameter passed in that acts as the weight
+    /// between differences in neighbouring cells (i.e. one index apart) and the difference between
+    /// values in cells arching over one cell (i.e. two indeces apart)
     Monocent(f64),
-    /// todo
+    /// VanLeer limiter function
     VanLeer,
 }
 

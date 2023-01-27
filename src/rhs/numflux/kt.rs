@@ -34,7 +34,7 @@ macro_rules! max {
     };
 }
 
-/// Handles calculating numerical flux using the HLL scheme
+/// Handles calculating numerical flux using the Kurganov-Tadmor scheme
 pub struct Kt<const E: usize, const S: usize> {
     /// Left-side characteristics
     a_plus: Array1<f64>,
@@ -51,7 +51,7 @@ pub struct Kt<const E: usize, const S: usize> {
     /// Numerical flux
     flux_num: Array2<f64>,
 
-    /// todo
+    /// The type of limiter to use during reconstruction
     limiter_mode: LimiterMode,
 
     /// inverse of the xi coordinate differential

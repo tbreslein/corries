@@ -85,7 +85,7 @@ pub struct RkfConfig {
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize)]
 pub struct NumericsConfig {
-    /// todo
+    /// Configures the numerical flux schemes
     pub numflux_config: NumFluxConfig,
 
     /// The type of time integration scheme to use

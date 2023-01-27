@@ -15,7 +15,7 @@ use crate::{NumFluxConfig, State};
 use super::calc_dflux_xi_generic;
 use super::NumFlux;
 
-/// Handles calculating numerical flux using the HLL scheme
+/// Handles calculating numerical flux using the HLL scheme with 0-order reconstruction
 pub struct Hll<const E: usize, const S: usize> {
     /// Left-side characteristics
     sl: Array1<f64>,
