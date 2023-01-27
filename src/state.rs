@@ -45,6 +45,12 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         };
     }
 
+    /// Initialises self.west and self.east
+    pub fn init_west_east(&mut self) {
+        self.west.assign(&self.cent);
+        self.east.assign(&self.cent);
+    }
+
     /// Returns whether this state is handled adiabatically or isothermally
     pub const fn is_adiabatic(&self) -> bool {
         P::IS_ADIABATIC

@@ -106,6 +106,7 @@ pub fn run_corries<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, c
     mesh: &Mesh<S>,
     writer: &mut Writer,
 ) -> Result<()> {
+    u.init_west_east();
     loop {
         if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
             time.timestep.t_next_output += time.timestep.dt_output;
