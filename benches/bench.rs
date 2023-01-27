@@ -130,7 +130,7 @@ pub fn noh_hll_run(c: &mut Criterion) {
     init_noh::<P, E, S>(&mut u);
     u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 
-    group.bench_function("noh test run", |b| {
+    group.bench_function("noh_hll", |b| {
         b.iter(|| {
             run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
         })
@@ -153,7 +153,7 @@ pub fn noh_kt_run(c: &mut Criterion) {
     u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
     u.init_west_east();
 
-    group.bench_function("noh test run", |b| {
+    group.bench_function("noh_kt", |b| {
         b.iter(|| {
             run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
         })
