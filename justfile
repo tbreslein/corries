@@ -21,3 +21,6 @@ test: build
 update:
   nix flake update
   cargo update
+
+bench:
+  cargo bench
