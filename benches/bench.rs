@@ -8,73 +8,33 @@ use ndarray::{Array1, Array2};
 
 const S: usize = 500;
 
-const EULER1D_ADIABATIC: usize = 0;
-const EULER1D_ISOT: usize = 1;
-const EULER2D_ISOT: usize = 2;
+fn get_config(numflux_config: NumFluxConfig) -> CorriesConfig {
+    let boundary_conditions_west = BoundaryMode::Custom(vec![
+        (0, CustomBoundaryMode::NoGradients),
+        (1, CustomBoundaryMode::NoGradients),
+        (2, CustomBoundaryMode::NoGradients),
+    ]);
 
-fn get_config(mode: usize) -> CorriesConfig {
-    let boundary_conditions_west = match mode {
-        EULER1D_ADIABATIC => BoundaryMode::Custom(vec![
-            (0, CustomBoundaryMode::NoGradients),
-            (1, CustomBoundaryMode::NoGradients),
-            (2, CustomBoundaryMode::NoGradients),
-        ]),
-        EULER1D_ISOT => BoundaryMode::Custom(vec![
-            (0, CustomBoundaryMode::NoGradients),
-            (1, CustomBoundaryMode::NoGradients),
-        ]),
-        EULER2D_ISOT => BoundaryMode::Custom(vec![
-            (0, CustomBoundaryMode::NoGradients),
-            (1, CustomBoundaryMode::NoGradients),
-            (2, CustomBoundaryMode::NoGradients),
-        ]),
-        _ => BoundaryMode::Custom(vec![]),
-    };
-
-    let boundary_conditions_east = match mode {
-        EULER1D_ADIABATIC => BoundaryMode::Custom(vec![
-            (0, CustomBoundaryMode::NoGradients),
-            (1, CustomBoundaryMode::NoGradients),
-            (2, CustomBoundaryMode::NoGradients),
-        ]),
-        EULER1D_ISOT => BoundaryMode::Custom(vec![
-            (0, CustomBoundaryMode::NoGradients),
-            (1, CustomBoundaryMode::NoGradients),
-        ]),
-        EULER2D_ISOT => BoundaryMode::Custom(vec![
-            (0, CustomBoundaryMode::NoGradients),
-            (1, CustomBoundaryMode::NoGradients),
-            (2, CustomBoundaryMode::NoGradients),
-        ]),
-        _ => BoundaryMode::Custom(vec![]),
-    };
+    let boundary_conditions_east = BoundaryMode::Custom(vec![
+        (0, CustomBoundaryMode::NoGradients),
+        (1, CustomBoundaryMode::NoGradients),
+        (2, CustomBoundaryMode::NoGradients),
+    ]);
 
     let file_name = "noh_".to_owned()
-        + match mode {
-            EULER1D_ADIABATIC => "euler1d_adiabatic",
-            EULER1D_ISOT => "euler1d_isot",
-            EULER2D_ISOT => "euler2d_isot",
-            _ => "",
+        + match numflux_config {
+            NumFluxConfig::Hll => "hll",
+            NumFluxConfig::Kt { limiter_mode: _ } => "kt",
         };
+
     let folder_name = "results/integrationtests/".to_owned() + &file_name;
-    let data_names_vector = match mode {
-        EULER1D_ADIABATIC => vec![
-            DataName::XiCent,
-            DataName::T,
-            DataName::Prim(0),
-            DataName::Prim(1),
-            DataName::Prim(2),
-        ],
-        EULER1D_ISOT => vec![DataName::XiCent, DataName::T, DataName::Prim(0), DataName::Prim(1)],
-        EULER2D_ISOT => vec![
-            DataName::XiCent,
-            DataName::T,
-            DataName::Prim(0),
-            DataName::Prim(1),
-            DataName::Prim(2),
-        ],
-        _ => vec![],
-    };
+    let data_names_vector = vec![
+        DataName::XiCent,
+        DataName::T,
+        DataName::Prim(0),
+        DataName::Prim(1),
+        DataName::Prim(2),
+    ];
 
     return CorriesConfig {
         print_banner: false,
@@ -91,9 +51,7 @@ fn get_config(mode: usize) -> CorriesConfig {
         boundary_condition_west: boundary_conditions_west,
         boundary_condition_east: boundary_conditions_east,
         numerics_config: NumericsConfig {
-            numflux_config: NumFluxConfig::Kt {
-                limiter_mode: LimiterMode::VanLeer,
-            },
+            numflux_config,
             time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
                 rkf_mode: RKFMode::SSPRK5,
                 asc: false,
@@ -164,7 +122,7 @@ pub fn noh_hll_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("noh_run");
 
     set_Physics_and_E!(Euler1DAdiabatic);
-    let config = get_config(EULER1D_ADIABATIC);
+    let config = get_config(NumFluxConfig::Hll);
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
@@ -184,7 +142,9 @@ pub fn noh_kt_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("noh_run");
 
     set_Physics_and_E!(Euler1DAdiabatic);
-    let config = get_config(EULER1D_ADIABATIC);
+    let config = get_config(NumFluxConfig::Kt {
+        limiter_mode: LimiterMode::VanLeer,
+    });
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
