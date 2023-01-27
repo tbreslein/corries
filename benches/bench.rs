@@ -160,7 +160,7 @@ fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E
     return;
 }
 
-pub fn noh_run(c: &mut Criterion) {
+pub fn noh_hll_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("noh_run");
 
     set_Physics_and_E!(Euler1DAdiabatic);
@@ -171,6 +171,27 @@ pub fn noh_run(c: &mut Criterion) {
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
     init_noh::<P, E, S>(&mut u);
     u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+
+    group.bench_function("noh test run", |b| {
+        b.iter(|| {
+            run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
+        })
+    });
+    group.finish();
+}
+
+pub fn noh_kt_run(c: &mut Criterion) {
+    let mut group = c.benchmark_group("noh_run");
+
+    set_Physics_and_E!(Euler1DAdiabatic);
+    let config = get_config(EULER1D_ADIABATIC);
+    type N = Kt<E, S>;
+    type T = RungeKuttaFehlberg<P, E, S>;
+
+    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    init_noh::<P, E, S>(&mut u);
+    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.init_west_east();
 
     group.bench_function("noh test run", |b| {
         b.iter(|| {
@@ -212,5 +233,5 @@ pub fn euler1d_isot_conversions(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, euler1d_isot_conversions, noh_run);
+criterion_group!(benches, euler1d_isot_conversions, noh_hll_run, noh_kt_run);
 criterion_main!(benches);
