@@ -33,17 +33,6 @@ macro_rules! max {
         }
     };
 }
-macro_rules! signum {
-    ($a:expr) => {
-        if $a < 0.0 {
-            -1.0
-        } else if $a > 0.0 {
-            1.0
-        } else {
-            0.0
-        }
-    };
-}
 
 /// Handles calculating numerical flux using the HLL scheme
 pub struct Kt<const E: usize, const S: usize> {
@@ -157,24 +146,6 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
                 &am in &self.a_minus.slice(s))
             *c = ap * am);
 
-        // dbg!(&u.cent.prim);
-        // dbg!(&u.west.prim);
-        // dbg!(&u.east.prim);
-        dbg!(&u.cent.cons);
-        dbg!(&u.west.cons);
-        dbg!(&u.east.cons);
-        // dbg!(&u.cent.c_sound);
-        // dbg!(&u.west.c_sound);
-        // dbg!(&u.east.c_sound);
-        // dbg!(&u.cent.eigen_min());
-        // dbg!(&u.west.eigen_min());
-        // dbg!(&u.east.eigen_min());
-        // dbg!(&u.cent.eigen_max());
-        // dbg!(&u.west.eigen_max());
-        // dbg!(&u.east.eigen_max());
-        // dbg!(&u.cent.flux);
-        // dbg!(&u.west.flux);
-        // dbg!(&u.east.flux);
         for j in 0..E {
             self.flux_num.row_mut(j).slice_mut(s).assign(
                 &(&self.b.slice(s)
@@ -205,9 +176,7 @@ impl<const E: usize, const S: usize> Kt<E, S> {
         let slope_fn = match self.limiter_mode {
             LimiterMode::NoLimiter => |a: f64, b: f64, _: f64, _: f64| 0.5 * (a + b),
             LimiterMode::MinMod => |a: f64, b: f64, _: f64, _: f64| {
-                // if signum!(a) * signum!(b) > 0.0 {
                 if signum(a) * signum(b) > 0 {
-                    dbg!("foo");
                     signum(a) as f64 * min!(a.abs(), b.abs())
                 } else {
                     0.0
@@ -215,17 +184,14 @@ impl<const E: usize, const S: usize> Kt<E, S> {
             },
             LimiterMode::Superbee => |a: f64, b: f64, _: f64, _: f64| {
                 if a * b > 0.0 {
-                    signum!(a) * min!(min!(a.abs(), b.abs()), 0.5 * max!(a.abs(), b.abs()))
+                    signum(a) as f64 * min!(min!(a.abs(), b.abs()), 0.5 * max!(a.abs(), b.abs()))
                 } else {
                     0.0
                 }
             },
             LimiterMode::Monocent(_) => |a: f64, b: f64, c: f64, p: f64| {
-                dbg!(a);
-                dbg!(b);
-                dbg!(c);
                 if signum(a) * signum(b) > 0 && signum(b) * signum(c) > 0 {
-                    signum(a) as f64 * min!((p * a).abs(), min!((p * b).abs(), (0.5 * c).abs()))
+                    signum(a) as f64 * min!((p * a).abs(), min!((p * b).abs(), c.abs()))
                 } else {
                     0.0
                 }
@@ -236,23 +202,17 @@ impl<const E: usize, const S: usize> Kt<E, S> {
                 (a * abs_b + b * abs_a) / (abs_a + abs_b + f64::MIN)
             },
         };
-        dbg!(self.inv_dxi);
-        dbg!(self.theta);
-        dbg!(&self.dist_west);
-        dbg!(&self.dist_east);
         for j in 0..E {
             for i in 1..S - 1 {
-                let slope = slope_fn(
-                    u.cent.cons[[j, i]] - u.cent.cons[[j, i - 1]],
-                    u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i]],
-                    u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i - 1]],
-                    self.theta,
-                );
-                dbg!(j);
-                dbg!(i);
-                dbg!(slope);
-                u.west.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.inv_dxi * self.dist_west[i];
-                u.east.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.inv_dxi * self.dist_east[i];
+                let slope = self.inv_dxi
+                    * slope_fn(
+                        u.cent.cons[[j, i]] - u.cent.cons[[j, i - 1]],
+                        u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i]],
+                        0.5 * (u.cent.cons[[j, i + 1]] - u.cent.cons[[j, i - 1]]),
+                        self.theta,
+                    );
+                u.west.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.dist_west[i];
+                u.east.cons[[j, i]] = u.cent.cons[[j, i]] + slope * self.dist_east[i];
             }
         }
     }
@@ -338,9 +298,10 @@ mod tests {
         init_noh(&mut u);
         u.update_cons_cent();
         u.update_derived_variables_cent();
+        u.init_west_east();
         let mut kt = Kt::new(
             &NumFluxConfig::Kt {
-                limiter_mode: LimiterMode::NoLimiter,
+                limiter_mode: LimiterMode::Monocent(1.2),
             },
             &mesh,
         )
@@ -349,7 +310,9 @@ mod tests {
         let dflux_dxi_prim_expect = Array2::from_shape_vec(
             (EQ, S),
             vec![
-                0.0, 0.0, 0.0, -4.0, -4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.0, -8.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, -4.0, -4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.0, -8.0, 0.0, 0.0,
+                0.0,
+                // 0.0, 0.0, 0.0, -4.0, -4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, -4.0, 0.0, 0.0, 0.0,
             ],
         )
         .unwrap();
