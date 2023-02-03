@@ -49,10 +49,10 @@ impl<const E: usize, const S: usize> BoundaryCondition<E, S> for CustomBoundaryC
 impl CustomBoundaryConditions {
     /// Constructs a new [CustomBoundaryConditions] object
     pub fn new(direction: Direction, modes: &[(usize, CustomBoundaryMode)]) -> Self {
-        return Self {
+        Self {
             direction,
             modes: modes.to_vec(),
-        };
+        }
     }
 }
 

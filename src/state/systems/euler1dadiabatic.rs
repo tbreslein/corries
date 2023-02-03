@@ -24,7 +24,7 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
     const JPRESSURE: usize = 2;
 
     fn new() -> Self {
-        return Self;
+        Self
     }
 
     #[inline(always)]
@@ -72,7 +72,7 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
     #[inline(always)]
     fn validate(vars: &Variables<E, S>) -> Result<()> {
         super::euler1disot::validate(vars, Self::JRHO)?;
-        return validate(vars, Self::JPRESSURE);
+        validate(vars, Self::JPRESSURE)
     }
 }
 
@@ -157,5 +157,5 @@ pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_pressu
         "Pressure must be positive! Got: {}",
         vars.prim.row(j_pressure)
     );
-    return Ok(());
+    Ok(())
 }

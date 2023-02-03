@@ -61,7 +61,7 @@ impl TimeStep {
     /// * `numericsconfig` - Configuration for everything regarding numerics
     /// * `output_counter_max` - The number of outputs this simulation produces
     pub fn new(numericsconfig: &NumericsConfig, output_counter_max: usize) -> Self {
-        return Self {
+        Self {
             iter: 0,
             iter_max: numericsconfig.iter_max,
             t: numericsconfig.t0,
@@ -73,7 +73,7 @@ impl TimeStep {
             dt_kind: DtKind::Init,
             dt_output: (numericsconfig.t_end - numericsconfig.t0) / output_counter_max as f64,
             t_next_output: numericsconfig.t0,
-        };
+        }
     }
 
     /// Calculates the explicit time step width
@@ -98,7 +98,7 @@ impl TimeStep {
             );
         }
         self.dt_kind = DtKind::Cfl;
-        return Ok(());
+        Ok(())
     }
 
     /// Caps the time step width to an upper limit, for example so that the time coordinate does
@@ -125,6 +125,6 @@ impl Collectable for TimeStep {
                 bail!("name.association() for {:?} returned {:?}", x, data.association)
             },
         };
-        return Ok(());
+        Ok(())
     }
 }

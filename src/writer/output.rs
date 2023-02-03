@@ -85,7 +85,7 @@ impl Output {
         } else {
             mesh.ixi_in
         };
-        return Ok(Output {
+        Ok(Self {
             data: outputconfig
                 .data_names
                 .iter()
@@ -143,7 +143,7 @@ impl Output {
                 FormattingMode::TSV => "#".to_string(),
                 FormattingMode::CSV => "".to_string(),
             },
-        });
+        })
     }
 
     /// Goes through `self.datanames` and pulls data from the other arguments writing that data
@@ -165,7 +165,7 @@ impl Output {
             StructAssociation::Physics => u.collect_data(data, self.mesh_offset),
             StructAssociation::TimeStep => timestep.collect_data(data, self.mesh_offset),
         })?;
-        return Ok(());
+        Ok(())
     }
 
     /// Makes this `Output` object write data in `self.data_matrix` into a stream.
@@ -206,7 +206,7 @@ impl Output {
             },
         };
         self.first_output = false;
-        return Ok(());
+        Ok(())
     }
 
     /// Take a buffer, and write this object's data into it
@@ -234,12 +234,12 @@ impl Output {
             }
             writeln!(buffer)?;
         }
-        return Ok(());
+        Ok(())
     }
 
     /// Format a piece of data (at index j, if it is indexable) and write it into the buffer
     fn format_data_to_buffer<T: std::io::Write>(&self, buffer: &mut T, data: &Data, j: usize) -> Result<()> {
-        return match &data.payload {
+        match &data.payload {
             DataValue::String(x) => {
                 write!(buffer, "{:>width$}", x, width = self.width).wrap_err("Unable to write to buffer!")
             },
@@ -250,7 +250,7 @@ impl Output {
                 .wrap_err("Unable to write to buffer!"),
             DataValue::VectorFloat(x) => write!(buffer, "{:>width$.*e}", self.precision, x[j], width = self.width)
                 .wrap_err("Unable to write to buffer!"),
-        };
+        }
     }
 
     /// Makes this `Output` object write meta_data into a stream.
@@ -274,7 +274,7 @@ impl Output {
                 },
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     /// Returns the header for writing output.
@@ -285,10 +285,10 @@ impl Output {
             .fold(self.leading_comment_symbol.clone(), |mut acc, name| {
                 acc += &format!("{:>width$}", format!("{}", name), width = self.width);
                 acc.push(self.delimiter);
-                return acc;
+                acc
             });
         s.pop();
         s.push('\n');
-        return s;
+        s
     }
 }

@@ -62,13 +62,13 @@ impl Writer {
             let output = Output::new(outputconf, mesh, config.output_counter_max)?;
             outputs.push(output);
         }
-        return Ok(Writer {
+        Ok(Self {
             outputs,
             output_counter: 0,
             should_perform_output: true,
             meta_data: serde_json::to_string_pretty(config)?,
             print_banner: config.print_banner,
-        });
+        })
     }
 
     /// Loops through `self.outputs` and calls their `update_data_matrix` methods.
@@ -86,8 +86,7 @@ impl Writer {
     ) -> Result<()> {
         self.outputs
             .iter_mut()
-            .try_for_each(|output| output.update_data(u, time, mesh))?;
-        return Ok(());
+            .try_for_each(|output| output.update_data(u, time, mesh))
     }
 
     /// Loops through `self.outputs` and calls their `write_output` methods.
@@ -96,7 +95,7 @@ impl Writer {
             .par_iter_mut()
             .try_for_each(|output| output.write_output(self.output_counter))?;
         self.output_counter += 1;
-        return Ok(());
+        Ok(())
     }
 
     /// Loops through `self.outputs` and calls their `write_metadata` methods if they are
@@ -104,8 +103,7 @@ impl Writer {
     pub fn write_metadata<const S: usize>(&mut self) -> Result<()> {
         self.outputs
             .par_iter_mut()
-            .try_for_each(|output| output.write_metadata::<S>(&self.meta_data))?;
-        return Ok(());
+            .try_for_each(|output| output.write_metadata::<S>(&self.meta_data))
     }
 }
 
@@ -130,7 +128,7 @@ pub trait Collectable {
     /// * `mesh_offset` - In case of writing vector data, how many cells should be skipped at the
     /// beginning and the end of the vector
     fn write_vector(&self, field: &ArrayView1<f64>, data: &mut Data, mesh_offset: usize) -> Result<()> {
-        return match &mut data.payload {
+        match &mut data.payload {
             DataValue::VectorFloat(v) => {
                 if mesh_offset == 0 {
                     v.assign(field);
@@ -145,6 +143,6 @@ pub trait Collectable {
                 field,
                 data
             ),
-        };
+        }
     }
 }

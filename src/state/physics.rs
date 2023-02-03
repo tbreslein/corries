@@ -123,7 +123,7 @@ pub trait Physics<const E: usize, const S: usize> {
         if !dt.is_finite() {
             bail!("dt_cfl turned non-finite! Got dt_cfl = {}", dt);
         }
-        return Ok(dt);
+        Ok(dt)
     }
 
     /// Validates the contents of vars, making sure it does not have non-finite numbers for example

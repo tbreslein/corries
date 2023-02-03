@@ -37,14 +37,14 @@ pub struct Variables<const E: usize, const S: usize> {
 impl<const E: usize, const S: usize> Variables<E, S> {
     /// Constructs a new [Variables] object
     pub fn new(physics_config: &PhysicsConfig) -> Self {
-        return Variables {
+        Variables {
             prim: Array2::zeros((E, S)),
             cons: Array2::zeros((E, S)),
             c_sound: Array1::zeros(S),
             eigen_vals: Array2::zeros((E, S)),
             flux: Array2::zeros((E, S)),
             gamma: physics_config.adiabatic_index,
-        };
+        }
     }
 
     /// Assign the fields of rhs to self.
@@ -78,7 +78,7 @@ impl<const E: usize, const S: usize> Collectable for Variables<E, S> {
                 bail!("name.association() for {:?} returned {:?}", x, data.association)
             },
         }?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -94,6 +94,6 @@ impl<const E: usize, const S: usize> Validation for Variables<E, S> {
             "Physics::cons must be finite! Got: {}",
             self.cons
         );
-        return Ok(());
+        Ok(())
     }
 }

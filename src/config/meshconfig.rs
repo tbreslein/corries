@@ -46,6 +46,6 @@ impl Validation for MeshConfig {
             "This must hold: 0.0 < ratio_disk <= 1.0! Got {}",
             self.ratio_disk
         );
-        return Ok(());
+        Ok(())
     }
 }

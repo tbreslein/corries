@@ -28,6 +28,6 @@ impl Validation for PhysicsConfig {
             "This must hold: 1 < adiabatic_index < 2 ! Got {}",
             self.adiabatic_index
         );
-        return Ok(());
+        Ok(())
     }
 }

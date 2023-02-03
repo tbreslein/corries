@@ -52,6 +52,9 @@ pub mod prelude {
 use errorhandling::Validation;
 pub use prelude::*;
 
+type CorriesComponents<P, N, T, const E: usize, const S: usize> =
+    (State<P, E, S>, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer);
+
 /// Initialises all objects needed to run a corries simulation.
 ///
 /// Apart from the `config` argument, the important bits that also help configuring the simulation
@@ -59,7 +62,7 @@ pub use prelude::*;
 /// determines the type of `Physics` used throughout the whole simulation!
 pub fn init_corries<P, N, T, const E: usize, const S: usize>(
     config: &CorriesConfig,
-) -> Result<(State<P, E, S>, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer)>
+) -> Result<CorriesComponents<P, N, T, E, S>>
 where
     P: Physics<E, S> + 'static,
     N: NumFlux<E, S>,
@@ -81,7 +84,7 @@ where
     writer
         .write_metadata::<S>()
         .context("Calling writer.write_metadata in run_corries")?;
-    return Ok((u, rhs, time, mesh, writer));
+    Ok((u, rhs, time, mesh, writer))
 }
 
 /// Runs a corries simulation.
@@ -131,7 +134,7 @@ pub fn run_corries<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, c
             return err;
         }
     }
-    return Ok(());
+    Ok(())
 }
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

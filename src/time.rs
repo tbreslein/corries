@@ -33,11 +33,11 @@ pub enum DtKind {
 
 impl Display for DtKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return match self {
+        match self {
             DtKind::Init => write!(f, "init"),
             DtKind::Cfl => write!(f, "cfl"),
             DtKind::ErrorDump => write!(f, "err"),
-        };
+        }
     }
 }
 
@@ -91,12 +91,11 @@ impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> T
     ///
     /// * `config` - a [CorriesConfig] configuration object
     pub fn new(config: &CorriesConfig, u: &State<P, E, S>) -> Result<Self> {
-        let solver = T::new(config, u)?;
-        return Ok(Self {
+        Ok(Self {
             timestep: TimeStep::new(&config.numerics_config, config.output_counter_max),
-            solver,
+            solver: T::new(config, u)?,
             embedded_type: PhantomData,
-        });
+        })
     }
 
     /// Calculates the next state for the [Physics] object `u`.
@@ -122,6 +121,6 @@ impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> T
                 self.timestep.iter_max
             );
         }
-        return Ok(());
+        Ok(())
     }
 }

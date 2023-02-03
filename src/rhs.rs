@@ -46,12 +46,12 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// * `numflux` - The [dyn NumFlux] object about to be stored in this [Rhs] object
     pub fn new(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
         let numflux = init_numflux(&config.numerics_config.numflux_config, mesh)?;
-        return Ok(Rhs {
+        Ok(Rhs {
             full_rhs: Array2::zeros((E, S)),
             numflux,
             boundary_west: Box::new(init_boundary_condition::<E, S>(Direction::West, config)),
             boundary_east: Box::new(init_boundary_condition::<E, S>(Direction::East, config)),
-        });
+        })
     }
 
     /// Solves the right-hand side and updates the `full_rhs` field
@@ -66,7 +66,7 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
         self.numflux
             .calc_dflux_dxi(&mut self.full_rhs, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -77,6 +77,6 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Validation for Rhs<N, E, 
             "Rhs::full_rhs must be finite! Got: {}",
             self.full_rhs
         );
-        return Ok(());
+        Ok(())
     }
 }

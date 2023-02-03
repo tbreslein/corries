@@ -37,12 +37,12 @@ pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
 impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Construct a new [State] object
     pub fn new(physics_config: &PhysicsConfig) -> Self {
-        return Self {
+        Self {
             cent: Variables::new(physics_config),
             west: Variables::new(physics_config),
             east: Variables::new(physics_config),
             methods: PhantomData,
-        };
+        }
     }
 
     /// Initialises self.west and self.east
@@ -253,14 +253,14 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Calculates the time step width according to the CFL criterium
     pub fn calc_dt_cfl(&self, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
-        return P::calc_dt_cfl(&self.cent.eigen_max(), c_cfl, mesh);
+        P::calc_dt_cfl(&self.cent.eigen_max(), c_cfl, mesh)
     }
 }
 
 impl<P: Physics<E, S>, const E: usize, const S: usize> Validation for State<P, E, S> {
     fn validate(&self) -> Result<()> {
         self.cent.validate()?;
-        return Ok(());
+        Ok(())
     }
 }
 

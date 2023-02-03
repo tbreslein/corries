@@ -24,7 +24,7 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
     const JPRESSURE: usize = std::usize::MAX;
 
     fn new() -> Self {
-        return Self;
+        Self
     }
 
     #[inline(always)]
@@ -65,7 +65,7 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
 
     #[inline(always)]
     fn validate(vars: &Variables<E, S>) -> Result<()> {
-        return validate(vars, Self::JRHO);
+        validate(vars, Self::JRHO)
     }
 }
 
@@ -136,5 +136,5 @@ pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_rho: u
         "Mass density must be positive! Got: {}",
         vars.prim.row(j_rho)
     );
-    return Ok(());
+    Ok(())
 }

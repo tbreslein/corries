@@ -67,7 +67,7 @@ impl Validation for OutputConfig {
                 );
             }
         }
-        return Ok(());
+        Ok(())
     }
 }
 

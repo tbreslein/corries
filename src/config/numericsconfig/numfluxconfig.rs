@@ -23,10 +23,10 @@ pub enum NumFluxConfig {
 
 impl Validation for NumFluxConfig {
     fn validate(&self) -> Result<()> {
-        return match self {
+        match self {
             Self::Hll => Ok(()),
             Self::Kt { limiter_mode } => limiter_mode.validate(),
-        };
+        }
     }
 }
 
@@ -50,7 +50,7 @@ pub enum LimiterMode {
 
 impl Validation for LimiterMode {
     fn validate(&self) -> Result<()> {
-        return match self {
+        match self {
             Self::NoLimiter | Self::MinMod | Self::Superbee | Self::VanLeer => Ok(()),
             Self::Monocent(p) => {
                 if p > &1.0 {
@@ -59,6 +59,6 @@ impl Validation for LimiterMode {
                     bail!("This must hold: Monocent parameter p > 1.0 ! Got {}", p)
                 }
             },
-        };
+        }
     }
 }

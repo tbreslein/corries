@@ -97,6 +97,6 @@ impl Validation for CorriesConfig {
         for outputconf in self.writer_config.iter() {
             outputconf.validate().context("Validating config.writerconf")?;
         }
-        return Ok(());
+        Ok(())
     }
 }

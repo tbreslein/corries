@@ -70,7 +70,7 @@ pub struct Kt<const E: usize, const S: usize> {
 
 impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
     fn new(numflux_config: &NumFluxConfig, mesh: &Mesh<S>) -> Result<Self> {
-        return match numflux_config {
+        match numflux_config {
             NumFluxConfig::Kt { limiter_mode } => Ok(Self {
                 a_plus: Array1::zeros(S),
                 a_minus: Array1::zeros(S),
@@ -87,7 +87,7 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
                 dist_east: Array1::from_shape_fn(S, |i| mesh.xi_east[i] - mesh.xi_cent[i]),
             }),
             _ => bail!("Tried constructing Kt, but numflux_config does not contain NumFluxConfig::Kt!"),
-        };
+        }
     }
 
     fn calc_dflux_dxi<P: Physics<E, S>>(
@@ -159,7 +159,7 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
         if cfg!(feature = "validation") {
             self.validate().context("Calling Kt::validate in Kt::calc_dflux_dxi")?;
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -242,7 +242,7 @@ impl<const E: usize, const S: usize> Validation for Kt<E, S> {
             "Hll::flux_num must be finite! Got: {}",
             self.flux_num
         );
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -285,7 +285,6 @@ mod tests {
             u.cent.c_sound.assign(&c_sound.view());
         }
         u.cent.prim.assign(&prim.view());
-        return;
     }
 
     set_Physics_and_E!(Euler1DIsot);

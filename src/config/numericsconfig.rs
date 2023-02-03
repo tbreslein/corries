@@ -57,9 +57,9 @@ pub enum TimeIntegrationConfig {
 
 impl Validation for TimeIntegrationConfig {
     fn validate(&self) -> Result<()> {
-        return match self {
+        match self {
             TimeIntegrationConfig::Rkf(c) => c.validate().context("Validating RkfConfig"),
-        };
+        }
     }
 }
 
@@ -135,7 +135,7 @@ impl Validation for NumericsConfig {
         self.time_integration_config
             .validate()
             .context("Validating config.numericsconfig.time_integration_config")?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -156,6 +156,6 @@ impl Validation for RkfConfig {
             "This must hold: asc_timestep_friction > 0.0 ! Got {}",
             self.asc_timestep_friction
         );
-        return Ok(());
+        Ok(())
     }
 }

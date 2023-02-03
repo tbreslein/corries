@@ -35,7 +35,7 @@ impl Data {
     /// * `data` - `DataName` that identifies what this struct will be holding
     /// * `mesh_offset` - The possible offset for vector-like values
     pub fn new<const S: usize>(name: &DataName, mesh_offset: usize) -> Self {
-        return Self {
+        Self {
             name: *name,
             payload: match name.data_type() {
                 DataType::Usize => DataValue::Usize(0),
@@ -45,13 +45,13 @@ impl Data {
             },
             data_type: name.data_type(),
             association: name.association(),
-        };
+        }
     }
 }
 
 impl fmt::Display for Data {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return match self.name {
+        match self.name {
             DataName::XiCent => write!(f, "xi_cent"),
             DataName::XiWest => write!(f, "xi_west"),
             DataName::XiEast => write!(f, "xi_east"),
@@ -62,7 +62,7 @@ impl fmt::Display for Data {
             DataName::Iter => write!(f, "iter"),
             DataName::Dt => write!(f, "dt"),
             DataName::DtKind => write!(f, "dt_kind"),
-        };
+        }
     }
 }
 
@@ -143,7 +143,7 @@ pub enum StructAssociation {
 impl DataName {
     /// Returns the `DataType` associated with the `DataName`.
     pub fn data_type(&self) -> DataType {
-        return match &self {
+        match &self {
             Self::XiCent => DataType::VectorFloat,
             Self::XiWest => DataType::VectorFloat,
             Self::XiEast => DataType::VectorFloat,
@@ -154,12 +154,12 @@ impl DataName {
             Self::T => DataType::Float,
             Self::Dt => DataType::Float,
             Self::DtKind => DataType::String,
-        };
+        }
     }
 
     /// Returns the `StructAssociation` associated with the `DataName`
     pub fn association(&self) -> StructAssociation {
-        return match &self {
+        match &self {
             Self::XiCent => StructAssociation::Mesh,
             Self::XiWest => StructAssociation::Mesh,
             Self::XiEast => StructAssociation::Mesh,
@@ -170,6 +170,6 @@ impl DataName {
             Self::T => StructAssociation::TimeStep,
             Self::Dt => StructAssociation::TimeStep,
             Self::DtKind => StructAssociation::TimeStep,
-        };
+        }
     }
 }

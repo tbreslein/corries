@@ -35,7 +35,7 @@ pub struct Hll<const E: usize, const S: usize> {
 
 impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
     fn new(numflux_config: &NumFluxConfig, _: &Mesh<S>) -> Result<Self> {
-        return match numflux_config {
+        match numflux_config {
             NumFluxConfig::Hll => Ok(Self {
                 sl: Array1::zeros(S),
                 sr: Array1::zeros(S),
@@ -44,7 +44,7 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
                 flux_num: Array2::zeros((E, S)),
             }),
             _ => bail!("Tried constructing Hll, but numflux_config does not contain NumFluxConfig::Hll!"),
-        };
+        }
     }
 
     fn calc_dflux_dxi<P: Physics<E, S>>(
@@ -98,7 +98,7 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
             self.validate()
                 .context("Calling Hll::validate in Hll::calc_dflux_dxi")?;
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -126,7 +126,7 @@ impl<const E: usize, const S: usize> Validation for Hll<E, S> {
             "Hll::flux_num must be finite! Got: {}",
             self.flux_num
         );
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -169,7 +169,6 @@ mod tests {
             u.cent.c_sound.assign(&c_sound.view());
         }
         u.cent.prim.assign(&prim.view());
-        return;
     }
 
     set_Physics_and_E!(Euler1DIsot);

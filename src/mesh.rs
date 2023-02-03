@@ -389,7 +389,7 @@ impl<const S: usize> Mesh<S> {
             mesh.validate().context("Validating Mesh")?;
         }
 
-        return Ok(mesh);
+        Ok(mesh)
     }
 }
 
@@ -441,7 +441,7 @@ impl<const S: usize> Validation for Mesh<S> {
             self.minus_cepe
         ];
 
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -456,7 +456,7 @@ impl<const S: usize> Collectable for Mesh<S> {
                 bail!("name.association() for {:?} returned {:?}", x, data.association)
             },
         }?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -471,7 +471,7 @@ mod tests {
                     (xi_in in 0.1f64..100_000.0,
                     xi_out in 0.1f64..100_000.0,
                     ratio_disk in 0.1f64..=1.0) -> Result<Mesh<S>> {
-            return Mesh::new(&MeshConfig { mode, xi_in, xi_out, ratio_disk });
+            Mesh::new(&MeshConfig { mode, xi_in, xi_out, ratio_disk })
         }
     }
 

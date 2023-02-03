@@ -39,7 +39,7 @@ impl ButcherTableau {
     pub fn new(rkfconfig: &RkfConfig) -> Self {
         let order = get_order(rkfconfig.rkf_mode);
         let asc = rkfconfig.asc;
-        return match rkfconfig.rkf_mode {
+        match rkfconfig.rkf_mode {
             RKFMode::RK1 => Self {
                 order,
                 a: Array2::from_shape_vec(
@@ -256,14 +256,14 @@ impl ButcherTableau {
                 ).unwrap(),
                 asc
             },
-        };
+        }
     }
-    
+
 }
 
 /// Takes an [RKFMode] and returns the order of the method.
 fn get_order(mode: RKFMode) -> usize {
-    return match mode {
+    match mode {
         RKFMode::RK1 => 1,
         RKFMode::RK2 => 2,
         RKFMode::RK3 => 3,
@@ -273,5 +273,5 @@ fn get_order(mode: RKFMode) -> usize {
         RKFMode::RKF45 => 6,
         RKFMode::SSPRK3 => 3,
         RKFMode::SSPRK5 => 5,
-    };
+    }
 }

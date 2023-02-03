@@ -84,7 +84,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
         let order = bt.order;
         let mut utilde = State::new(&config.physics_config);
         utilde.assign(u);
-        return Ok(Self {
+        Ok(Self {
             bt,
             k_bundle: Array3::zeros([order, E, S]),
             err_new: 0.0,
@@ -96,7 +96,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
             solution_accepted: true,
             u_cons_low: Array2::zeros((E, S)),
             utilde,
-        });
+        })
     }
 
     fn next_solution<N: NumFlux<E, S>>(
@@ -140,7 +140,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
         }
 
         time.t += time.dt;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -259,7 +259,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> RungeKuttaFehlb
             self.validate()
                 .context("Validating RungeKuttaFehlberg at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
         }
-        return Ok(dt_out);
+        Ok(dt_out)
     }
 }
 
@@ -273,6 +273,6 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> Validation for RungeKutta
         self.utilde
             .validate()
             .context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;
-        return Ok(());
+        Ok(())
     }
 }

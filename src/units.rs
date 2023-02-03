@@ -37,57 +37,57 @@ impl Units {
     ///
     /// * `mode` - The type of units used when setting up the simulation
     pub fn new(mode: UnitsMode) -> Self {
-        return Units { mode };
+        Self { mode }
     }
 
     /// Takes the argument representing a length, and converts it to SI units
     pub fn convert_length_to_si(&self, input: f64) -> f64 {
-        return match self.mode {
+        match self.mode {
             UnitsMode::SI => input,
             UnitsMode::CGS => input * LENGTH_CGS,
-        };
+        }
     }
 
     /// Takes the argument representing a time, and converts it to SI units
     pub fn convert_time_to_si(&self, input: f64) -> f64 {
-        return match self.mode {
+        match self.mode {
             UnitsMode::SI => input,
             UnitsMode::CGS => input,
-        };
+        }
     }
 
     /// Takes the argument representing a mass, and converts it to SI units
     pub fn convert_mass_to_si(&self, input: f64) -> f64 {
-        return match self.mode {
+        match self.mode {
             UnitsMode::SI => input,
             UnitsMode::CGS => input * MASS_CGS,
-        };
+        }
     }
 
     /// Takes the argument representing a length, and converts it to CGS units
     pub fn convert_length_to_cgs(&self, input: f64) -> f64 {
         let si_input = self.convert_length_to_si(input);
-        return match self.mode {
+        match self.mode {
             UnitsMode::SI => si_input,
             UnitsMode::CGS => si_input / LENGTH_CGS,
-        };
+        }
     }
 
     /// Takes the argument representing a time, and converts it to CGS units
     pub fn convert_time_to_cgs(&self, input: f64) -> f64 {
         let si_input = self.convert_time_to_si(input);
-        return match self.mode {
+        match self.mode {
             UnitsMode::SI => si_input,
             UnitsMode::CGS => si_input,
-        };
+        }
     }
 
     /// Takes the argument representing a mass, and converts it to CGS units
     pub fn convert_mass_to_cgs(&self, input: f64) -> f64 {
         let si_input = self.convert_mass_to_si(input);
-        return match self.mode {
+        match self.mode {
             UnitsMode::SI => si_input,
             UnitsMode::CGS => si_input / MASS_CGS,
-        };
+        }
     }
 }

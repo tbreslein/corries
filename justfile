@@ -5,7 +5,7 @@ format:
   rustfmt ./**/*.rs
 
 clippy:
-  cargo clippy -- -A clippy::needless_return -A clippy::op_ref -A clippy::too_many_arguments
+  cargo clippy
 
 doc:
   cargo doc --document-private-items

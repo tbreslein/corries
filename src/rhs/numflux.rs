@@ -35,7 +35,7 @@ pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(
     numflux_config: &NumFluxConfig,
     mesh: &Mesh<S>,
 ) -> Result<N> {
-    return N::new(numflux_config, mesh);
+    N::new(numflux_config, mesh)
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.
