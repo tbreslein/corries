@@ -34,6 +34,17 @@ pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
     methods: PhantomData<P>,
 }
 
+/// Enumerates the different directions inside a cell we can pull values from
+#[repr(u8)]
+pub enum Direction {
+    /// west facing cell face
+    West,
+    /// cell centre
+    Cent,
+    /// east facing cell face
+    East,
+}
+
 impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Construct a new [State] object
     pub fn new(physics_config: &PhysicsConfig) -> Self {
@@ -56,127 +67,81 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         P::IS_ADIABATIC
     }
 
-    /// Update the primitive variables at the centre the mesh's cells
-    pub fn update_prim_cent(&mut self) {
-        P::update_prim(&mut self.cent);
+    const fn get_vars<const D: u8>(&self) -> &Variables<E, S> {
+        if D == Direction::West as u8 {
+            &self.west
+        } else if D == Direction::East as u8 {
+            &self.east
+        } else {
+            &self.cent
+        }
     }
 
-    /// Update the primitive variables at the west border the mesh's cells
-    pub fn update_prim_west(&mut self) {
-        P::update_prim(&mut self.west);
+    // TODO: make this a const fn, once the feature is added to rustlang to enable mut refs in
+    // const contexts.
+    fn get_vars_mut<const D: u8>(&mut self) -> &mut Variables<E, S> {
+        if D == Direction::West as u8 {
+            &mut self.west
+        } else if D == Direction::East as u8 {
+            &mut self.east
+        } else {
+            &mut self.cent
+        }
     }
 
-    /// Update the primitive variables at the east border the mesh's cells
-    pub fn update_prim_east(&mut self) {
-        P::update_prim(&mut self.east);
+    /// Update the primitive variables
+    ///
+    /// The template parameter denotes whether to update the cell centres, west cell faces, or east
+    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    /// let physics_config = PhysicsConfig { adiabatic_index = 1.66, units_mode = UnitsMode::SI };
+    /// let mut u: State<Euler1DIsot, E, S> = State::new(physics_config);
+    ///
+    /// // Updates the primitive variables in the cell centres
+    /// u.update_prim::<Direction::Cent as u8>();
+    /// ```
+    pub fn update_prim<const D: u8>(&mut self) {
+        P::update_prim(self.get_vars_mut::<D>());
     }
 
-    /// Update the conservative variables at the centre the mesh's cells
-    pub fn update_cons_cent(&mut self) {
-        P::update_cons(&mut self.cent);
-    }
-
-    /// Update the conservative variables at the west border the mesh's cells
-    pub fn update_cons_west(&mut self) {
-        P::update_cons(&mut self.west);
-    }
-
-    /// Update the conservative variables at the east border the mesh's cells
-    pub fn update_cons_east(&mut self) {
-        P::update_cons(&mut self.east);
+    /// Update the conservative variables
+    pub fn update_cons<const D: u8>(&mut self) {
+        P::update_cons(self.get_vars_mut::<D>());
     }
 
     /// Updates variables that are not part of the primitive or conservative variables, like speed
     /// of sound, at the centre of the mesh's cells
-    pub fn update_derived_variables_cent(&mut self) {
-        P::update_derived_variables(&mut self.cent);
-    }
-
-    /// Updates variables that are not part of the primitive or conservative variables, like speed
-    /// of sound, at the west border of the mesh's cells
-    pub fn update_derived_variables_west(&mut self) {
-        P::update_derived_variables(&mut self.west);
-    }
-
-    /// Updates variables that are not part of the primitive or conservative variables, like speed
-    /// of sound, at the east border of the mesh's cells
-    pub fn update_derived_variables_east(&mut self) {
-        P::update_derived_variables(&mut self.east);
+    pub fn update_derived_variables<const D: u8>(&mut self) {
+        P::update_derived_variables(self.get_vars_mut::<D>());
     }
 
     /// Updates the speed of the sound at the centre of the mesh's cells
-    pub fn update_c_sound_cent(&mut self) {
-        P::update_c_sound(&mut self.cent);
-    }
-
-    /// Updates the speed of the sound at the west border of the mesh's cells
-    pub fn update_c_sound_west(&mut self) {
-        P::update_c_sound(&mut self.west);
-    }
-
-    /// Updates the speed of the sound at the east border of the mesh's cells
-    pub fn update_c_sound_east(&mut self) {
-        P::update_c_sound(&mut self.east);
+    pub fn update_c_sound<const D: u8>(&mut self) {
+        P::update_c_sound(self.get_vars_mut::<D>());
     }
 
     /// Updates the eigen values at the centre of the mesh's cells
-    pub fn update_eigen_vals_cent(&mut self) {
-        P::update_eigen_vals(&mut self.cent);
-    }
-
-    /// Updates the eigen values at the west border of the mesh's cells
-    pub fn update_eigen_vals_west(&mut self) {
-        P::update_eigen_vals(&mut self.west);
-    }
-
-    /// Updates the eigen values at the east border of the mesh's cells
-    pub fn update_eigen_vals_east(&mut self) {
-        P::update_eigen_vals(&mut self.east);
+    pub fn update_eigen_vals<const D: u8>(&mut self) {
+        P::update_eigen_vals(self.get_vars_mut::<D>());
     }
 
     /// Updates the minimal eigen values at the centre of the mesh's cells
-    pub fn update_eigen_vals_min_cent(&mut self) {
-        P::update_eigen_vals_min(&mut self.cent);
-    }
-
-    /// Updates the minimal eigen values at the west border of the mesh's cells
-    pub fn update_eigen_vals_min_west(&mut self) {
-        P::update_eigen_vals_min(&mut self.west);
-    }
-
-    /// Updates the minimal eigen values at the east border of the mesh's cells
-    pub fn update_eigen_vals_min_east(&mut self) {
-        P::update_eigen_vals_min(&mut self.east);
+    pub fn update_eigen_vals_min<const D: u8>(&mut self) {
+        P::update_eigen_vals_min(self.get_vars_mut::<D>());
     }
 
     /// Updates the maximal eigen values at the centre of the mesh's cells
-    pub fn update_eigen_vals_max_cent(&mut self) {
-        P::update_eigen_vals_max(&mut self.cent);
-    }
-
-    /// Updates the maximal eigen values at the west border of the mesh's cells
-    pub fn update_eigen_vals_max_west(&mut self) {
-        P::update_eigen_vals_max(&mut self.west);
-    }
-
-    /// Updates the maximal eigen values at the east border of the mesh's cells
-    pub fn update_eigen_vals_max_east(&mut self) {
-        P::update_eigen_vals_max(&mut self.east);
+    pub fn update_eigen_vals_max<const D: u8>(&mut self) {
+        P::update_eigen_vals_max(self.get_vars_mut::<D>());
     }
 
     /// Updates the physical flux at the centre of the mesh's cells
-    pub fn update_flux_cent(&mut self) {
-        P::update_flux(&mut self.cent);
-    }
-
-    /// Updates the physical flux at the west border of the mesh's cells
-    pub fn update_flux_west(&mut self) {
-        P::update_flux(&mut self.west);
-    }
-
-    /// Updates the physical flux at the east border of the mesh's cells
-    pub fn update_flux_east(&mut self) {
-        P::update_flux(&mut self.east);
+    pub fn update_flux<const D: u8>(&mut self) {
+        P::update_flux(self.get_vars_mut::<D>());
     }
 
     /// Update the full .cent field, assuming that .cent.prim is already up-to-date
