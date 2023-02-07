@@ -8,6 +8,7 @@ use color_eyre::eyre::{bail, ensure, Context};
 use color_eyre::Result;
 use ndarray::{par_azip, s, Array1, Array2};
 
+use crate::directions::Direction;
 use crate::errorhandling::Validation;
 use crate::{mesh::Mesh, state::Physics};
 use crate::{LimiterMode, NumFluxConfig, State};
@@ -99,16 +100,16 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
         // NOTE: Assumes that u.cons is already up to date
         self.reconstruct(u);
 
-        u.update_prim_west();
-        u.update_prim_east();
-        u.update_c_sound_west();
-        u.update_c_sound_east();
-        u.update_eigen_vals_min_west();
-        u.update_eigen_vals_min_east();
-        u.update_eigen_vals_max_west();
-        u.update_eigen_vals_max_east();
-        u.update_flux_west();
-        u.update_flux_east();
+        u.update_prim_d::<{ Direction::West as u8 }>();
+        u.update_prim_d::<{ Direction::East as u8 }>();
+        u.update_c_sound_d::<{ Direction::West as u8 }>();
+        u.update_c_sound_d::<{ Direction::East as u8 }>();
+        u.update_eigen_vals_min_d::<{ Direction::West as u8 }>();
+        u.update_eigen_vals_min_d::<{ Direction::East as u8 }>();
+        u.update_eigen_vals_max_d::<{ Direction::West as u8 }>();
+        u.update_eigen_vals_max_d::<{ Direction::East as u8 }>();
+        u.update_flux_d::<{ Direction::West as u8 }>();
+        u.update_flux_d::<{ Direction::East as u8 }>();
 
         let eigen_min_west = &u.west.eigen_min();
         let eigen_min_east = &u.east.eigen_min();
@@ -295,8 +296,8 @@ mod tests {
         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
         let mut u = State::<P, E, S>::new(&PHYSICSCONFIG);
         init_noh(&mut u);
-        u.update_cons_cent();
-        u.update_derived_variables_cent();
+        u.update_cons();
+        u.update_derived_variables();
         u.init_west_east();
         let mut kt = Kt::new(
             &NumFluxConfig::Kt {

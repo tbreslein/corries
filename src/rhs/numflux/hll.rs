@@ -54,7 +54,7 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
         mesh: &Mesh<S>,
     ) -> Result<()> {
         // NOTE: Assumes that u.eigen_vals are already up to date
-        u.update_flux_cent();
+        u.update_flux();
 
         let uflux = &u.cent.flux;
         let ucons = &u.cent.cons;
@@ -179,8 +179,8 @@ mod tests {
         let mesh: Mesh<S> = Mesh::new(&MESHCONFIG).unwrap();
         let mut u = State::<P, E, S>::new(&PHYSICSCONFIG);
         init_noh(&mut u);
-        u.update_cons_cent();
-        u.update_derived_variables_cent();
+        u.update_cons();
+        u.update_derived_variables();
         let mut hll: Hll<E, S> = Hll::new(&NumFluxConfig::Hll, &mesh).unwrap();
 
         let dflux_dxi_prim_expect = Array2::from_shape_vec(

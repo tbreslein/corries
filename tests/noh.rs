@@ -164,7 +164,7 @@ fn noh_euler1d_adiabatic() -> Result<()> {
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init_noh::<P, E, S>(&mut u);
-    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
         .context("Calling run_loop in noh test")?;
@@ -185,7 +185,7 @@ fn noh_euler1d_isot() -> Result<()> {
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init_noh::<P, E, S>(&mut u);
-    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 
     run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
         .context("Calling run_loop in noh test")?;
