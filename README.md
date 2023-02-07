@@ -148,6 +148,9 @@ And this is the simulation run with the KT (Kurganov-Tadmor) numerical flux sche
 
 ## TODO
 
+- go through all docs:
+  - make sure they are all still correct
+  - add more doc tests
 - Add cylindrical geometry + Source + GeometricSource + Sedov test
 - Add spherical geometry + new Sedov case
 - Add Euler2DAdiabatic
