@@ -2,18 +2,20 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use std::fs::{create_dir_all, remove_dir_all, File};
-use std::io::Write;
-use std::path::Path;
-
-use color_eyre::{eyre::WrapErr, Result};
-
+use super::{
+    data::{Data, StructAssociation},
+    Collectable, DataValue,
+};
 use crate::prelude::*;
-
-use super::data::{Data, StructAssociation};
-use super::{Collectable, DataValue};
+use color_eyre::{eyre::WrapErr, Result};
+use std::{
+    fs::{create_dir_all, remove_dir_all, File},
+    io::Write,
+    path::Path,
+};
 
 /// Struct that handles writing to output into a file or stdout
+#[derive(Debug, Clone, Default)]
 pub struct Output {
     /// Matrix of raw, unformatted data, still retaining their original data types
     pub data: Vec<Data>,
@@ -60,6 +62,9 @@ pub struct Output {
     /// Leading character for comments
     leading_comment_symbol: String,
 }
+
+unsafe impl Send for Output {}
+unsafe impl Sync for Output {}
 
 impl Output {
     /// Builds a new `color_eyre::Result<Output>` object.

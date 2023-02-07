@@ -5,10 +5,9 @@
 //! Exports the [NumFlux] trait that identifies structs that can calculate numerical flux, and the
 //! [init_numflux] function that handles constructing [NumFlux] objects.
 
+use crate::{mesh::Mesh, state::Physics, NumFluxConfig, State};
 use color_eyre::Result;
 use ndarray::{s, Array2};
-
-use crate::{mesh::Mesh, state::Physics, NumFluxConfig, State};
 
 pub mod hll;
 pub mod kt;

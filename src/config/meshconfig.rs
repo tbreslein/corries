@@ -4,21 +4,23 @@
 
 //! Exports [MeshConfig] for configuring the mesh of the simulation.
 
-use color_eyre::eyre::ensure;
-use color_eyre::Result;
+use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
-
 use crate::errorhandling::Validation;
 
-/// Enum for the different kinds of Meshes available
-#[derive(Debug, Serialize, Copy, Clone)]
+/// Enum for the different kinds of Meshes available; defaults to cartesian mesh
+#[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
 pub enum MeshMode {
-    /// Cartesian mesh
+    /// Cartesian mesh (default)
+    #[default]
     Cartesian,
 }
 
+unsafe impl Send for MeshMode {}
+unsafe impl Sync for MeshMode {}
+
 /// Carries information about how the mesh should shaped
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct MeshConfig {
     /// The type of Mesh that should constructed
     pub mode: MeshMode,
@@ -32,6 +34,9 @@ pub struct MeshConfig {
     /// Ratio in terms of radial thickness between the massive disk and the computational area
     pub ratio_disk: f64,
 }
+
+unsafe impl Send for MeshConfig {}
+unsafe impl Sync for MeshConfig {}
 
 impl Validation for MeshConfig {
     fn validate(&self) -> Result<()> {

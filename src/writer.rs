@@ -4,6 +4,8 @@
 
 //! Exports the [Writer] struct that deals with writing data to multiple different output streams
 
+pub use self::data::*;
+use self::output::*;
 use crate::prelude::*;
 use color_eyre::{eyre::bail, Result};
 use ndarray::{s, Array1, ArrayView1};
@@ -12,10 +14,8 @@ use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 pub mod data;
 mod output;
 
-pub use self::data::*;
-use self::output::*;
-
 /// Wrapper for `Vec<Output>` that facilitates writing output into streams.
+#[derive(Debug, Clone, Default)]
 pub struct Writer {
     /// Contains the objects that handle writing into single streams.
     pub outputs: Vec<Output>,
@@ -33,8 +33,11 @@ pub struct Writer {
     pub print_banner: bool,
 }
 
+unsafe impl Send for Writer {}
+unsafe impl Sync for Writer {}
+
 /// Wrapper enum around the different datatypes that can be written into an output stream.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataValue {
     /// Carries a `usize`
     Usize(usize),
@@ -48,6 +51,9 @@ pub enum DataValue {
     /// Carries a `String`
     String(String),
 }
+
+unsafe impl Send for DataValue {}
+unsafe impl Sync for DataValue {}
 
 impl Writer {
     /// Builds a new `Result<Writer>` object.

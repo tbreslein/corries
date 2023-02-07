@@ -13,8 +13,11 @@ use crate::{state::Physics, variables::Variables};
 const E: usize = 2;
 
 /// Test struct for using a trait for Physics
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Euler1DIsot<const S: usize>;
+
+unsafe impl<const S: usize> Send for Euler1DIsot<S> {}
+unsafe impl<const S: usize> Sync for Euler1DIsot<S> {}
 
 impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
     const IS_ADIABATIC: bool = false;

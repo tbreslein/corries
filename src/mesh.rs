@@ -22,7 +22,7 @@ use ndarray::Array1;
 /// cartesian coordinates, you would then usually name these xi = x, Phi = y, eta = z, or in
 /// cylindrical coordinates you would name them xi = r (the radius), Phi = phi (the polar angle),
 /// eta = z.
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Mesh<const S: usize> {
     /// The kind of mesh this is, i.e. cartesian, log-cylindrical, etc.
     pub mode: MeshMode,
@@ -197,6 +197,9 @@ pub struct Mesh<const S: usize> {
     /// Shorthand: -1.0 * cepe
     pub minus_cepe: Array1<f64>,
 }
+
+unsafe impl<const S: usize> Send for Mesh<S> {}
+unsafe impl<const S: usize> Sync for Mesh<S> {}
 
 impl<const S: usize> Mesh<S> {
     /// Builds a new `color_eyre::Result<Mesh>` object.

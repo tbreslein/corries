@@ -20,8 +20,10 @@ pub use self::rkf::RungeKuttaFehlberg;
 use self::timestep::TimeStep;
 
 /// Enumerates the different kinds of effects that can limit the time step width.
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
 pub enum DtKind {
     /// The initial value of such a variable at the beginning of the simulation
+    #[default]
     Init,
 
     /// CFL limited
@@ -30,6 +32,9 @@ pub enum DtKind {
     /// Used when dumping state because of an error
     ErrorDump,
 }
+
+unsafe impl Send for DtKind {}
+unsafe impl Sync for DtKind {}
 
 impl Display for DtKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -74,6 +79,7 @@ pub trait TimeSolver<P: Physics<E, S>, const E: usize, const S: usize> {
 ///
 /// Carries a [TimeStep] for keeping track of the time coordinate and data regarding it, as well as
 /// a `Box<dyn TimeSolver>` for calculating new solutions.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Time<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> {
     /// Keeps track of the time coordinate and related data
     pub timestep: TimeStep,
@@ -81,8 +87,12 @@ pub struct Time<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const 
     /// Calculates solutions for the [Physics] state
     solver: T,
 
+    // TODO: Is this still necessary?
     embedded_type: PhantomData<P>,
 }
+
+unsafe impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Send for Time<P,T,E,S> {}
+unsafe impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Sync for Time<P,T,E,S> {}
 
 impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Time<P, T, E, S> {
     /// Constructs a new [Time] struct.

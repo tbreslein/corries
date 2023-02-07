@@ -6,7 +6,6 @@
 //! [Variables] object.
 
 use crate::{config::CustomBoundaryMode, mesh::Mesh, variables::Variables};
-
 use super::{BoundaryCondition, Direction};
 
 /// This is a set of boundary conditions, where the exact condition is set for each equation
@@ -14,10 +13,14 @@ use super::{BoundaryCondition, Direction};
 /// quickly, whithout defining a new boundary condition set each time.
 ///
 /// Check [CustomBoundaryMode] for the types of boundary conditions available.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct CustomBoundaryConditions {
     direction: Direction,
     modes: Vec<(usize, CustomBoundaryMode)>,
 }
+
+unsafe impl Send for CustomBoundaryConditions {}
+unsafe impl Sync for CustomBoundaryConditions {}
 
 impl<const E: usize, const S: usize> BoundaryCondition<E, S> for CustomBoundaryConditions {
     fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>) {
@@ -42,6 +45,7 @@ impl<const E: usize, const S: usize> BoundaryCondition<E, S> for CustomBoundaryC
                 CustomBoundaryMode::OutflowNoGradients => outflow_no_gradients_east(*j, vars),
                 CustomBoundaryMode::Reflecting => reflecting_east(*j, vars),
             }),
+            Direction::Cent => panic!("Cannot apply boundary condition for Direction::Cent!"),
         }
     }
 }

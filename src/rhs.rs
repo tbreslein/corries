@@ -10,18 +10,16 @@ use color_eyre::{
     Result,
 };
 use ndarray::Array2;
-
-use crate::errorhandling::Validation;
 use crate::{
-    boundaryconditions::{init_boundary_condition, BoundaryCondition, Direction},
+    errorhandling::Validation,
+    boundaryconditions::{init_boundary_condition, BoundaryCondition},
     prelude::*,
 };
-
-pub mod numflux;
 pub use self::numflux::{hll::Hll, init_numflux, kt::Kt, NumFlux};
 
+pub mod numflux;
+
 /// Carries objects and methods for solving the right-hand side of a set of equations.
-// pub struct Rhs<N: NumFlux<P,E,S>, P: Physics<E,S>, const E: usize, const S: usize> {
 pub struct Rhs<N: NumFlux<E, S>, const E: usize, const S: usize> {
     /// Full summed up rhs
     pub full_rhs: Array2<f64>,
@@ -35,6 +33,9 @@ pub struct Rhs<N: NumFlux<E, S>, const E: usize, const S: usize> {
     /// Boundary condition operator for the east boundary
     pub boundary_east: Box<dyn BoundaryCondition<E, S>>,
 }
+
+unsafe impl<N: NumFlux<E, S>, const E: usize, const S: usize> Send for Rhs<N,E,S> {}
+unsafe impl<N: NumFlux<E, S>, const E: usize, const S: usize> Sync for Rhs<N,E,S> {}
 
 impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// Constructs a new [Rhs] object.

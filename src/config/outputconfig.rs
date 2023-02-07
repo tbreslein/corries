@@ -6,14 +6,13 @@
 
 use color_eyre::eyre::ensure;
 use serde::Serialize;
-
 use crate::{
     errorhandling::Validation,
     writer::data::{DataName, DataType},
 };
 
 /// Carries information about how an `Output` is built
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct OutputConfig {
     /// Type of stream the `Output` writes to
     pub stream_mode: StreamMode,
@@ -46,6 +45,9 @@ pub struct OutputConfig {
     pub data_names: Vec<DataName>,
 }
 
+unsafe impl Send for OutputConfig {}
+unsafe impl Sync for OutputConfig {}
+
 impl Validation for OutputConfig {
     fn validate(&self) -> color_eyre::Result<()> {
         if self.stream_mode == StreamMode::File {
@@ -72,31 +74,49 @@ impl Validation for OutputConfig {
 }
 
 /// Enumerates the different streams an `Output` may write to
-#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
+///
+/// Defaults to Stdout.
+#[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum StreamMode {
     /// Streams to stdout
+    #[default]
     Stdout,
 
     /// Streams to a file
     File,
 }
 
+unsafe impl Send for StreamMode {}
+unsafe impl Sync for StreamMode {}
+
 /// Enumerates whether an `Output` writes scalar or vector values
-#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
+///
+/// Defaults to Scalar.
+#[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum ToStringConversionMode {
     /// Writes scalars
+    #[default]
     Scalar,
 
     /// Writes vectors
     Vector,
 }
 
+unsafe impl Send for ToStringConversionMode {}
+unsafe impl Sync for ToStringConversionMode {}
+
 /// Enumerates how an `Output` formats its output
-#[derive(Debug, Serialize, Clone, Copy)]
+///
+/// Defaults to TSV.
+#[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum FormattingMode {
     /// Comma seperated output
     CSV,
 
     /// Tab seperated output
+    #[default]
     TSV,
 }
+
+unsafe impl Send for FormattingMode {}
+unsafe impl Sync for FormattingMode {}
