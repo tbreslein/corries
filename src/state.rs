@@ -59,24 +59,22 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     }
 
     const fn get_vars<const D: u8>(&self) -> &Variables<E, S> {
-        if D == Direction::West as u8 {
-            &self.west
-        } else if D == Direction::East as u8 {
-            &self.east
-        } else {
-            &self.cent
+        match D {
+            d if d == Direction::West as u8 => &self.west,
+            d if d == Direction::Cent as u8 => &self.cent,
+            d if d == Direction::East as u8 => &self.east,
+            _ => panic!("called get vars with a template parameter that cannot be cast into from a Direction!")
         }
     }
 
     // TODO: make this a const fn, once the feature is added to rustlang to enable mut refs in
     // const contexts.
     fn get_vars_mut<const D: u8>(&mut self) -> &mut Variables<E, S> {
-        if D == Direction::West as u8 {
-            &mut self.west
-        } else if D == Direction::East as u8 {
-            &mut self.east
-        } else {
-            &mut self.cent
+        match D {
+            d if d == Direction::West as u8 => &mut self.west,
+            d if d == Direction::Cent as u8 => &mut self.cent,
+            d if d == Direction::East as u8 => &mut self.east,
+            _ => panic!("called get vars with a template parameter that cannot be cast into from a Direction!")
         }
     }
 
