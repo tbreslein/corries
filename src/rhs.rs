@@ -62,7 +62,7 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// * `mesh` - Information about spatial properties
     pub fn update<P: Physics<E, S>>(&mut self, u: &mut State<P, E, S>, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date
-        u.update_cent_from_cons(&mut self.boundary_west, &mut self.boundary_east, mesh);
+        u.update_vars_from_cons(&mut self.boundary_west, &mut self.boundary_east, mesh);
         self.numflux
             .calc_dflux_dxi(&mut self.full_rhs, u, mesh)
             .context("Calling Rhs::numflux::calc_dflux_dxi in Rhs::update_dflux_dxi")?;

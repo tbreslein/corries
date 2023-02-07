@@ -18,6 +18,7 @@ pub mod config;
 mod errorhandling;
 #[macro_use]
 pub mod macros;
+pub mod directions;
 pub mod mesh;
 pub mod rhs;
 pub mod state;
@@ -38,6 +39,7 @@ pub mod writer;
 /// as well as the [set_Physics_and_E] macro, and the [run_corries] function
 pub mod prelude {
     pub use crate::config::*;
+    pub use crate::directions::*;
     pub use crate::init_corries;
     pub use crate::mesh::*;
     pub use crate::rhs::*;

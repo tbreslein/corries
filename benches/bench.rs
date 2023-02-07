@@ -128,7 +128,7 @@ pub fn noh_hll_run(c: &mut Criterion) {
 
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
     init_noh::<P, E, S>(&mut u);
-    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
 
     group.bench_function("noh_hll", |b| {
         b.iter(|| {
@@ -150,7 +150,7 @@ pub fn noh_kt_run(c: &mut Criterion) {
 
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
     init_noh::<P, E, S>(&mut u);
-    u.update_cent_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
     u.init_west_east();
 
     group.bench_function("noh_kt", |b| {
@@ -174,8 +174,8 @@ pub fn euler1d_isot_conversions(c: &mut Criterion) {
     u.cent.prim.row_mut(1).fill(3.0);
     group.bench_function("from prim to cons and back; euler 1d isot", |b| {
         b.iter(|| {
-            u.update_cons_cent();
-            u.update_prim_cent();
+            u.update_cons();
+            u.update_prim();
         })
     });
 
@@ -185,8 +185,8 @@ pub fn euler1d_isot_conversions(c: &mut Criterion) {
     u.cent.prim.row_mut(2).fill(4.0);
     group.bench_function("from prim to cons and back; euler 1d adiabatic", |b| {
         b.iter(|| {
-            u.update_cons_cent();
-            u.update_prim_cent();
+            u.update_cons();
+            u.update_prim();
         })
     });
 

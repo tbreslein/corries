@@ -133,7 +133,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
             .context("RungeKuttaFehlberg::calc_rkf_solution at the end of RungeKuttaFehlberg::next_solution")?;
 
         u.cent.cons.assign(&self.utilde.cent.cons);
-        u.update_cent_from_cons(&mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
+        u.update_vars_from_cons(&mut rhs.boundary_west, &mut rhs.boundary_east, mesh);
         if cfg!(feature = "validation") {
             u.validate()
                 .context("Calling u.update_everything_from_prim at the end of RungeKuttaFehlberg::calc_rkf_solution")?;
