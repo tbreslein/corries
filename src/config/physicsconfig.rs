@@ -4,15 +4,12 @@
 
 //! Exports [PhysicsConfig] for configuring the physics equations and conditions.
 
-use color_eyre::eyre::ensure;
-use color_eyre::Result;
+use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
-
-use crate::errorhandling::Validation;
-use crate::UnitsMode;
+use crate::{errorhandling::Validation, UnitsMode};
 
 /// Carries information about how the mesh should shaped
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct PhysicsConfig {
     /// Ratio of specific heats
     pub adiabatic_index: f64,
@@ -20,6 +17,9 @@ pub struct PhysicsConfig {
     /// The units system
     pub units_mode: UnitsMode,
 }
+
+unsafe impl Send for PhysicsConfig {}
+unsafe impl Sync for PhysicsConfig {}
 
 impl Validation for PhysicsConfig {
     fn validate(&self) -> Result<()> {

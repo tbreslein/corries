@@ -4,11 +4,11 @@
 
 //! Exports the [ButcherTableau] struct
 
+use crate::config::numericsconfig::{RKFMode, RkfConfig};
 use ndarray::{Array1, Array2};
 
-use crate::config::numericsconfig::{RKFMode, RkfConfig};
-
 /// Carries the butcher tableau needed for implement different Runge-Kutta-Fehlberg methods
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ButcherTableau {
     /// Order of the method
     pub order: usize,
@@ -28,6 +28,9 @@ pub struct ButcherTableau {
     /// Whether to use automated step control
     pub asc: bool,
 }
+
+unsafe impl Send for ButcherTableau {}
+unsafe impl Sync for ButcherTableau {}
 
 #[rustfmt::skip]
 impl ButcherTableau {

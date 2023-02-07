@@ -9,14 +9,15 @@ use color_eyre::{
     Result,
 };
 use serde::Serialize;
-
-mod numfluxconfig;
 pub use numfluxconfig::*;
-
 use crate::errorhandling::Validation;
 
+mod numfluxconfig;
+
 /// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
-#[derive(Debug, Serialize, Copy, Clone)]
+///
+/// Defaults to SSPRK5
+#[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
 pub enum RKFMode {
     /// Runge-Kutta 1
     RK1,
@@ -43,16 +44,31 @@ pub enum RKFMode {
     SSPRK3,
 
     /// Strong stability preserving Runge-Kutta 5
+    #[default]
     SSPRK5,
 }
 
+unsafe impl Send for RKFMode {}
+unsafe impl Sync for RKFMode {}
+
 /// Enumerates the different types of configuration for time integration schemes
 ///
+/// Defaults to Rkf.
+///
 /// TODO: Export this into its own module
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Copy, Clone)]
 pub enum TimeIntegrationConfig {
     /// Runge-Kutta-Fehlberg
     Rkf(RkfConfig),
+}
+
+unsafe impl Send for TimeIntegrationConfig {}
+unsafe impl Sync for TimeIntegrationConfig {}
+
+impl Default for TimeIntegrationConfig {
+    fn default() -> Self {
+        Self::Rkf(RkfConfig::default())
+    }
 }
 
 impl Validation for TimeIntegrationConfig {
@@ -64,7 +80,7 @@ impl Validation for TimeIntegrationConfig {
 }
 
 /// Configures the Runge-Kutta-Fehlberg scheme
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Copy, Clone, Default)]
 pub struct RkfConfig {
     /// Type of RKF scheme to use
     pub rkf_mode: RKFMode,
@@ -82,8 +98,11 @@ pub struct RkfConfig {
     pub asc_timestep_friction: f64,
 }
 
+unsafe impl Send for RkfConfig {}
+unsafe impl Sync for RkfConfig {}
+
 /// Carries information about how the mesh should shaped
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct NumericsConfig {
     /// Configures the numerical flux schemes
     pub numflux_config: NumFluxConfig,
@@ -109,6 +128,9 @@ pub struct NumericsConfig {
     /// CFL parameter
     pub dt_cfl_param: f64,
 }
+
+unsafe impl Send for NumericsConfig {}
+unsafe impl Sync for NumericsConfig {}
 
 impl Validation for NumericsConfig {
     fn validate(&self) -> Result<()> {

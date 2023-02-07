@@ -4,30 +4,35 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
+use color_eyre::{eyre::Context, Result};
+use serde::Serialize;
+pub use meshconfig::*;
+pub use numericsconfig::*;
+pub use outputconfig::*;
+pub use physicsconfig::*;
+use crate::errorhandling::Validation;
+
 pub mod meshconfig;
 pub mod numericsconfig;
 pub mod outputconfig;
 pub mod physicsconfig;
 
-use color_eyre::{eyre::Context, Result};
-use serde::Serialize;
-
-pub use meshconfig::*;
-pub use numericsconfig::*;
-pub use outputconfig::*;
-pub use physicsconfig::*;
-
-use crate::errorhandling::Validation;
-
 /// Enumerates the different boundary conditions
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub enum BoundaryMode {
-    /// Set of custom boundary conditions applied to each variable
+    /// Set of custom boundary conditions applied to each variable (default)
     Custom(Vec<(usize, CustomBoundaryMode)>),
+
+    /// Sets no-gradients boundaries for all equations
+    #[default]
+    NoGradients,
 }
 
-/// Enumerates the possible custom boundary conditions
-#[derive(Debug, Serialize, Clone, Copy)]
+unsafe impl Send for BoundaryMode {}
+unsafe impl Sync for BoundaryMode {}
+
+/// Enumerates the possible custom boundary conditions; defaults to NoGradients
+#[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum CustomBoundaryMode {
     /// Extrapolate the values near the boundary into the ghost cells
     Extrapolate,
@@ -42,6 +47,7 @@ pub enum CustomBoundaryMode {
     NearZero,
 
     /// No gradients condition; copies the value closest to the boundary into the ghost cells.
+    #[default]
     NoGradients,
 
     /// Reflects outgoing flow, and applies NoGradients to incoming flow
@@ -54,11 +60,14 @@ pub enum CustomBoundaryMode {
     Reflecting,
 }
 
+unsafe impl Send for CustomBoundaryMode {}
+unsafe impl Sync for CustomBoundaryMode {}
+
 /// Struct that carries the full configuration info for a simulation.
 ///
 /// This struct is used in the beginning of a run to initialise all the runtime-objects that are
 /// used throughout the simulation.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct CorriesConfig {
     /// Whether to print the Corries banner to stdout
     pub print_banner: bool,
@@ -74,6 +83,7 @@ pub struct CorriesConfig {
 
     /// boundary condition on the east border of the computational area
     pub boundary_condition_east: BoundaryMode,
+
     /// Config for everything related to numerics
     pub numerics_config: NumericsConfig,
 
@@ -84,6 +94,9 @@ pub struct CorriesConfig {
     /// Config for Writer objects
     pub writer_config: Vec<OutputConfig>,
 }
+
+unsafe impl Send for CorriesConfig {}
+unsafe impl Sync for CorriesConfig {}
 
 impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {

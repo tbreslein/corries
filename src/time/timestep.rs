@@ -4,8 +4,7 @@
 
 //! Exports the [TimeStep]
 
-use color_eyre::{eyre::bail, Result};
-
+use super::DtKind;
 use crate::{
     config::numericsconfig::NumericsConfig,
     data::{Data, DataName, StructAssociation},
@@ -13,10 +12,10 @@ use crate::{
     state::Physics,
     Collectable, DataValue, State,
 };
-
-use super::DtKind;
+use color_eyre::{eyre::bail, Result};
 
 /// Information about the time coordinate and related data
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct TimeStep {
     /// Current iteration counter for the simulation
     pub iter: usize,
@@ -52,6 +51,9 @@ pub struct TimeStep {
     /// At which time to perform the next output
     pub t_next_output: f64,
 }
+
+unsafe impl Send for TimeStep {}
+unsafe impl Sync for TimeStep {}
 
 impl TimeStep {
     /// Constructs a new [TimeStep] object

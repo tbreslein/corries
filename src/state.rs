@@ -4,26 +4,23 @@
 
 //! Exports the [State] struct
 
-pub mod physics;
-pub mod systems;
-pub mod variables;
-
 use std::marker::PhantomData;
-
 use color_eyre::Result;
-
 use crate::{
     boundaryconditions::BoundaryCondition, directions::Direction, errorhandling::Validation, Mesh, PhysicsConfig,
 };
-
 pub use self::{physics::Physics, systems::*};
-
 use self::variables::Variables;
+
+pub mod physics;
+pub mod systems;
+pub mod variables;
 
 /// Central struct for corries, holding the simulation state.
 ///
 /// The first generic parameter determines how the state is handled internally, like are primitive
 /// and conservative variables updated, how is the physical flux calculated, etc.
+#[derive(Debug, Clone, PartialEq)]
 pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
     /// Variables at the centre of each cell in the mesh
     pub cent: Variables<E, S>,
@@ -34,6 +31,15 @@ pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
     /// Variables at the east border of each cell in the mesh
     pub east: Variables<E, S>,
     methods: PhantomData<P>,
+}
+
+unsafe impl<P: Physics<E,S>, const E: usize, const S: usize> Send for State<P,E,S> {}
+unsafe impl<P: Physics<E,S>, const E: usize, const S: usize> Sync for State<P,E,S> {}
+
+impl<P: Physics<E,S>, const E: usize, const S: usize> Default for State<P,E,S> {
+    fn default() -> Self {
+        Self::new(&PhysicsConfig::default())
+    }
 }
 
 impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
@@ -89,8 +95,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the primitive variables in the cell centres
     /// u.update_prim_d::<{Direction::Cent as u8}>();
@@ -117,8 +122,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the primitive variables in the cell centres
     /// u.update_prim();
@@ -138,8 +142,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the conservative variables in the cell centres
     /// u.update_cons_d::<{Direction::Cent as u8}>();
@@ -166,8 +169,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the conservative variables in the cell centres
     /// u.update_cons();
@@ -188,8 +190,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the derived variables in the cell centres
     /// u.update_derived_variables_d::<{Direction::Cent as u8}>();
@@ -217,8 +218,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the derived variables in the cell centres
     /// u.update_derived_variables();
@@ -238,8 +238,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the speed of sound in the cell centres
     /// u.update_c_sound_d::<{Direction::Cent as u8}>();
@@ -266,8 +265,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the speed of sound in the cell centres
     /// u.update_c_sound();
@@ -287,8 +285,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the eigen values in the cell centres
     /// u.update_eigen_vals_d::<{Direction::Cent as u8}>();
@@ -315,8 +312,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the eigen values in the cell centres
     /// u.update_eigen_vals();
@@ -336,8 +332,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the minimal eigen values in the cell centres
     /// u.update_eigen_vals_min_d::<{Direction::Cent as u8}>();
@@ -364,8 +359,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the minimal eigen values in the cell centres
     /// u.update_eigen_vals_min();
@@ -385,8 +379,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the maximal eigen values in the cell centres
     /// u.update_eigen_vals_max_d::<{Direction::Cent as u8}>();
@@ -413,8 +406,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the maximal eigen values in the cell centres
     /// u.update_eigen_vals_max();
@@ -434,8 +426,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the physical flux in the cell centres
     /// u.update_flux_d::<{Direction::Cent as u8}>();
@@ -462,8 +453,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u: State<P, E, S> = State::new(&physics_config);
+    /// let mut u: State<P, E, S> = State::default();
     ///
     /// // Updates the physical flux in the cell centres
     /// u.update_flux();
@@ -536,9 +526,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// use corries::prelude::*;
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
-    /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u1: State<P, E, S> = State::new(&physics_config);
-    /// let mut u2: State<P, E, S> = State::new(&physics_config);
+    /// let mut u1: State<P, E, S> = State::default();
+    /// let mut u2: State<P, E, S> = State::default();
     ///
     /// u1.cent.prim[[0,0]] = 0.0;
     /// u2.cent.prim[[0,0]] = 1.0;
@@ -574,8 +563,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
     /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u1: State<P, E, S> = State::new(&physics_config);
-    /// let mut u2: State<P, E, S> = State::new(&physics_config);
+    /// let mut u1: State<P, E, S> = State::default();
+    /// let mut u2: State<P, E, S> = State::default();
     ///
     /// u1.cent.prim[[0,0]] = 0.0;
     /// u2.cent.prim[[0,0]] = 1.0;
@@ -616,8 +605,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// set_Physics_and_E!(Euler1DIsot);
     /// const S: usize = 10;
     /// let physics_config = PhysicsConfig { adiabatic_index: 1.66, units_mode: UnitsMode::SI };
-    /// let mut u1: State<P, E, S> = State::new(&physics_config);
-    /// let mut u2: State<P, E, S> = State::new(&physics_config);
+    /// let mut u1: State<P, E, S> = State::default();
+    /// let mut u2: State<P, E, S> = State::default();
     ///
     /// u1.cent.prim[[0,0]] = 0.0;
     /// u2.cent.prim[[0,0]] = 1.0;

@@ -12,23 +12,30 @@ const LENGTH_CGS: f64 = 0.01;
 /// Mass scale in CGS units
 const MASS_CGS: f64 = 0.001;
 
-/// Enum for the different kinds of unit systems available
-#[derive(Debug, Serialize, Copy, Clone)]
+/// Enum for the different kinds of unit systems available; defaults to SI
+#[derive(Debug, Serialize, Clone, Default, PartialEq, Eq)]
 pub enum UnitsMode {
-    /// Use SI units
+    /// Use SI units (default value)
+    #[default]
     SI,
 
     /// Use CGS units
     CGS,
 }
 
+unsafe impl Send for UnitsMode {}
+unsafe impl Sync for UnitsMode {}
+
 /// Struct that serves to know the type units the simulation uses, and exposes methods to convert
 /// between different units.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Clone, Default)]
 pub struct Units {
     /// the type of units during the simulation
     mode: UnitsMode,
 }
+
+unsafe impl Send for Units {}
+unsafe impl Sync for Units {}
 
 impl Units {
     /// Builds a new `Units` object.

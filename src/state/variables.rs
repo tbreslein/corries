@@ -4,16 +4,15 @@
 
 //! Exports the [Variables] struct
 
+use crate::{errorhandling::Validation, Collectable, Data, DataName, PhysicsConfig, StructAssociation};
 use color_eyre::{
     eyre::{bail, ensure},
     Result,
 };
 use ndarray::{Array1, Array2, ArrayView1};
 
-use crate::{errorhandling::Validation, Collectable, Data, DataName, PhysicsConfig, StructAssociation};
-
 /// Contains the variables of a physics system
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Variables<const E: usize, const S: usize> {
     /// Primitive variables
     pub prim: Array2<f64>,
@@ -33,6 +32,9 @@ pub struct Variables<const E: usize, const S: usize> {
     /// Adiabatic index
     pub gamma: f64,
 }
+
+unsafe impl<const E: usize, const S: usize> Send for Variables<E,S> {}
+unsafe impl<const E: usize, const S: usize> Sync for Variables<E,S> {}
 
 impl<const E: usize, const S: usize> Variables<E, S> {
     /// Constructs a new [Variables] object

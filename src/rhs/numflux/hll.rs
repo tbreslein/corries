@@ -4,18 +4,18 @@
 
 //! Exports the [Hll] struct.
 
-use color_eyre::eyre::{bail, ensure, Context};
-use color_eyre::Result;
+use super::{calc_dflux_xi_generic, NumFlux};
+use crate::{
+    errorhandling::Validation,
+    mesh::Mesh,
+    state::Physics,
+    NumFluxConfig, State,
+};
+use color_eyre::{eyre::{bail, ensure, Context}, Result};
 use ndarray::{par_azip, s, Array1, Array2};
 
-use crate::errorhandling::Validation;
-use crate::{mesh::Mesh, state::Physics};
-use crate::{NumFluxConfig, State};
-
-use super::calc_dflux_xi_generic;
-use super::NumFlux;
-
 /// Handles calculating numerical flux using the HLL scheme with 0-order reconstruction
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Hll<const E: usize, const S: usize> {
     /// Left-side characteristics
     sl: Array1<f64>,
@@ -32,6 +32,9 @@ pub struct Hll<const E: usize, const S: usize> {
     /// Numerical flux
     flux_num: Array2<f64>,
 }
+
+unsafe impl<const E: usize, const S: usize> Send for Hll<E, S> {}
+unsafe impl<const E: usize, const S: usize> Sync for Hll<E, S> {}
 
 impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
     fn new(numflux_config: &NumFluxConfig, _: &Mesh<S>) -> Result<Self> {

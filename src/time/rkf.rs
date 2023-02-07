@@ -4,31 +4,22 @@
 
 //! Exports the [RungeKuttaFehlberg] struct
 
+use self::butchertableau::ButcherTableau;
+use super::{timestep::TimeStep, TimeSolver};
+use crate::{
+    config::CorriesConfig, errorhandling::Validation, mesh::Mesh, rhs::Rhs, state::Physics, NumFlux, State,
+    TimeIntegrationConfig,
+};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
 use ndarray::{Array2, Array3, Axis};
 
-use crate::{
-    config::CorriesConfig,
-    errorhandling::Validation,
-    // errorhandling::Validation,
-    mesh::Mesh,
-    rhs::Rhs,
-    state::Physics,
-    NumFlux,
-    State,
-    TimeIntegrationConfig,
-};
-
-use self::butchertableau::ButcherTableau;
-
-use super::{timestep::TimeStep, TimeSolver};
-
 mod butchertableau;
 
 /// Struct for solving the time integration step using Runge-Kutta-Fehlberg methods.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct RungeKuttaFehlberg<P: Physics<E, S>, const E: usize, const S: usize> {
     /// Butcher Tableau for the Runge-Kutta method
     bt: ButcherTableau,
@@ -63,6 +54,9 @@ pub struct RungeKuttaFehlberg<P: Physics<E, S>, const E: usize, const S: usize> 
     /// Stores the full intermediate solution
     utilde: State<P, E, S>,
 }
+
+unsafe impl<P: Physics<E, S>, const E: usize, const S: usize> Send for RungeKuttaFehlberg<P, E, S> {}
+unsafe impl<P: Physics<E, S>, const E: usize, const S: usize> Sync for RungeKuttaFehlberg<P, E, S> {}
 
 impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E, S> for RungeKuttaFehlberg<P, E, S> {
     /// Constructs a new [RungeKuttaFehlberg] object

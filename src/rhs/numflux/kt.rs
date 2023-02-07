@@ -4,17 +4,18 @@
 
 //! Exports the [Kt] struct.
 
-use color_eyre::eyre::{bail, ensure, Context};
-use color_eyre::Result;
+use color_eyre::{eyre::{bail, ensure, Context}, Result};
 use ndarray::{par_azip, s, Array1, Array2};
-
-use crate::directions::Direction;
-use crate::errorhandling::Validation;
-use crate::{mesh::Mesh, state::Physics};
-use crate::{LimiterMode, NumFluxConfig, State};
-
-use super::calc_dflux_xi_generic;
-use super::NumFlux;
+use crate::{
+    directions::Direction,
+    errorhandling::Validation,
+    mesh::Mesh,
+    state::Physics,
+    LimiterMode,
+    NumFluxConfig,
+    State
+};
+use super::{calc_dflux_xi_generic, NumFlux};
 
 macro_rules! min {
     ($a:expr, $b:expr) => {
@@ -36,6 +37,7 @@ macro_rules! max {
 }
 
 /// Handles calculating numerical flux using the Kurganov-Tadmor scheme
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Kt<const E: usize, const S: usize> {
     /// Left-side characteristics
     a_plus: Array1<f64>,
@@ -68,6 +70,9 @@ pub struct Kt<const E: usize, const S: usize> {
     /// distances between cell centres and the east facing cell borders
     dist_east: Array1<f64>,
 }
+
+unsafe impl<const E: usize, const S: usize> Send for Kt<E, S> {}
+unsafe impl<const E: usize, const S: usize> Sync for Kt<E, S> {}
 
 impl<const E: usize, const S: usize> NumFlux<E, S> for Kt<E, S> {
     fn new(numflux_config: &NumFluxConfig, mesh: &Mesh<S>) -> Result<Self> {

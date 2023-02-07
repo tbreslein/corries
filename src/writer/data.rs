@@ -4,15 +4,13 @@
 
 //! Exports the [Data] struct and associated enums
 
-use std::fmt;
-
+use super::DataValue;
 use ndarray::Array1;
 use serde::Serialize;
-
-use super::DataValue;
+use std::fmt;
 
 /// Represents a piece of data that can be written into an output stream
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Data {
     /// The identifier of the piece of data
     pub name: DataName,
@@ -26,6 +24,9 @@ pub struct Data {
     /// The struct that the piece of data is extracted from
     pub association: StructAssociation,
 }
+
+unsafe impl Send for Data {}
+unsafe impl Sync for Data {}
 
 impl Data {
     /// Builds a new `Data` object.
@@ -67,7 +68,7 @@ impl fmt::Display for Data {
 }
 
 /// Enumerates the different pieces of data that can be written to output
-#[derive(Debug, Serialize, Clone, Copy)]
+#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum DataName {
     // ====
     // Mesh
@@ -108,6 +109,9 @@ pub enum DataName {
     DtKind,
 }
 
+unsafe impl Send for DataName {}
+unsafe impl Sync for DataName {}
+
 /// Enumerates the different types of data that be written to output.
 ///
 /// This has overlap with corries::writer::DataValue, but I needed an enum without a payload to
@@ -127,8 +131,11 @@ pub enum DataType {
     String,
 }
 
+unsafe impl Send for DataType {}
+unsafe impl Sync for DataType {}
+
 /// Enumerates the structs / traits a `DataName` may be associated to.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StructAssociation {
     /// Value is associated with `Mesh` objects
     Mesh,
@@ -139,6 +146,9 @@ pub enum StructAssociation {
     /// Valus is associated with `TimeStep` objects
     TimeStep,
 }
+
+unsafe impl Send for StructAssociation {}
+unsafe impl Sync for StructAssociation {}
 
 impl DataName {
     /// Returns the `DataType` associated with the `DataName`.
