@@ -33,8 +33,8 @@ pub struct Variables<const E: usize, const S: usize> {
     pub gamma: f64,
 }
 
-unsafe impl<const E: usize, const S: usize> Send for Variables<E,S> {}
-unsafe impl<const E: usize, const S: usize> Sync for Variables<E,S> {}
+unsafe impl<const E: usize, const S: usize> Send for Variables<E, S> {}
+unsafe impl<const E: usize, const S: usize> Sync for Variables<E, S> {}
 
 impl<const E: usize, const S: usize> Variables<E, S> {
     /// Constructs a new [Variables] object

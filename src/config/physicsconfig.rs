@@ -4,9 +4,9 @@
 
 //! Exports [PhysicsConfig] for configuring the physics equations and conditions.
 
+use crate::{errorhandling::Validation, UnitsMode};
 use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
-use crate::{errorhandling::Validation, UnitsMode};
 
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize, Clone, Default)]

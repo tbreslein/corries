@@ -4,13 +4,13 @@
 
 //! Exports [NumericsConfig] for configuring the numerical schemes
 
+use crate::errorhandling::Validation;
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
-use serde::Serialize;
 pub use numfluxconfig::*;
-use crate::errorhandling::Validation;
+use serde::Serialize;
 
 mod numfluxconfig;
 

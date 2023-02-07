@@ -5,17 +5,17 @@
 //! Exports the [Rhs] struct that carries objects and methods for solving the right-hand side of a
 //! set of equations.
 
+pub use self::numflux::{hll::Hll, init_numflux, kt::Kt, NumFlux};
+use crate::{
+    boundaryconditions::{init_boundary_condition, BoundaryCondition},
+    errorhandling::Validation,
+    prelude::*,
+};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
 use ndarray::Array2;
-use crate::{
-    errorhandling::Validation,
-    boundaryconditions::{init_boundary_condition, BoundaryCondition},
-    prelude::*,
-};
-pub use self::numflux::{hll::Hll, init_numflux, kt::Kt, NumFlux};
 
 pub mod numflux;
 
@@ -34,8 +34,8 @@ pub struct Rhs<N: NumFlux<E, S>, const E: usize, const S: usize> {
     pub boundary_east: Box<dyn BoundaryCondition<E, S>>,
 }
 
-unsafe impl<N: NumFlux<E, S>, const E: usize, const S: usize> Send for Rhs<N,E,S> {}
-unsafe impl<N: NumFlux<E, S>, const E: usize, const S: usize> Sync for Rhs<N,E,S> {}
+unsafe impl<N: NumFlux<E, S>, const E: usize, const S: usize> Send for Rhs<N, E, S> {}
+unsafe impl<N: NumFlux<E, S>, const E: usize, const S: usize> Sync for Rhs<N, E, S> {}
 
 impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// Constructs a new [Rhs] object.

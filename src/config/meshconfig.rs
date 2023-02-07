@@ -4,9 +4,9 @@
 
 //! Exports [MeshConfig] for configuring the mesh of the simulation.
 
+use crate::errorhandling::Validation;
 use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
-use crate::errorhandling::Validation;
 
 /// Enum for the different kinds of Meshes available; defaults to cartesian mesh
 #[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]

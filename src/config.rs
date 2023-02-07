@@ -4,13 +4,13 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
+use crate::errorhandling::Validation;
 use color_eyre::{eyre::Context, Result};
-use serde::Serialize;
 pub use meshconfig::*;
 pub use numericsconfig::*;
 pub use outputconfig::*;
 pub use physicsconfig::*;
-use crate::errorhandling::Validation;
+use serde::Serialize;
 
 pub mod meshconfig;
 pub mod numericsconfig;

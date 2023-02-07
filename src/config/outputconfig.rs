@@ -4,12 +4,12 @@
 
 //! Exports [OutputConfig] for configuring the objects that write output.
 
-use color_eyre::eyre::ensure;
-use serde::Serialize;
 use crate::{
     errorhandling::Validation,
     writer::data::{DataName, DataType},
 };
+use color_eyre::eyre::ensure;
+use serde::Serialize;
 
 /// Carries information about how an `Output` is built
 #[derive(Debug, Serialize, Clone, Default)]

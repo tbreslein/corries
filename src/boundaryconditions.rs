@@ -4,8 +4,8 @@
 
 //! Exports the [BoundaryCondition] trait and [init_boundary_condition] function.
 
-use crate::{mesh::Mesh, variables::Variables, BoundaryMode, CorriesConfig, CustomBoundaryMode, Direction};
 use self::custom::CustomBoundaryConditions;
+use crate::{mesh::Mesh, variables::Variables, BoundaryMode, CorriesConfig, CustomBoundaryMode, Direction};
 
 mod custom;
 

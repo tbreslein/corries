@@ -4,9 +4,9 @@
 
 //! Exports [NumFluxConfig] for configuring the numerical flux schemes
 
+use crate::errorhandling::Validation;
 use color_eyre::{eyre::bail, Result};
 use serde::Serialize;
-use crate::errorhandling::Validation;
 
 /// Enumerates the different configurations for the different types of numerical flux schemes
 ///

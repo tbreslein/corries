@@ -4,18 +4,15 @@
 
 //! Exports the [Kt] struct.
 
-use color_eyre::{eyre::{bail, ensure, Context}, Result};
-use ndarray::{par_azip, s, Array1, Array2};
-use crate::{
-    directions::Direction,
-    errorhandling::Validation,
-    mesh::Mesh,
-    state::Physics,
-    LimiterMode,
-    NumFluxConfig,
-    State
-};
 use super::{calc_dflux_xi_generic, NumFlux};
+use crate::{
+    directions::Direction, errorhandling::Validation, mesh::Mesh, state::Physics, LimiterMode, NumFluxConfig, State,
+};
+use color_eyre::{
+    eyre::{bail, ensure, Context},
+    Result,
+};
+use ndarray::{par_azip, s, Array1, Array2};
 
 macro_rules! min {
     ($a:expr, $b:expr) => {

@@ -5,13 +5,11 @@
 //! Exports the [Hll] struct.
 
 use super::{calc_dflux_xi_generic, NumFlux};
-use crate::{
-    errorhandling::Validation,
-    mesh::Mesh,
-    state::Physics,
-    NumFluxConfig, State,
+use crate::{errorhandling::Validation, mesh::Mesh, state::Physics, NumFluxConfig, State};
+use color_eyre::{
+    eyre::{bail, ensure, Context},
+    Result,
 };
-use color_eyre::{eyre::{bail, ensure, Context}, Result};
 use ndarray::{par_azip, s, Array1, Array2};
 
 /// Handles calculating numerical flux using the HLL scheme with 0-order reconstruction

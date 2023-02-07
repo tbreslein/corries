@@ -5,8 +5,8 @@
 //! Exports [CustomBoundaryConditions] which applies a set of custom boundary conditions to a
 //! [Variables] object.
 
-use crate::{config::CustomBoundaryMode, mesh::Mesh, variables::Variables};
 use super::{BoundaryCondition, Direction};
+use crate::{config::CustomBoundaryMode, mesh::Mesh, variables::Variables};
 
 /// This is a set of boundary conditions, where the exact condition is set for each equation
 /// separately. This is useful, where you use generic boundary conditions and want to swap them out

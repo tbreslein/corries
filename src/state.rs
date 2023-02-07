@@ -4,13 +4,13 @@
 
 //! Exports the [State] struct
 
-use std::marker::PhantomData;
-use color_eyre::Result;
+use self::variables::Variables;
+pub use self::{physics::Physics, systems::*};
 use crate::{
     boundaryconditions::BoundaryCondition, directions::Direction, errorhandling::Validation, Mesh, PhysicsConfig,
 };
-pub use self::{physics::Physics, systems::*};
-use self::variables::Variables;
+use color_eyre::Result;
+use std::marker::PhantomData;
 
 pub mod physics;
 pub mod systems;
@@ -33,10 +33,10 @@ pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
     methods: PhantomData<P>,
 }
 
-unsafe impl<P: Physics<E,S>, const E: usize, const S: usize> Send for State<P,E,S> {}
-unsafe impl<P: Physics<E,S>, const E: usize, const S: usize> Sync for State<P,E,S> {}
+unsafe impl<P: Physics<E, S>, const E: usize, const S: usize> Send for State<P, E, S> {}
+unsafe impl<P: Physics<E, S>, const E: usize, const S: usize> Sync for State<P, E, S> {}
 
-impl<P: Physics<E,S>, const E: usize, const S: usize> Default for State<P,E,S> {
+impl<P: Physics<E, S>, const E: usize, const S: usize> Default for State<P, E, S> {
     fn default() -> Self {
         Self::new(&PhysicsConfig::default())
     }
@@ -69,7 +69,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
             d if d == Direction::West as u8 => &self.west,
             d if d == Direction::Cent as u8 => &self.cent,
             d if d == Direction::East as u8 => &self.east,
-            _ => panic!("called get vars with a template parameter that cannot be cast into from a Direction!")
+            _ => panic!("called get vars with a template parameter that cannot be cast into from a Direction!"),
         }
     }
 
@@ -80,7 +80,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
             d if d == Direction::West as u8 => &mut self.west,
             d if d == Direction::Cent as u8 => &mut self.cent,
             d if d == Direction::East as u8 => &mut self.east,
-            _ => panic!("called get vars with a template parameter that cannot be cast into from a Direction!")
+            _ => panic!("called get vars with a template parameter that cannot be cast into from a Direction!"),
         }
     }
 

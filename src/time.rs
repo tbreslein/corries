@@ -87,12 +87,11 @@ pub struct Time<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const 
     /// Calculates solutions for the [Physics] state
     solver: T,
 
-    // TODO: Is this still necessary?
     embedded_type: PhantomData<P>,
 }
 
-unsafe impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Send for Time<P,T,E,S> {}
-unsafe impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Sync for Time<P,T,E,S> {}
+unsafe impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Send for Time<P, T, E, S> {}
+unsafe impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Sync for Time<P, T, E, S> {}
 
 impl<P: Physics<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Time<P, T, E, S> {
     /// Constructs a new [Time] struct.
