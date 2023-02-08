@@ -14,7 +14,7 @@ use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
-use ndarray::{Array2, Array3, Axis};
+use ndarray::{s, Array2, Array3, Axis, Zip};
 
 mod butchertableau;
 
@@ -160,10 +160,9 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> RungeKuttaFehlb
         for q in 0..self.bt.order {
             self.utilde.assign(u);
             for p in 0..q {
-                self.utilde.cent.cons.assign(
-                    &(&self.utilde.cent.cons.view()
-                        - &(dt_out * self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p)).view()),
-                );
+                // PERF: This was benchmarked against using a raw index loop; performance diffs
+                // were within the error margins
+                self.utilde.cent.cons -= &(dt_out * self.bt.a[[p, q]] * &self.k_bundle.index_axis(Axis(0), p));
             }
             rhs.update(&mut self.utilde, mesh)
                 .context("Calling rhs.update while calculating k_bundle in RungeKuttaFehlberg::calc_rkf_solution")?;
@@ -173,36 +172,25 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> RungeKuttaFehlb
         // calculate high order solution
         self.utilde.cent.cons.assign(&u.cent.cons);
         for q in 0..self.bt.order {
-            self.utilde.cent.cons.assign(
-                &(&self.utilde.cent.cons.view() - dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q))
-                    .view(),
-            );
+            self.utilde.cent.cons -= &(dt_out * self.bt.b_high[q] * &self.k_bundle.index_axis(Axis(0), q));
         }
 
         if !self.solution_accepted {
             // calculate low order solution
             self.u_cons_low.assign(&u.cent.cons);
             for q in 0..self.bt.order {
-                self.utilde.cent.cons.assign(
-                    &(&self.u_cons_low - dt_out * self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q)).view(),
-                );
+                self.u_cons_low -= &(dt_out * self.bt.b_low[q] * &self.k_bundle.index_axis(Axis(0), q));
             }
 
             // calc err_new
-            self.err_new = {
-                let mut err_max = 0.0f64;
-                for j in 0..E {
-                    for i in 2..S - 2 {
-                        err_max = err_max.max(
-                            ((self.utilde.cent.cons[[j, i]] - self.u_cons_low[[j, i]])
-                                / (self.asc_relative_tolerance
-                                    * (self.utilde.cent.cons[[j, i]] + self.asc_absolute_tolerance)))
-                                .abs(),
-                        );
-                    }
-                }
-                err_max
-            };
+            let s = s![.., 2..S - 2];
+            self.err_new = Zip::from(&self.utilde.cent.cons.slice(s))
+                .and(&self.u_cons_low.slice(s))
+                .fold(0.0f64, |acc, ucons, ulow| {
+                    acc.max(
+                        ((ucons - ulow) / (self.asc_relative_tolerance * (ucons + self.asc_absolute_tolerance))).abs(),
+                    )
+                });
 
             // adjust dt
             dt_out = {
