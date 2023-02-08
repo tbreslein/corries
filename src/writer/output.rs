@@ -263,7 +263,7 @@ impl Output {
         if self.should_print_metadata {
             match self.stream_mode {
                 StreamMode::Stdout => {
-                    println!("{}", meta_data);
+                    println!("{meta_data}");
                 },
                 StreamMode::File => {
                     let full_path_string = self.file_name.clone() + "_metadata.json";
@@ -288,7 +288,7 @@ impl Output {
             .data
             .iter()
             .fold(self.leading_comment_symbol.clone(), |mut acc, name| {
-                acc += &format!("{:>width$}", format!("{}", name), width = self.width);
+                acc += &format!("{:>width$}", format!("{name}"), width = self.width);
                 acc.push(self.delimiter);
                 acc
             });

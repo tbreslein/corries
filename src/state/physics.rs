@@ -131,7 +131,7 @@ pub trait Physics<const E: usize, const S: usize> {
             // - ndarray's `assign`
             // - ndarray's `Zip`
             for i in 0..S {
-                vars.c_sound[i] = (vars.gamma * &Self::pressure(vars)[i] / &Self::rho_prim(vars)[i]).sqrt();
+                vars.c_sound[i] = (vars.gamma * Self::pressure(vars)[i] / Self::rho_prim(vars)[i]).sqrt();
             }
         }
         // isothermal case is a no-op
