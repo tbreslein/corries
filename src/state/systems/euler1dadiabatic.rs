@@ -6,8 +6,6 @@
 //! adiabatic Euler equations
 
 use color_eyre::{eyre::ensure, Result};
-use ndarray::{ArrayView2, ArrayViewMut2, Zip};
-
 use crate::{state::Physics, variables::Variables};
 
 const E: usize = 3;
@@ -74,14 +72,10 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
 
     #[inline(always)]
     fn update_flux(vars: &mut Variables<E, S>) {
-        update_flux(
-            vars.flux.view_mut(),
-            vars.prim.view(),
-            vars.cons.view(),
-            Self::JRHO,
-            Self::JXI,
-            Self::JPRESSURE,
-        );
+        for i in 0..S {
+            (vars.flux[[Self::JRHO, i]], vars.flux[[Self::JXI, i]], vars.flux[[Self::JPRESSURE, i]]) =
+                calc_flux(vars.prim[[Self::JXI, i]], vars.cons[[Self::JXI, i]], vars.prim[[Self::JPRESSURE, i]], vars.cons[[Self::JPRESSURE, i]]);
+        }
     }
 
     #[inline(always)]
@@ -93,29 +87,13 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
 
 /// Updates physical flux
 #[inline(always)]
-pub fn update_flux(
-    mut flux: ArrayViewMut2<f64>,
-    prim: ArrayView2<f64>,
-    cons: ArrayView2<f64>,
-    j_rho: usize,
-    j_xi: usize,
-    j_p: usize,
-) {
-    Zip::from(flux.row_mut(j_rho))
-        .and(cons.row(j_xi))
-        .for_each(|f, &xi_mom| *f = xi_mom);
-
-    Zip::from(flux.row_mut(j_xi))
-        .and(prim.row(j_xi))
-        .and(cons.row(j_xi))
-        .and(prim.row(j_p))
-        .for_each(|f, &xi_vel, &xi_mom, &pressure| *f = xi_vel * xi_mom + pressure);
-
-    Zip::from(flux.row_mut(j_p))
-        .and(cons.row(j_p))
-        .and(prim.row(j_p))
-        .and(prim.row(j_xi))
-        .for_each(|f, &energy, &pressure, &xi_vel| *f = (energy + pressure) * xi_vel);
+pub fn calc_flux(
+    xi_vel: f64,
+    xi_mom: f64,
+    pressure: f64,
+    energy: f64,
+) -> (f64, f64, f64) {
+    (xi_mom, xi_vel * xi_mom + pressure, (energy + pressure) * xi_vel)
 }
 
 /// Converts conservative to primitive variables

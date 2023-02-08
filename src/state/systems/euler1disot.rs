@@ -6,8 +6,6 @@
 //! isothermal Euler equations
 
 use color_eyre::{eyre::ensure, Result};
-use ndarray::{ArrayView1, ArrayView2, ArrayViewMut2, Zip};
-
 use crate::{state::Physics, variables::Variables};
 
 const E: usize = 2;
@@ -56,14 +54,10 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
 
     #[inline(always)]
     fn update_flux(vars: &mut Variables<E, S>) {
-        update_flux(
-            vars.flux.view_mut(),
-            vars.prim.view(),
-            vars.cons.view(),
-            Self::JRHO,
-            Self::JXI,
-            vars.c_sound.view(),
-        );
+        for i in 0..S {
+            (vars.flux[[Self::JRHO, i]], vars.flux[[Self::JXI, i]]) =
+                calc_flux(vars.cons[[Self::JRHO, i]], vars.prim[[Self::JXI, i]], vars.cons[[Self::JXI, i]], vars.c_sound[i])
+        }
     }
 
     #[inline(always)]
@@ -74,23 +68,13 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
 
 /// Updates physical flux
 #[inline(always)]
-pub fn update_flux(
-    mut flux: ArrayViewMut2<f64>,
-    prim: ArrayView2<f64>,
-    cons: ArrayView2<f64>,
-    j_rho: usize,
-    j_xi: usize,
-    c_sound: ArrayView1<f64>,
-) {
-    Zip::from(flux.row_mut(j_rho))
-        .and(cons.row(j_xi))
-        .for_each(|f, &xi_mom| *f = xi_mom);
-
-    Zip::from(flux.row_mut(j_xi))
-        .and(cons.row(j_rho))
-        .and(prim.row(j_xi))
-        .and(c_sound)
-        .for_each(|f, &rho, &xi_vel, &cs| *f = rho * (xi_vel * xi_vel + cs * cs));
+pub fn calc_flux(
+    rho: f64,
+    xi_vel: f64,
+    xi_mom: f64,
+    cs: f64,
+) -> (f64, f64) {
+    (xi_mom, rho * (xi_vel * xi_vel + cs * cs))
 }
 
 /// Converts conservative to primitive variables
