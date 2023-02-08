@@ -53,7 +53,7 @@ fn calc_dflux_xi_generic<const E: usize, const S: usize>(
     flux_num: &Array2<f64>,
     mesh: &Mesh<S>,
 ) {
-    // NOTE: This was benchmarked against using par_azip calls instead of regular assign calls. The
+    // PERF: This was benchmarked against using par_azip calls instead of regular assign calls. The
     // performance differences were negligable.
     let s = s![mesh.ixi_in..=mesh.ixi_out];
     let sm1 = s![mesh.ixi_in - 1..=mesh.ixi_out - 1];

@@ -5,8 +5,8 @@
 //! Exports the [Euler1DIsot] struct, which is an implementer for [Physics] for 1-dimensional
 //! isothermal Euler equations
 
-use color_eyre::{eyre::ensure, Result};
 use crate::{state::Physics, variables::Variables};
+use color_eyre::{eyre::ensure, Result};
 
 const E: usize = 2;
 
@@ -55,8 +55,12 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
     #[inline(always)]
     fn update_flux(vars: &mut Variables<E, S>) {
         for i in 0..S {
-            (vars.flux[[Self::JRHO, i]], vars.flux[[Self::JXI, i]]) =
-                calc_flux(vars.cons[[Self::JRHO, i]], vars.prim[[Self::JXI, i]], vars.cons[[Self::JXI, i]], vars.c_sound[i])
+            (vars.flux[[Self::JRHO, i]], vars.flux[[Self::JXI, i]]) = calc_flux(
+                vars.cons[[Self::JRHO, i]],
+                vars.prim[[Self::JXI, i]],
+                vars.cons[[Self::JXI, i]],
+                vars.c_sound[i],
+            )
         }
     }
 
@@ -68,12 +72,7 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
 
 /// Updates physical flux
 #[inline(always)]
-pub fn calc_flux(
-    rho: f64,
-    xi_vel: f64,
-    xi_mom: f64,
-    cs: f64,
-) -> (f64, f64) {
+pub fn calc_flux(rho: f64, xi_vel: f64, xi_mom: f64, cs: f64) -> (f64, f64) {
     (xi_mom, rho * (xi_vel * xi_vel + cs * cs))
 }
 
