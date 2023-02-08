@@ -32,26 +32,26 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
 
     #[inline(always)]
     fn update_prim(vars: &mut Variables<E, S>) {
-        cons_to_prim(
-            &mut vars.prim.view_mut(),
-            Self::JRHO,
-            Self::JXI,
-            &vars.cons.view(),
-            Self::JRHO,
-            Self::JXI,
-        );
+        // PERF: This was benchmarked between the following options:
+        // - raw index loop over columns calculating the tuple of the primitive values per column
+        // (~20% speed up over the zip)
+        // - ndarray::Zip!, where each row is calculated in a separate zip
+        for i in 0..S {
+            (vars.prim[[Self::JRHO, i]], vars.prim[[Self::JXI, i]]) =
+                cons_to_prim(vars.cons[[Self::JRHO, i]], vars.cons[[Self::JXI, i]]);
+        }
     }
 
     #[inline(always)]
     fn update_cons(vars: &mut Variables<E, S>) {
-        prim_to_cons(
-            &mut vars.cons.view_mut(),
-            Self::JRHO,
-            Self::JXI,
-            &vars.prim.view(),
-            Self::JRHO,
-            Self::JXI,
-        );
+        // PERF: This was benchmarked between the following options:
+        // - raw index loop over columns calculating the tuple of the primitive values per column
+        // (~20% speed up over the zip)
+        // - ndarray::Zip!, where each row is calculated in a separate zip
+        for i in 0..S {
+            (vars.cons[[Self::JRHO, i]], vars.cons[[Self::JXI, i]]) =
+                prim_to_cons(vars.prim[[Self::JRHO, i]], vars.prim[[Self::JXI, i]]);
+        }
     }
 
     #[inline(always)]
@@ -95,40 +95,14 @@ pub fn update_flux(
 
 /// Converts conservative to primitive variables
 #[inline(always)]
-pub fn cons_to_prim(
-    prim: &mut ArrayViewMut2<f64>,
-    j_rho_prim: usize,
-    j_xi_vel: usize,
-    cons: &ArrayView2<f64>,
-    j_rho_cons: usize,
-    j_xi_mom: usize,
-) {
-    Zip::from(prim.row_mut(j_rho_prim))
-        .and(cons.row(j_rho_cons))
-        .for_each(|rho_prim, &rho_cons| *rho_prim = rho_cons);
-    Zip::from(prim.row_mut(j_xi_vel))
-        .and(cons.row(j_xi_mom))
-        .and(cons.row(j_rho_cons))
-        .for_each(|xi_vel, &xi_mom, &rho_cons| *xi_vel = xi_mom / rho_cons);
+pub fn cons_to_prim(rho_cons: f64, xi_mom: f64) -> (f64, f64) {
+    (rho_cons, xi_mom / rho_cons)
 }
 
 /// Converts primitive to conservative variables
 #[inline(always)]
-pub fn prim_to_cons(
-    cons: &mut ArrayViewMut2<f64>,
-    j_rho_cons: usize,
-    j_xi_mom: usize,
-    prim: &ArrayView2<f64>,
-    j_rho_prim: usize,
-    j_xi_vel: usize,
-) {
-    Zip::from(cons.row_mut(j_rho_cons))
-        .and(prim.row(j_rho_prim))
-        .for_each(|rho_cons, &rho_prim| *rho_cons = rho_prim);
-    Zip::from(cons.row_mut(j_xi_mom))
-        .and(prim.row(j_xi_vel))
-        .and(prim.row(j_rho_prim))
-        .for_each(|xi_mom, &xi_vel, &rho_cons| *xi_mom = xi_vel * rho_cons);
+pub fn prim_to_cons(rho_prim: f64, xi_vel: f64) -> (f64, f64) {
+    (rho_prim, xi_vel * rho_prim)
 }
 
 /// Checks vars for inconsistency, like mass density
