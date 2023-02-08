@@ -32,32 +32,44 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
 
     #[inline(always)]
     fn update_prim(vars: &mut Variables<E, S>) {
-        cons_to_prim(
-            &mut vars.prim.view_mut(),
-            Self::JRHO,
-            Self::JXI,
-            Self::JPRESSURE,
-            &vars.cons.view(),
-            Self::JRHO,
-            Self::JXI,
-            Self::JPRESSURE,
-            vars.gamma,
-        );
+        // PERF: This was benchmarked between the following options:
+        // - raw index loop over columns calculating the tuple of the primitive values per column
+        // (~20% speed up over the zip)
+        // - ndarray::Zip!, where each row is calculated in a separate zip
+
+        for i in 0..S {
+            (
+                vars.prim[[Self::JRHO, i]],
+                vars.prim[[Self::JXI, i]],
+                vars.prim[[Self::JPRESSURE, i]],
+            ) = cons_to_prim(
+                vars.cons[[Self::JRHO, i]],
+                vars.cons[[Self::JXI, i]],
+                vars.cons[[Self::JPRESSURE, i]],
+                vars.gamma,
+            );
+        }
     }
 
     #[inline(always)]
     fn update_cons(vars: &mut Variables<E, S>) {
-        prim_to_cons(
-            &mut vars.cons.view_mut(),
-            Self::JRHO,
-            Self::JXI,
-            Self::JPRESSURE,
-            &vars.prim.view(),
-            Self::JRHO,
-            Self::JXI,
-            Self::JPRESSURE,
-            vars.gamma,
-        );
+        // PERF: This was benchmarked between the following options:
+        // - raw index loop over columns calculating the tuple of the primitive values per column
+        // (~20% speed up over the zip)
+        // - ndarray::Zip!, where each row is calculated in a separate zip
+
+        for i in 0..S {
+            (
+                vars.cons[[Self::JRHO, i]],
+                vars.cons[[Self::JXI, i]],
+                vars.cons[[Self::JPRESSURE, i]],
+            ) = prim_to_cons(
+                vars.prim[[Self::JRHO, i]],
+                vars.prim[[Self::JXI, i]],
+                vars.prim[[Self::JPRESSURE, i]],
+                vars.gamma,
+            );
+        }
     }
 
     #[inline(always)]
@@ -108,48 +120,24 @@ pub fn update_flux(
 
 /// Converts conservative to primitive variables
 #[inline(always)]
-pub fn cons_to_prim(
-    prim: &mut ArrayViewMut2<f64>,
-    j_rho_prim: usize,
-    j_xi_vel: usize,
-    j_pressure: usize,
-    cons: &ArrayView2<f64>,
-    j_rho_cons: usize,
-    j_xi_mom: usize,
-    j_energy: usize,
-    gamma: f64,
-) {
-    super::euler1disot::cons_to_prim(prim, j_rho_prim, j_xi_vel, cons, j_rho_cons, j_xi_mom);
-    Zip::from(prim.row_mut(j_pressure))
-        .and(cons.row(j_energy))
-        .and(cons.row(j_rho_cons))
-        .and(cons.row(j_xi_mom))
-        .for_each(|pressure, &energy, &rho_cons, &xi_mom| {
-            *pressure = (gamma - 1.0) * (energy - 0.5 / rho_cons * xi_mom * xi_mom)
-        });
+pub fn cons_to_prim(rho_cons: f64, xi_mom: f64, energy: f64, gamma: f64) -> (f64, f64, f64) {
+    let (rho_prim, xi_vel) = super::euler1disot::cons_to_prim(rho_cons, xi_mom);
+    (
+        rho_prim,
+        xi_vel,
+        (gamma - 1.0) * (energy - 0.5 / rho_cons * xi_mom * xi_mom),
+    )
 }
 
 /// Converts primitive to conservative variables
 #[inline(always)]
-pub fn prim_to_cons(
-    cons: &mut ArrayViewMut2<f64>,
-    j_rho_cons: usize,
-    j_xi_mom: usize,
-    j_energy: usize,
-    prim: &ArrayView2<f64>,
-    j_rho_prim: usize,
-    j_xi_vel: usize,
-    j_pressure: usize,
-    gamma: f64,
-) {
-    super::euler1disot::prim_to_cons(cons, j_rho_cons, j_xi_mom, prim, j_rho_prim, j_xi_vel);
-    Zip::from(cons.row_mut(j_energy))
-        .and(prim.row(j_pressure))
-        .and(prim.row(j_rho_prim))
-        .and(prim.row(j_xi_vel))
-        .for_each(|energy, &pressure, &rho_prim, &xi_vel| {
-            *energy = pressure * (gamma - 1.0).recip() + 0.5 * rho_prim * xi_vel * xi_vel
-        });
+pub fn prim_to_cons(rho_prim: f64, xi_vel: f64, pressure: f64, gamma: f64) -> (f64, f64, f64) {
+    let (rho_cons, xi_mom) = super::euler1disot::prim_to_cons(rho_prim, xi_vel);
+    (
+        rho_cons,
+        xi_mom,
+        pressure * (gamma - 1.0).recip() + 0.5 * rho_prim * xi_vel * xi_vel,
+    )
 }
 
 /// Checks vars for inconsistency, like negative pressure
