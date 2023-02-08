@@ -5,8 +5,8 @@
 //! Exports the [Euler1DAdiabatic] struct, which is an implementer for [Physics] for 1-dimensional
 //! adiabatic Euler equations
 
-use color_eyre::{eyre::ensure, Result};
 use crate::{state::Physics, variables::Variables};
+use color_eyre::{eyre::ensure, Result};
 
 const E: usize = 3;
 
@@ -73,8 +73,16 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
     #[inline(always)]
     fn update_flux(vars: &mut Variables<E, S>) {
         for i in 0..S {
-            (vars.flux[[Self::JRHO, i]], vars.flux[[Self::JXI, i]], vars.flux[[Self::JPRESSURE, i]]) =
-                calc_flux(vars.prim[[Self::JXI, i]], vars.cons[[Self::JXI, i]], vars.prim[[Self::JPRESSURE, i]], vars.cons[[Self::JPRESSURE, i]]);
+            (
+                vars.flux[[Self::JRHO, i]],
+                vars.flux[[Self::JXI, i]],
+                vars.flux[[Self::JPRESSURE, i]],
+            ) = calc_flux(
+                vars.prim[[Self::JXI, i]],
+                vars.cons[[Self::JXI, i]],
+                vars.prim[[Self::JPRESSURE, i]],
+                vars.cons[[Self::JPRESSURE, i]],
+            );
         }
     }
 
@@ -87,12 +95,7 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
 
 /// Updates physical flux
 #[inline(always)]
-pub fn calc_flux(
-    xi_vel: f64,
-    xi_mom: f64,
-    pressure: f64,
-    energy: f64,
-) -> (f64, f64, f64) {
+pub fn calc_flux(xi_vel: f64, xi_mom: f64, pressure: f64, energy: f64) -> (f64, f64, f64) {
     (xi_mom, xi_vel * xi_mom + pressure, (energy + pressure) * xi_vel)
 }
 
