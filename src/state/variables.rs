@@ -31,6 +31,9 @@ pub struct Variables<const E: usize, const S: usize> {
 
     /// Adiabatic index
     pub gamma: f64,
+
+    /// Helper vector that only contains zeros
+    zero_vec: Array1<f64>,
 }
 
 unsafe impl<const E: usize, const S: usize> Send for Variables<E, S> {}
@@ -46,7 +49,16 @@ impl<const E: usize, const S: usize> Variables<E, S> {
             eigen_vals: Array2::zeros((E, S)),
             flux: Array2::zeros((E, S)),
             gamma: physics_config.adiabatic_index,
+            zero_vec: Array1::zeros(S),
         }
+    }
+
+    /// Accessor function for zero_vec
+    ///
+    /// zero_vec should not be mutable, so access is restricted to this function that only gives
+    /// you an immutable view.
+    pub fn zero_vec(&self) -> ArrayView1<f64> {
+        self.zero_vec.view()
     }
 
     /// Assign the fields of rhs to self.
