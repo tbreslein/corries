@@ -5,7 +5,7 @@
 //! Exports the [Physics] trait which defines the behavior embedded in objects
 
 use color_eyre::{eyre::bail, Result};
-use ndarray::{ArrayView1, Zip};
+use ndarray::{ArrayView1, ArrayViewMut1, Zip};
 
 use crate::{boundaryconditions::BoundaryCondition, variables::Variables, Mesh};
 
@@ -35,6 +35,78 @@ pub trait Physics<const E: usize, const S: usize> {
 
     /// Construct a new Physics object
     fn new() -> Self;
+
+    /// todo
+    fn rho_prim(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JRHO < usize::MAX {
+            vars.prim.row(Self::JRHO)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn rho_cons(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JRHO < usize::MAX {
+            vars.cons.row(Self::JRHO)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn xi_vel(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JXI < usize::MAX {
+            vars.prim.row(Self::JXI)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn xi_mom(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JXI < usize::MAX {
+            vars.cons.row(Self::JXI)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn eta_vel(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JETA < usize::MAX {
+            vars.prim.row(Self::JETA)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn eta_mom(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JETA < usize::MAX {
+            vars.cons.row(Self::JETA)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn pressure(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JPRESSURE < usize::MAX {
+            vars.prim.row(Self::JPRESSURE)
+        } else {
+            vars.zero_vec()
+        }
+    }
+
+    /// todo
+    fn energy(vars: &Variables<E, S>) -> ArrayView1<f64> {
+        if Self::JPRESSURE < usize::MAX {
+            vars.cons.row(Self::JPRESSURE)
+        } else {
+            vars.zero_vec()
+        }
+    }
 
     /// Updates primitive variables in vars.prim
     fn update_prim(vars: &mut Variables<E, S>);
