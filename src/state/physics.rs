@@ -5,7 +5,7 @@
 //! Exports the [Physics] trait which defines the behavior embedded in objects
 
 use color_eyre::{eyre::bail, Result};
-use ndarray::{ArrayView1, ArrayViewMut1, Zip};
+use ndarray::{ArrayView1, Zip};
 
 use crate::{boundaryconditions::BoundaryCondition, variables::Variables, Mesh};
 
