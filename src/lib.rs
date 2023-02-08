@@ -144,7 +144,7 @@ fn print_banner() {
     println!("# ****************************************");
     println!("# Corries - corrosive Riemann solver ");
     println!("# ");
-    println!("# Version: {}", VERSION);
+    println!("# Version: {VERSION}");
     println!("# Copyright (c) 2022-2023");
     println!("# Author: tbreslein <github.com/tbreslein>");
     println!("# License: MIT");

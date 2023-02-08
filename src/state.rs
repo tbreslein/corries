@@ -589,7 +589,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// assert_eq!(u1.east.prim[[0,0]], 3.0);
     /// ```
     pub fn assign_vars_d<const D: u8>(&mut self, rhs: &Self) {
-        self.get_vars_mut::<D>().assign(&rhs.get_vars::<D>());
+        self.get_vars_mut::<D>().assign(rhs.get_vars::<D>());
     }
 
     /// Assigns the fields of rhs to self for cell centric values
