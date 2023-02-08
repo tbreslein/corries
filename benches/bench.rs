@@ -119,7 +119,7 @@ fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E
 }
 
 pub fn noh_hll_run(c: &mut Criterion) {
-    let mut group = c.benchmark_group("noh_run");
+    let mut group = c.benchmark_group("noh_hll_run");
 
     set_Physics_and_E!(Euler1DAdiabatic);
     let config = get_config(NumFluxConfig::Hll);
@@ -139,7 +139,7 @@ pub fn noh_hll_run(c: &mut Criterion) {
 }
 
 pub fn noh_kt_run(c: &mut Criterion) {
-    let mut group = c.benchmark_group("noh_run");
+    let mut group = c.benchmark_group("noh_kt_run");
 
     set_Physics_and_E!(Euler1DAdiabatic);
     let config = get_config(NumFluxConfig::Kt {
