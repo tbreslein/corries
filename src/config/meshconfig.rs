@@ -8,11 +8,10 @@ use crate::errorhandling::Validation;
 use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
 
-/// Enum for the different kinds of Meshes available; defaults to cartesian mesh
-#[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
+/// Enum for the different kinds of Meshes available
+#[derive(Debug, Serialize, Copy, Clone, PartialEq, Eq)]
 pub enum MeshMode {
-    /// Cartesian mesh (default)
-    #[default]
+    /// Cartesian mesh
     Cartesian,
 }
 
@@ -20,7 +19,7 @@ unsafe impl Send for MeshMode {}
 unsafe impl Sync for MeshMode {}
 
 /// Carries information about how the mesh should shaped
-#[derive(Debug, Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone)]
 pub struct MeshConfig {
     /// The type of Mesh that should constructed
     pub mode: MeshMode,
@@ -33,6 +32,31 @@ pub struct MeshConfig {
 
     /// Ratio in terms of radial thickness between the massive disk and the computational area
     pub ratio_disk: f64,
+}
+
+impl MeshConfig {
+    /// Sets up a MeshConfig that can be used for most Riemann tests, which uses a Cartesian mesh
+    /// with coordinate boundaries set to 1.0 and 2.0, and ratio_disk set to 1.0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// let meshconfig = MeshConfig::default_riemann_test();
+    /// assert_eq!(meshconfig.mode, MeshMode::Cartesian);
+    /// assert_eq!(meshconfig.xi_in, 1.0);
+    /// assert_eq!(meshconfig.xi_out, 2.0);
+    /// assert_eq!(meshconfig.ratio_disk, 1.0);
+    /// ```
+    pub fn default_riemann_test() -> Self {
+        Self {
+            mode: MeshMode::Cartesian,
+            xi_in: 1.0,
+            xi_out: 2.0,
+            ratio_disk: 1.0,
+        }
+    }
 }
 
 unsafe impl Send for MeshConfig {}

@@ -4,7 +4,7 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
-use crate::errorhandling::Validation;
+use crate::{errorhandling::Validation, NumFlux};
 use color_eyre::{eyre::Context, Result};
 pub use meshconfig::*;
 pub use numericsconfig::*;
@@ -67,7 +67,7 @@ unsafe impl Sync for CustomBoundaryMode {}
 ///
 /// This struct is used in the beginning of a run to initialise all the runtime-objects that are
 /// used throughout the simulation.
-#[derive(Debug, Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone)]
 pub struct CorriesConfig {
     /// Whether to print the Corries banner to stdout
     pub print_banner: bool,
@@ -97,6 +97,44 @@ pub struct CorriesConfig {
 
 unsafe impl Send for CorriesConfig {}
 unsafe impl Sync for CorriesConfig {}
+
+impl CorriesConfig {
+    /// Sets up a default CorriesConfig that can be used by most Riemann tests.
+    ///
+    /// TODO: add asserts to the example
+    ///
+    /// # Arguments
+    ///
+    /// * `t_end` - The time coordinate at which the simulation is terminated
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// // set up constants
+    /// set_Physics_and_E!(Euler1DAdiabatic);
+    /// const S: usize = 100;
+    /// type N = Hll<E,S>;
+    ///
+    /// let t_end = 0.5;
+    ///
+    /// // define the config instance
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end);
+    /// ```
+    pub fn default_riemann_test<N: NumFlux<E,S> + 'static, const E: usize, const S: usize>(t_end: f64) -> Self {
+        Self {
+            print_banner: false,
+            mesh_config: MeshConfig::default_riemann_test(),
+            physics_config: PhysicsConfig::default(),
+            boundary_condition_west: BoundaryMode::NoGradients,
+            boundary_condition_east: BoundaryMode::NoGradients,
+            numerics_config: NumericsConfig::default_riemann_test::<N, E, S>(t_end),
+            output_counter_max: 1,
+            writer_config: vec![],
+        }
+    }
+}
 
 impl Validation for CorriesConfig {
     fn validate(&self) -> Result<()> {

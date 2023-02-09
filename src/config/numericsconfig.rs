@@ -4,105 +4,22 @@
 
 //! Exports [NumericsConfig] for configuring the numerical schemes
 
-use crate::errorhandling::Validation;
+use std::any::TypeId;
+
+use crate::{errorhandling::Validation, Hll, NumFlux};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
 pub use numfluxconfig::*;
+pub use timeintegrationconfig::*;
 use serde::Serialize;
 
 mod numfluxconfig;
-
-/// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
-///
-/// Defaults to SSPRK5
-#[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
-pub enum RKFMode {
-    /// Runge-Kutta 1
-    RK1,
-
-    /// Runge-Kutta 2
-    RK2,
-
-    /// Runge-Kutta 3
-    RK3,
-
-    /// Runge-Kutta 4
-    RK4,
-
-    /// Second-order Heun
-    Heun2,
-
-    /// Runge-Kutta-Fehlberg 1(2)
-    RKF12,
-
-    /// Runge-Kutta-Fehlberg 4(5)
-    RKF45,
-
-    /// Strong stability preserving Runge-Kutta 3
-    SSPRK3,
-
-    /// Strong stability preserving Runge-Kutta 5
-    #[default]
-    SSPRK5,
-}
-
-unsafe impl Send for RKFMode {}
-unsafe impl Sync for RKFMode {}
-
-/// Enumerates the different types of configuration for time integration schemes
-///
-/// Defaults to Rkf.
-///
-/// TODO: Export this into its own module
-#[derive(Debug, Serialize, Copy, Clone)]
-pub enum TimeIntegrationConfig {
-    /// Runge-Kutta-Fehlberg
-    Rkf(RkfConfig),
-}
-
-unsafe impl Send for TimeIntegrationConfig {}
-unsafe impl Sync for TimeIntegrationConfig {}
-
-impl Default for TimeIntegrationConfig {
-    fn default() -> Self {
-        Self::Rkf(RkfConfig::default())
-    }
-}
-
-impl Validation for TimeIntegrationConfig {
-    fn validate(&self) -> Result<()> {
-        match self {
-            TimeIntegrationConfig::Rkf(c) => c.validate().context("Validating RkfConfig"),
-        }
-    }
-}
-
-/// Configures the Runge-Kutta-Fehlberg scheme
-#[derive(Debug, Serialize, Copy, Clone, Default)]
-pub struct RkfConfig {
-    /// Type of RKF scheme to use
-    pub rkf_mode: RKFMode,
-
-    /// Whether to use automated time step control
-    pub asc: bool,
-
-    /// Relative tolerance for automated time step control
-    pub asc_relative_tolerance: f64,
-
-    /// Absolte tolerance for automated time step control
-    pub asc_absolute_tolerance: f64,
-
-    /// Timestep "friction" for automated time step control
-    pub asc_timestep_friction: f64,
-}
-
-unsafe impl Send for RkfConfig {}
-unsafe impl Sync for RkfConfig {}
+mod timeintegrationconfig;
 
 /// Carries information about how the mesh should shaped
-#[derive(Debug, Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone)]
 pub struct NumericsConfig {
     /// Configures the numerical flux schemes
     pub numflux_config: NumFluxConfig,
@@ -127,6 +44,62 @@ pub struct NumericsConfig {
 
     /// CFL parameter
     pub dt_cfl_param: f64,
+}
+
+impl NumericsConfig {
+    /// Sets up a NumericsConfig for most Riemann tests.
+    ///
+    /// It needs to be passed the type of NumFlux for the simulation as a template parameter so
+    /// that the `numflux_config` field can be set accordingly.
+    /// It also sets up the default Runge-Kutta-Fehlberg setup.
+    ///
+    /// You can check the other defaults that are being set by checking the asserts in the example.
+    ///
+    /// # Arguments
+    ///
+    /// * `t_end` - The time coordinate at which to terminate the simulation
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// // set up constants
+    /// set_Physics_and_E!(Euler1DAdiabatic);
+    /// const S: usize = 100;
+    /// type N = Kt<E,S>;
+    ///
+    /// let t_end = 1.0;
+    ///
+    /// // define the config instance
+    /// let numerics_config = NumericsConfig::default_riemann_test::<N, E, S>(t_end);
+    ///
+    /// assert_eq!(numerics_config.numflux_config, NumFluxConfig::Kt { limiter_mode: LimiterMode::VanLeer });
+    /// assert_eq!(numerics_config.iter_max, usize::MAX - 2);
+    /// assert_eq!(numerics_config.t0, 0.0);
+    /// assert_eq!(numerics_config.t_end, t_end);
+    /// assert_eq!(numerics_config.dt_min, 1.0e-12);
+    /// assert_eq!(numerics_config.dt_max, f64::MAX);
+    /// assert_eq!(numerics_config.dt_cfl_param, 0.4);
+    /// ```
+    pub fn default_riemann_test<N: NumFlux<E,S> + 'static, const E: usize, const S: usize>(t_end: f64) -> Self {
+        Self {
+            numflux_config: if TypeId::of::<N>() == TypeId::of::<Hll<E, S>>() {
+                NumFluxConfig::Hll
+            } else {
+                NumFluxConfig::Kt {
+                    limiter_mode: LimiterMode::VanLeer,
+                }
+            },
+            time_integration_config: TimeIntegrationConfig::default_rkf(),
+            iter_max: usize::MAX - 2,
+            t0: 0.0,
+            t_end,
+            dt_min: 1.0e-12,
+            dt_max: f64::MAX,
+            dt_cfl_param: 0.4,
+        }
+    }
 }
 
 unsafe impl Send for NumericsConfig {}
@@ -157,27 +130,6 @@ impl Validation for NumericsConfig {
         self.time_integration_config
             .validate()
             .context("Validating config.numericsconfig.time_integration_config")?;
-        Ok(())
-    }
-}
-
-impl Validation for RkfConfig {
-    fn validate(&self) -> Result<()> {
-        ensure!(
-            self.asc_absolute_tolerance > 0.0,
-            "This must hold: asc_absolute_tolerance > 0.0 ! Got {}",
-            self.asc_absolute_tolerance
-        );
-        ensure!(
-            self.asc_relative_tolerance > 0.0,
-            "This must hold: asc_relative_tolerance > 0.0 ! Got {}",
-            self.asc_relative_tolerance
-        );
-        ensure!(
-            self.asc_timestep_friction > 0.0,
-            "This must hold: asc_timestep_friction > 0.0 ! Got {}",
-            self.asc_timestep_friction
-        );
         Ok(())
     }
 }
