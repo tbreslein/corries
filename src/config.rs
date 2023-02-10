@@ -18,7 +18,7 @@ pub mod outputconfig;
 pub mod physicsconfig;
 
 /// Enumerates the different boundary conditions
-#[derive(Debug, Serialize, Clone, Default)]
+#[derive(Debug, Serialize, Clone, Default, PartialEq)]
 pub enum BoundaryMode {
     /// Set of custom boundary conditions applied to each variable (default)
     Custom(Vec<(usize, CustomBoundaryMode)>),
@@ -101,11 +101,20 @@ unsafe impl Sync for CorriesConfig {}
 impl CorriesConfig {
     /// Sets up a default CorriesConfig that can be used by most Riemann tests.
     ///
-    /// TODO: add asserts to the example
+    /// Check the asserts in the example, as well as the docs for the following methods to see the
+    /// full config:
+    ///
+    /// * `MeshConfig::default_riemann_test`
+    /// * `PhysicsConfig::default`
+    /// * `NumericsConfig::default_riemann_test`
+    /// * `OutputConfig::default_stdout`
+    /// * `OutputConfig::default_file`
     ///
     /// # Arguments
     ///
     /// * `t_end` - The time coordinate at which the simulation is terminated
+    /// * `folder_name` - The folder to write the file output to
+    /// * `file_name` - The base name of the files that output is being written to
     ///
     /// # Examples
     ///
@@ -118,11 +127,17 @@ impl CorriesConfig {
     /// type N = Hll<E,S>;
     ///
     /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
     ///
     /// // define the config instance
-    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end);
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    /// assert_eq!(config.print_banner, false);
+    /// assert_eq!(config.boundary_condition_west, BoundaryMode::NoGradients);
+    /// assert_eq!(config.boundary_condition_east, BoundaryMode::NoGradients);
+    /// assert_eq!(config.output_counter_max, 1);
     /// ```
-    pub fn default_riemann_test<N: NumFlux<E,S> + 'static, const E: usize, const S: usize>(t_end: f64) -> Self {
+    pub fn default_riemann_test<N: NumFlux<E,S> + 'static, const E: usize, const S: usize>(t_end: f64, folder_name: &str, file_name: &str) -> Self {
         Self {
             print_banner: false,
             mesh_config: MeshConfig::default_riemann_test(),
@@ -131,7 +146,7 @@ impl CorriesConfig {
             boundary_condition_east: BoundaryMode::NoGradients,
             numerics_config: NumericsConfig::default_riemann_test::<N, E, S>(t_end),
             output_counter_max: 1,
-            writer_config: vec![],
+            writer_config: vec![OutputConfig::default_stdout(), OutputConfig::default_file(folder_name, file_name, E)],
         }
     }
 }
