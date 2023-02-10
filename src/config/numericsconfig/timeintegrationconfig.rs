@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [NumFluxConfig] for configuring the numerical flux schemes
+//! Exports [TimeIntegrationConfig] for configuring the numerical flux schemes
 
 use crate::errorhandling::Validation;
 use color_eyre::{
@@ -14,8 +14,6 @@ use serde::Serialize;
 /// Enumerates the different types of configuration for time integration schemes
 ///
 /// Defaults to Rkf.
-///
-/// TODO: Export this into its own module
 #[derive(Debug, Serialize, Copy, Clone)]
 pub enum TimeIntegrationConfig {
     /// Runge-Kutta-Fehlberg
