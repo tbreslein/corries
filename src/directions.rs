@@ -2,13 +2,13 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports the [Directions] enum
+//! Exports the [Direction] enum
 
 use serde::Serialize;
 
 /// Enumerates the different directions inside a cell we can pull values from
 ///
-/// Defaults to Cent
+/// Defaults to `Direction::Cent`
 #[repr(u8)]
 #[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
 pub enum Direction {
