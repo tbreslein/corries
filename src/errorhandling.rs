@@ -2,6 +2,9 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+//! Contains everything regarding error handling, and exports the [Validation] trait as well as the
+//! [checks] module.
+
 use color_eyre::Result;
 
 #[macro_use]
