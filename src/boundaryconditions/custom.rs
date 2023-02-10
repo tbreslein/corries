@@ -52,6 +52,16 @@ impl<const E: usize, const S: usize> BoundaryCondition<E, S> for CustomBoundaryC
 
 impl CustomBoundaryConditions {
     /// Constructs a new [CustomBoundaryConditions] object
+    ///
+    /// # Arguments
+    ///
+    /// * `direction` - Sets whether this set of custom conditions is used for the west or east end
+    /// of the computational area.
+    /// * `modes` - Vector of pairs that pair up an equation index with a cusotm boundary condition
+    ///
+    /// # Panics
+    ///
+    /// Panics if `direction` is set to `Direction::Cent`.
     pub fn new(direction: Direction, modes: &[(usize, CustomBoundaryMode)]) -> Self {
         Self {
             direction,
