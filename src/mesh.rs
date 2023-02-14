@@ -14,6 +14,8 @@ use ndarray::Array1;
 
 /// The Mesh the simulation runs on.
 ///
+/// The template argument defines the number of cells in the mesh.
+///
 /// This struct contains general information about the current mesh, like the number of cells,
 /// and special indexes like the first non-ghost-cell cell index, but also vectors containing the
 /// distance between each cell and the origin, or the geometric scales per cell.
@@ -202,11 +204,11 @@ unsafe impl<const S: usize> Send for Mesh<S> {}
 unsafe impl<const S: usize> Sync for Mesh<S> {}
 
 impl<const S: usize> Mesh<S> {
-    /// Builds a new `color_eyre::Result<Mesh>` object.
+    /// Builds a new [`color_eyre::Result<Mesh>`] object.
     ///
     /// # Arguments
     ///
-    /// * `meshconf` - `MeshConfig` containing configuration to build `Mesh` objects
+    /// * `meshconf` - [MeshConfig] containing configuration to build [Mesh] objects
     ///
     /// # Examples
     ///
