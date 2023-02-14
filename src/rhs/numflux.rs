@@ -15,7 +15,7 @@ pub use self::{hll::Hll, kt::Kt};
 
 /// Trait for structs that can calculate numerical flux
 pub trait NumFlux<const E: usize, const S: usize> {
-    /// construct a new trait object
+    /// construct a new [NumFlux] trait object
     fn new(numflux_config: &NumFluxConfig, mesh: &Mesh<S>) -> Result<Self>
     where
         Self: Sized;
