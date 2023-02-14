@@ -28,16 +28,16 @@ pub mod writer;
 
 /// Exports everything you need to run a corries simulation. This includes the following modules
 ///
-/// - [config]
-/// - [directions]
-/// - [mesh]
-/// - [physics]
-/// - [rhs]
-/// - [time]
-/// - [units]
-/// - [writer]
+/// - [corries::config](crate::config)
+/// - [corries::directions](crate::directions)
+/// - [corries::mesh](crate::mesh)
+/// - [corries::physics](crate::physics)
+/// - [corries::rhs](crate::rhs)
+/// - [corries::time](crate::time)
+/// - [corries::units](crate::units)
+/// - [corries::writer](crate::writer)
 ///
-/// as well as the [set_Physics_and_E] macro, and the [run_corries] function
+/// as well as the [set_Physics_and_E] macro, and the [run_corries], and [init_corries] function.
 pub mod prelude {
     pub use crate::config::*;
     pub use crate::directions::*;
@@ -62,7 +62,7 @@ type CorriesComponents<P, N, T, const E: usize, const S: usize> =
 ///
 /// Apart from the `config` argument, the important bits that also help configuring the simulation
 /// are the template Parameters. For example, the type you pass as the first template argument
-/// determines the type of `Physics` used throughout the whole simulation!
+/// determines the type of [Physics] used throughout the whole simulation!
 ///
 /// # Arguments
 ///
@@ -121,8 +121,8 @@ where
 ///
 /// This assumes that you already set your initial conditions in `u` and that it is fully
 /// up-to-date.
-/// During the run, [writer] will be writing output according to your specifications when you wrote
-/// the [CorriesConfig] struct to configure everthing.
+/// During the run, `writer` will be writing output according to your specifications when you wrote
+/// the [CorriesConfig] struct.
 ///
 /// # Arguments
 ///
