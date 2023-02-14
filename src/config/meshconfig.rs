@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [MeshConfig] for configuring the mesh of the simulation.
+//! Exports [MeshConfig] for configuring the [Mesh](crate::mesh::Mesh) of the simulation.
 
 use crate::errorhandling::Validation;
 use color_eyre::{eyre::ensure, Result};

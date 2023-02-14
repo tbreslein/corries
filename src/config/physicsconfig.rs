@@ -2,13 +2,18 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [PhysicsConfig] for configuring the physics equations and conditions.
+//! Exports [PhysicsConfig] for configuring [Physics](crate::state::Physics) objects.
 
 use crate::{errorhandling::Validation, UnitsMode};
 use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
 
-/// Carries information about how the mesh should shaped
+/// Carries information about how to construct [Physics](crate::state::Physics) objects.
+///
+/// Defaults to setting:
+///
+/// * `adiabatic_index` to 5.0 / 3.0
+/// * `units_mode` to [UnitsMode::default()]
 #[derive(Debug, Serialize, Clone)]
 pub struct PhysicsConfig {
     /// Ratio of specific heats

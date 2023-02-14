@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [NumericsConfig] for configuring the numerical schemes
+//! Exports [NumericsConfig] for configuring [NumFlux] and [Time](crate::time::Time) objects
 
 use std::any::TypeId;
 
@@ -21,10 +21,10 @@ mod timeintegrationconfig;
 /// Carries information about how the mesh should shaped
 #[derive(Debug, Serialize, Clone)]
 pub struct NumericsConfig {
-    /// Configures the numerical flux schemes
+    /// Configures [NumFlux] objects
     pub numflux_config: NumFluxConfig,
 
-    /// The type of time integration scheme to use
+    /// Configures [TimeSolver](crate::time::TimeSolver)
     pub time_integration_config: TimeIntegrationConfig,
 
     /// Maximum number of time step iterations throughout the simulation
@@ -47,9 +47,9 @@ pub struct NumericsConfig {
 }
 
 impl NumericsConfig {
-    /// Sets up a NumericsConfig for most Riemann tests.
+    /// Sets up a [NumericsConfig] for most Riemann tests.
     ///
-    /// It needs to be passed the type of NumFlux for the simulation as a template parameter so
+    /// It needs to be passed the type of [NumFlux] for the simulation as a template parameter so
     /// that the `numflux_config` field can be set accordingly.
     /// It also sets up the default Runge-Kutta-Fehlberg setup.
     ///
