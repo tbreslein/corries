@@ -57,11 +57,12 @@ impl CustomBoundaryConditions {
     ///
     /// * `direction` - Sets whether this set of custom conditions is used for the west or east end
     /// of the computational area.
-    /// * `modes` - Vector of pairs that pair up an equation index with a cusotm boundary condition
+    /// * `modes` - Vector of pairs that pair up a [usize] equation index with a
+    /// [CustomBoundaryMode]
     ///
     /// # Panics
     ///
-    /// Panics if `direction` is set to `Direction::Cent`.
+    /// Panics if `direction` is set to [Direction::Cent].
     pub fn new(direction: Direction, modes: &[(usize, CustomBoundaryMode)]) -> Self {
         Self {
             direction,

@@ -11,12 +11,12 @@ mod custom;
 
 /// Identifies an object that can apply boundary condition to a [Variables] object
 pub trait BoundaryCondition<const E: usize, const S: usize> {
-    /// Applies the boundary condition to the primitive variables.
+    /// Applies the [BoundaryCondition] to the primitive variables.
     ///
     /// # Arguments
     ///
-    /// * `vars` - The set of variables to apply the condition to
-    /// * `mesh` - The mesh for the simulation
+    /// * `vars` - The set of [Variables] to apply the condition to
+    /// * `mesh` - The [Mesh] for the simulation
     fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>);
 }
 
@@ -31,7 +31,7 @@ pub trait BoundaryCondition<const E: usize, const S: usize> {
 ///
 /// # Panics
 ///
-/// Panics if `direction` is set to `Direction::Cent`.
+/// Panics if `direction` is set to [Direction::Cent].
 ///
 /// # Examples
 ///
