@@ -207,6 +207,15 @@ impl<const S: usize> Mesh<S> {
     /// # Arguments
     ///
     /// * `meshconf` - `MeshConfig` containing configuration to build `Mesh` objects
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// const S: usize = 100;
+    /// let mesh: Mesh<S> = Mesh::<S>::new(&MeshConfig::default_riemann_test()).unwrap();
+    /// ```
     pub fn new(meshconf: &MeshConfig) -> Result<Mesh<S>> {
         let mode = meshconf.mode;
         let is_logarithmic = match mode {
