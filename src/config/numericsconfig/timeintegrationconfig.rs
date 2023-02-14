@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [TimeIntegrationConfig] for configuring the numerical flux schemes
+//! Exports [TimeIntegrationConfig] for configuring [TimeSolver](crate::time::TimeSolver) objects.
 
 use crate::errorhandling::Validation;
 use color_eyre::{
@@ -11,12 +11,13 @@ use color_eyre::{
 };
 use serde::Serialize;
 
-/// Enumerates the different types of configuration for time integration schemes
-///
-/// Defaults to Rkf.
+/// Enumerates the different types of configuration [TimeSolver](crate::time::TimeSolver) objects.
 #[derive(Debug, Serialize, Copy, Clone)]
 pub enum TimeIntegrationConfig {
-    /// Runge-Kutta-Fehlberg
+    /// Configuration for the Runge-Kutta-Fehlberg solver, i.e.
+    /// [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg).
+    ///
+    /// The payload for this variant is a [RkfConfig] object.
     Rkf(RkfConfig),
 }
 
@@ -24,8 +25,9 @@ unsafe impl Send for TimeIntegrationConfig {}
 unsafe impl Sync for TimeIntegrationConfig {}
 
 impl TimeIntegrationConfig {
-    /// Sets up the default Runge-Kutta-Fehlberg setup. Check the asserts in the example for
-    /// defaults.
+    /// Constructs a [TimeIntegrationConfig] for the default Runge-Kutta-Fehlberg setup.
+    ///
+    /// Check the asserts in the example for defaults.
     ///
     /// ```
     /// use corries::prelude::*;
@@ -56,7 +58,7 @@ impl Validation for TimeIntegrationConfig {
 
 /// Enum for the different kinds of Runge-Kutta-Fehlberg schemes available
 ///
-/// Defaults to SSPRK5
+/// Defaults to [SSPRK5](RKFMode::SSPRK5)
 #[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
 pub enum RKFMode {
     /// Runge-Kutta 1
@@ -91,10 +93,10 @@ pub enum RKFMode {
 unsafe impl Send for RKFMode {}
 unsafe impl Sync for RKFMode {}
 
-/// Configures the Runge-Kutta-Fehlberg scheme
+/// Configures the [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg) objects.
 #[derive(Debug, Serialize, Copy, Clone)]
 pub struct RkfConfig {
-    /// Type of RKF scheme to use
+    /// Type of Runge-Kutta-Fehlberg scheme to use
     pub rkf_mode: RKFMode,
 
     /// Whether to use automated time step control

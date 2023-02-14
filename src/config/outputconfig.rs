@@ -2,7 +2,8 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [OutputConfig] for configuring the objects that write output.
+//! Exports [OutputConfig], which is used to configure different output streams
+//! for [Writer](crate::writer::Writer) objects.
 
 use crate::{
     errorhandling::Validation,
@@ -11,7 +12,7 @@ use crate::{
 use color_eyre::eyre::ensure;
 use serde::Serialize;
 
-/// Carries information about how an `Output` is built
+/// Carries information about how a single `Output` is built
 #[derive(Debug, Serialize, Clone)]
 pub struct OutputConfig {
     /// Type of stream the `Output` writes to
@@ -20,7 +21,7 @@ pub struct OutputConfig {
     /// How the `Output` formats its data
     pub formatting_mode: FormattingMode,
 
-    /// Whether the `Output` converts its incoming data to a single `String` or a `Vec<String>`
+    /// Whether the `Output` converts its incoming data to a single [String] or a [Vec<String>]
     pub string_conversion_mode: ToStringConversionMode,
 
     /// Which folder to write file output to
@@ -46,9 +47,9 @@ pub struct OutputConfig {
 }
 
 impl OutputConfig {
-    /// Constructs a OutputConfig default configuration that writes to stdout.
+    /// Constructs a [OutputConfig] default configuration that writes to stdout.
     ///
-    /// This will set up the output such that the following values will be printed:
+    /// This will set up the output such that the `data_names` field in [OutputConfig] consists of:
     ///
     /// `DataName::Iter, DataName::T, DataName::Dt, DataName::DtKind`
     ///
@@ -79,14 +80,14 @@ impl OutputConfig {
         Self::default_stdout_with_names(vec![DataName::Iter, DataName::T, DataName::Dt, DataName::DtKind])
     }
 
-    /// Constructs a OutputConfig default configuration that writes to stdout for a given set of
+    /// Constructs an [OutputConfig] default configuration that writes to stdout for a given set of
     /// output values.
     ///
     /// Check out the asserts in the example to see what those defaults are.
     ///
     /// # Arguments
     ///
-    /// * `data_names` - a vector of `DataName` objects that will be printed to stdout
+    /// * `data_names` - a vector of [DataName] objects that will be printed to stdout
     ///
     /// NOTE: `data_names` cannot contain identifiers for vector-like values, like
     /// `DataName::XiCent`, because this configuration has `string_conversion_mode` set to
@@ -127,7 +128,7 @@ impl OutputConfig {
         }
     }
 
-    /// Constructs a OutputConfig default configuration that writes to files for a given set of
+    /// Constructs a [OutputConfig] default configuration that writes to files for a given set of
     /// output values, folder path and file name.
     ///
     /// The files will be written to the path described by `folder_name`, and will be named
@@ -176,7 +177,7 @@ impl OutputConfig {
         Self::default_file_with_names(folder_name, file_name, data_names)
     }
 
-    /// Constructs a OutputConfig default configuration that writes to files for a given set of
+    /// Constructs a [OutputConfig] default configuration that writes to files for a given set of
     /// output values, folder path and file name.
     ///
     /// The files will be written to the path described by `folder_name`, and will be named
@@ -260,9 +261,9 @@ impl Validation for OutputConfig {
     }
 }
 
-/// Enumerates the different streams an `Output` may write to
+/// Enumerates the different streams an `Output` may write to.
 ///
-/// Defaults to Stdout.
+/// Defaults to [Stdout](StreamMode::Stdout).
 #[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum StreamMode {
     /// Streams to stdout
@@ -278,7 +279,7 @@ unsafe impl Sync for StreamMode {}
 
 /// Enumerates whether an `Output` writes scalar or vector values
 ///
-/// Defaults to Scalar.
+/// Defaults to [Scalar](ToStringConversionMode::Scalar).
 #[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum ToStringConversionMode {
     /// Writes scalars
@@ -294,7 +295,7 @@ unsafe impl Sync for ToStringConversionMode {}
 
 /// Enumerates how an `Output` formats its output
 ///
-/// Defaults to TSV.
+/// Defaults to [TSV](FormattingMode::TSV).
 #[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum FormattingMode {
     /// Comma seperated output

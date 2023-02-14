@@ -17,13 +17,16 @@ pub mod numericsconfig;
 pub mod outputconfig;
 pub mod physicsconfig;
 
-/// Enumerates the different boundary conditions
+/// Enumerates the different boundary conditions.
+///
+/// Defaults to [NoGradients](BoundaryMode::NoGradients)
 #[derive(Debug, Serialize, Clone, Default, PartialEq)]
 pub enum BoundaryMode {
-    /// Set of custom boundary conditions applied to each variable (default)
+    /// Set of custom boundary conditions applied to seperate equations identified by their
+    /// equation indexes
     Custom(Vec<(usize, CustomBoundaryMode)>),
 
-    /// Sets no-gradients boundaries for all equations
+    /// Sets no-gradients boundaries for all equations (default)
     #[default]
     NoGradients,
 }
@@ -31,7 +34,9 @@ pub enum BoundaryMode {
 unsafe impl Send for BoundaryMode {}
 unsafe impl Sync for BoundaryMode {}
 
-/// Enumerates the possible custom boundary conditions; defaults to NoGradients
+/// Enumerates the possible custom boundary conditions.
+///
+/// Defaults to [NoGradients](CustomBoundaryMode::NoGradients)
 #[derive(Debug, Serialize, Clone, Copy, Default, PartialEq, Eq)]
 pub enum CustomBoundaryMode {
     /// Extrapolate the values near the boundary into the ghost cells
@@ -72,10 +77,10 @@ pub struct CorriesConfig {
     /// Whether to print the Corries banner to stdout
     pub print_banner: bool,
 
-    /// Config for Mesh objects
+    /// Config for [Mesh](crate::mesh::Mesh) objects
     pub mesh_config: MeshConfig,
 
-    /// Config for Physics objects
+    /// Config for [Physics](crate::state::Physics) objects
     pub physics_config: PhysicsConfig,
 
     /// boundary condition on the west border of the computational area
@@ -91,7 +96,7 @@ pub struct CorriesConfig {
     /// state
     pub output_counter_max: usize,
 
-    /// Config for Writer objects
+    /// Config for [Writer](crate::writer::Writer) objects
     pub writer_config: Vec<OutputConfig>,
 }
 
@@ -99,16 +104,16 @@ unsafe impl Send for CorriesConfig {}
 unsafe impl Sync for CorriesConfig {}
 
 impl CorriesConfig {
-    /// Sets up a default CorriesConfig that can be used by most Riemann tests.
+    /// Sets up a default [CorriesConfig] that can be used by most Riemann tests.
     ///
     /// Check the asserts in the example, as well as the docs for the following methods to see the
     /// full config:
     ///
-    /// * `MeshConfig::default_riemann_test`
-    /// * `PhysicsConfig::default`
-    /// * `NumericsConfig::default_riemann_test`
-    /// * `OutputConfig::default_stdout`
-    /// * `OutputConfig::default_file`
+    /// * [MeshConfig::default_riemann_test()]
+    /// * [PhysicsConfig::default()]
+    /// * [NumericsConfig::default_riemann_test()]
+    /// * [OutputConfig::default_stdout()]
+    /// * [OutputConfig::default_file()]
     ///
     /// # Arguments
     ///
@@ -137,7 +142,11 @@ impl CorriesConfig {
     /// assert_eq!(config.boundary_condition_east, BoundaryMode::NoGradients);
     /// assert_eq!(config.output_counter_max, 1);
     /// ```
-    pub fn default_riemann_test<N: NumFlux<E,S> + 'static, const E: usize, const S: usize>(t_end: f64, folder_name: &str, file_name: &str) -> Self {
+    pub fn default_riemann_test<N: NumFlux<E, S> + 'static, const E: usize, const S: usize>(
+        t_end: f64,
+        folder_name: &str,
+        file_name: &str,
+    ) -> Self {
         Self {
             print_banner: false,
             mesh_config: MeshConfig::default_riemann_test(),
@@ -146,7 +155,10 @@ impl CorriesConfig {
             boundary_condition_east: BoundaryMode::NoGradients,
             numerics_config: NumericsConfig::default_riemann_test::<N, E, S>(t_end),
             output_counter_max: 1,
-            writer_config: vec![OutputConfig::default_stdout(), OutputConfig::default_file(folder_name, file_name, E)],
+            writer_config: vec![
+                OutputConfig::default_stdout(),
+                OutputConfig::default_file(folder_name, file_name, E),
+            ],
         }
     }
 }

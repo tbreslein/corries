@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [NumFluxConfig] for configuring the numerical flux schemes
+//! Exports [NumFluxConfig] for configuring [NumFlux](crate::rhs::numflux::NumFlux) objects.
 
 use crate::errorhandling::Validation;
 use color_eyre::{eyre::bail, Result};
@@ -10,12 +10,14 @@ use serde::Serialize;
 
 /// Enumerates the different configurations for the different types of numerical flux schemes
 ///
-/// Defaults to Kt with the VanLeer limiter function
+/// Defaults to [Kt](NumFluxConfig::Kt) with the [VanLeer](LimiterMode::VanLeer) limiter function.
 #[derive(Debug, Serialize, Copy, Clone, PartialEq)]
 pub enum NumFluxConfig {
-    /// Hll configuration (i.e., no configuration)
+    /// Configuration for the Harten-Lax-van-Leer solver, i.e. the [Hll](crate::rhs::numflux::Hll)
+    /// struct (no further configuration needed)
     Hll,
-    /// Kt configuration
+    /// Configuration for the Kurganov-Tadmor solver, i.e. the [Kt](crate::rhs::numflux::Kt)
+    /// struct. Carries one field `limiter_mode` which controls the reconstruction scheme to use.
     Kt {
         /// The type of limiter to be used in reconstruction in the Kt scheme
         limiter_mode: LimiterMode,
@@ -43,9 +45,9 @@ impl Validation for NumFluxConfig {
 }
 
 /// Enumerates the different kinds of limiter functions used during reconstruction of cell boundary
-/// values
+/// values.
 ///
-/// Defaults to VanLeer
+/// Defaults to [VanLeer](LimiterMode::VanLeer)
 #[derive(Debug, Serialize, Copy, Clone, Default, PartialEq)]
 pub enum LimiterMode {
     /// No limiter function, just average the differences between the cells
