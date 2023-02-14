@@ -44,7 +44,7 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     ///
     /// * `config` - Configuration for the whole simulation
     /// * `u` - The main [Physics] object for this simulation
-    /// * `numflux` - The [dyn NumFlux] object about to be stored in this [Rhs] object
+    /// * `numflux` - The [NumFlux] object about to be stored in this [Rhs] object
     ///
     /// # Examples
     ///
