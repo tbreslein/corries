@@ -45,6 +45,29 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// * `config` - Configuration for the whole simulation
     /// * `u` - The main [Physics] object for this simulation
     /// * `numflux` - The [dyn NumFlux] object about to be stored in this [Rhs] object
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
+    /// // Runge-Kutta-Fehlberg schemes for solving the equations.
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E, S>;
+    ///
+    /// // use the default config for Riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    ///
+    /// // define the config instance
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    /// let mesh: Mesh<S> = Mesh::<S>::new(&config.mesh_config).unwrap();
+    ///
+    /// let rhs: Rhs<N, E, S> = Rhs::<N,E,S>::new(&config, &mesh).unwrap();
+    /// ```
     pub fn new(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
         let numflux = init_numflux(&config.numerics_config.numflux_config, mesh)?;
         Ok(Rhs {
@@ -61,6 +84,31 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     ///
     /// * `u` - The current [Physics] state
     /// * `mesh` - Information about spatial properties
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use corries::prelude::*;
+    ///
+    /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
+    /// // Runge-Kutta-Fehlberg schemes for solving the equations.
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E, S>;
+    /// type T = RungeKuttaFehlberg<P, E, S>;
+    ///
+    /// // use the default config for Riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    ///
+    /// // define the config instance
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    ///
+    /// let (mut u, mut rhs, _, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    ///
+    /// rhs.update(&mut u, &mesh).unwrap();
+    /// ```
     pub fn update<P: Physics<E, S>>(&mut self, u: &mut State<P, E, S>, mesh: &Mesh<S>) -> Result<()> {
         // this assumes that u.cons is up-to-date
         u.update_vars_from_cons(&mut self.boundary_west, &mut self.boundary_east, mesh);
