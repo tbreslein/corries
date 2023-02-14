@@ -6,9 +6,9 @@
 
 use serde::Serialize;
 
-/// Enumerates the different directions inside a cell we can pull values from
+/// Enumerates the different directions inside a cell we can pull values from.
 ///
-/// Defaults to `Direction::Cent`
+/// Defaults to [Cent](Direction::Cent)
 #[repr(u8)]
 #[derive(Debug, Serialize, Copy, Clone, Default, PartialEq, Eq)]
 pub enum Direction {
