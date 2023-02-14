@@ -12,7 +12,7 @@ use color_eyre::eyre::{bail, ensure, Context};
 use color_eyre::Result;
 use ndarray::Array1;
 
-/// The Mesh the simulation runs on.
+/// The mesh the simulation runs on.
 ///
 /// The template argument defines the number of cells in the mesh.
 ///
@@ -136,10 +136,10 @@ pub struct Mesh<const S: usize> {
     /// Inverse of line_xi
     pub line_xi_inv: Array1<f64>,
 
-    /// Shorthand: area_west / (deta / dphi)
+    /// Shorthand: `area_west / (deta * dphi)`
     pub d_area_xi_deta_dphi_west: Array1<f64>,
 
-    /// Shorthand: area_east / (deta / dphi)
+    /// Shorthand: `area_east / (deta * dphi)`
     pub d_area_xi_deta_dphi_east: Array1<f64>,
 
     /// Surface area of each cell normal to xi x Phi
@@ -154,7 +154,7 @@ pub struct Mesh<const S: usize> {
     /// Volume of each cell
     pub volume: Array1<f64>,
 
-    /// Shorthand: deta * dPhi / dVolume
+    /// Shorthand: `deta * dphi / volume`
     pub deta_dphi_d_volume: Array1<f64>,
 
     /// Distance between west and east border of each cell
@@ -181,22 +181,22 @@ pub struct Mesh<const S: usize> {
     /// Commutator coefficient for eta and Phi
     pub cepe: Array1<f64>,
 
-    /// Shorthand: -1.0 * cexe
+    /// Shorthand: `-1.0 * cexe`
     pub minus_cexe: Array1<f64>,
 
-    /// Shorthand: -1.0 * cpxp
+    /// Shorthand: `-1.0 * cpxp`
     pub minus_cpxp: Array1<f64>,
 
-    /// Shorthand: -1.0 * cxex
+    /// Shorthand: `-1.0 * cxex`
     pub minus_cxex: Array1<f64>,
 
-    /// Shorthand: -1.0 * cpep
+    /// Shorthand: `-1.0 * cpep`
     pub minus_cpep: Array1<f64>,
 
-    /// Shorthand: -1.0 * cxpx
+    /// Shorthand: `-1.0 * cxpx`
     pub minus_cxpx: Array1<f64>,
 
-    /// Shorthand: -1.0 * cepe
+    /// Shorthand: `-1.0 * cepe`
     pub minus_cepe: Array1<f64>,
 }
 
