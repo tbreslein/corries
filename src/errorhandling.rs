@@ -16,8 +16,8 @@ pub mod checks;
 /// method's purpose is to make sure the fields of a given struct are coherent and adhere to
 /// rules specific to this struct.
 ///
-/// For example, a `Mesh`'s coordinate arrays should be finite and non-empty, so its `validate`
-/// method should check its arrays for these properties.
+/// For example, a [Mesh](crate::mesh::Mesh)'s coordinate arrays should be finite and non-empty,
+/// so its `validate` method should check its arrays for these properties.
 pub trait Validation {
     /// Make sure that the fields of `&self` are coherent and adhere to struct specific internal rules.
     fn validate(&self) -> Result<()>;
