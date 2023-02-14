@@ -15,12 +15,31 @@ pub use self::{hll::Hll, kt::Kt};
 
 /// Trait for structs that can calculate numerical flux
 pub trait NumFlux<const E: usize, const S: usize> {
-    /// construct a new [NumFlux] trait object
+    /// Construct a new [NumFlux] trait object wrapped in a [`color_eyre::Result`]
+    ///
+    /// # Arguments
+    ///
+    /// * `numflux_config` - configures the [NumFlux] object
+    /// * `mesh` - the [Mesh] this simulation runs on
+    ///
+    /// # Examples
+    ///
+    /// TODO:
     fn new(numflux_config: &NumFluxConfig, mesh: &Mesh<S>) -> Result<Self>
     where
         Self: Sized;
 
-    /// Calculates the numerical derivative along the xi direction
+    /// Calculates the numerical derivative along the xi direction.
+    ///
+    /// # Arguments
+    ///
+    /// * `dflux_dxi` - derivative of the numerical flux over xi
+    /// * `u` - current [Physics] state of the simulation
+    /// * `mesh` - the [Mesh] this simulation runs on
+    ///
+    /// # Examples
+    ///
+    /// TODO:
     fn calc_dflux_dxi<P: Physics<E, S>>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
@@ -29,7 +48,16 @@ pub trait NumFlux<const E: usize, const S: usize> {
     ) -> Result<()>;
 }
 
-/// Constructs an `impl Numflux<S, EQ>`.
+/// Initialise a new [NumFlux] object, wrapped in a [`color_eyre::Result`].
+///
+/// # Arguments
+///
+/// * `numflux_config` - configures the [NumFlux] object
+/// * `mesh` - the [Mesh] this simulation runs on
+///
+/// # Examples
+///
+/// TODO:
 pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(
     numflux_config: &NumFluxConfig,
     mesh: &Mesh<S>,
@@ -41,13 +69,17 @@ pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(
 ///
 /// The purpose of this function is that, after a [NumFlux] object has already calculated the
 /// numerical flux, calculating the derivative of that flux is the same for most numerical flux
-/// schemes.
+/// schemes. This function abstracts this derivation.
 ///
 /// # Arguments
 ///
 /// * `dflux_dxi` - numerical flux derivative
 /// * `flux_num` - numerical flux
-/// * `mesh` - [Mesh] object
+/// * `mesh` - [Mesh] object the simulation runs on
+///
+/// # Examples
+///
+/// TODO:
 fn calc_dflux_xi_generic<const E: usize, const S: usize>(
     dflux_dxi: &mut Array2<f64>,
     flux_num: &Array2<f64>,
