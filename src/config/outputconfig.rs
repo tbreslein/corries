@@ -21,7 +21,7 @@ pub struct OutputConfig {
     /// How the `Output` formats its data
     pub formatting_mode: FormattingMode,
 
-    /// Whether the `Output` converts its incoming data to a single [String] or a [Vec<String>]
+    /// Whether the `Output` converts its incoming data to a single [String] or a [`Vec<String>`]
     pub string_conversion_mode: ToStringConversionMode,
 
     /// Which folder to write file output to
