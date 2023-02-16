@@ -3,14 +3,69 @@
 // License: MIT
 
 //! Exports the [Euler1DIsot] struct, which is an implementer for [Physics] for 1-dimensional
-//! isothermal Euler equations
+//! isothermal Euler equations.
 
 use crate::{state::Physics, variables::Variables};
 use color_eyre::{eyre::ensure, Result};
 
 const E: usize = 2;
 
-/// Test struct for using a trait for Physics
+/// Implenter for [Physics] that manipulates [State](crate::state::State) for 1-dimensional
+/// isothermal Euler equations.
+///
+/// # Variables
+///
+/// The equations are sorted such that they correspond to the primitive and conservative variables
+/// such that:
+///
+/// equation index | primitive variable | conservative variable
+/// ---            | ---                | ---
+/// 0              | mass density       | mass density
+/// 1              | xi velocity        | xi momentum
+///
+/// Keep in mind that the coordinates in [corries](crate) are generalised, and that it is a purely
+/// 1-dimensional framework. `xi` is the only coordinate that can have more than one cell, whereas
+/// the `eta` and `Phi` directions only ever have one cell.
+///
+/// Being isothermal means that the speed of sound for this system has the same value everywhere
+/// and never changes.
+///
+/// [Euler1DIsot] does not model velocities along the `eta` direction as well as pressure and inner
+/// energy. Accessors to any of these will return a vector of zeroes, whereas the corresponding
+/// equation indexes will return [usize::MAX].
+///
+/// # Conversions
+///
+/// Let
+///
+/// * `up_j`: primitive variables at equation index `j`
+/// * `uc_j`: conservative variables at equation index `j`
+/// * `Fp_j`: physical flux at equation index `j`
+/// * `cs`: The speed of sound
+///
+/// In combination with the table up to this means that, for example, `up_0` corresponds the
+/// primitive mass density, and `uc_1` corresponds to the momentum along the xi direction.
+///
+/// Assuming we start with the primitive variables, the conservative variables are calculated with:
+///
+/// ```text
+/// uc_0 = up_0
+/// uc_1 = up_0 * up_1
+/// ```
+///
+/// They are converted back with:
+///
+/// ```text
+/// up_0 = uc_0
+/// up_1 = uc_1 / uc_0
+/// ```
+///
+/// The physical flux is calculated with:
+///
+/// ```text
+/// Fp_0 = uc_1
+/// Fp_1 = up_0 * (up_1 * up_1 + cs * cs)
+/// ```
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Euler1DIsot<const S: usize>;
 
@@ -19,6 +74,7 @@ unsafe impl<const S: usize> Sync for Euler1DIsot<S> {}
 
 impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
     const IS_ADIABATIC: bool = false;
+    const IS_ISOTHERMAL: bool = !Self::IS_ADIABATIC;
     const JRHO: usize = 0;
     const JXI: usize = 1;
     const JETA: usize = std::usize::MAX;
@@ -70,19 +126,19 @@ impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
     }
 }
 
-/// Updates physical flux
+/// Updates physical flux corresponding to [Euler1DIsot]
 #[inline(always)]
 pub fn calc_flux(rho: f64, xi_vel: f64, xi_mom: f64, cs: f64) -> (f64, f64) {
     (xi_mom, rho * (xi_vel * xi_vel + cs * cs))
 }
 
-/// Converts conservative to primitive variables
+/// Converts conservative to primitive variables corresponding to [Euler1DIsot]
 #[inline(always)]
 pub fn cons_to_prim(rho_cons: f64, xi_mom: f64) -> (f64, f64) {
     (rho_cons, xi_mom / rho_cons)
 }
 
-/// Converts primitive to conservative variables
+/// Converts primitive to conservative variables corresponding to [Euler1DIsot]
 #[inline(always)]
 pub fn prim_to_cons(rho_prim: f64, xi_vel: f64) -> (f64, f64) {
     (rho_prim, xi_vel * rho_prim)
