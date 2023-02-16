@@ -117,7 +117,7 @@ where
     Ok((u, rhs, time, mesh, writer))
 }
 
-/// Runs a corries simulation.
+/// Runs a [corries](crate) simulation.
 ///
 /// This assumes that you already set your initial conditions in `u` and that it is fully
 /// up-to-date.

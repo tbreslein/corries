@@ -45,7 +45,7 @@ pub trait NumFlux<const E: usize, const S: usize> {
     /// # Arguments
     ///
     /// * `dflux_dxi` - derivative of the numerical flux over xi
-    /// * `u` - current [Physics] state of the simulation
+    /// * `u` - current [State] of the simulation
     /// * `mesh` - the [Mesh] this simulation runs on
     ///
     /// # Examples
