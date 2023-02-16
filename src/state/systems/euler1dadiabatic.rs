@@ -10,7 +10,63 @@ use color_eyre::{eyre::ensure, Result};
 
 const E: usize = 3;
 
-/// Test struct for using a trait for Physics
+/// Implenter for [Physics] that manipulates [State](crate::state::State) for 1-dimensional
+/// adiabatic Euler equations.
+///
+/// # Variables
+///
+/// The equations are sorted such that they correspond to the primitive and conservative variables
+/// such that:
+///
+/// equation index | primitive variable | conservative variable
+/// ---            | ---                | ---
+/// 0              | mass density       | mass density
+/// 1              | xi velocity        | xi momentum
+/// 2              | pressure           | inner energy
+///
+/// Keep in mind that the coordinates in [corries](crate) are generalised, and that it is a purely
+/// 1-dimensional framework. `xi` is the only coordinate that can have more than one cell, whereas
+/// the `eta` and `Phi` directions only ever have one cell.
+///
+/// [Euler1DAdiabatic] does not model velocities along the `eta` direction.
+/// Accessors to any of these will return a vector of zeroes, whereas the corresponding equation
+/// indexes will return [usize::MAX].
+///
+/// # Conversions
+///
+/// Let
+///
+/// * `up_j`: primitive variables at equation index `j`
+/// * `uc_j`: conservative variables at equation index `j`
+/// * `Fp_j`: physical flux at equation index `j`
+/// * `gamma`: the adiabatic index
+///
+/// In combination with the table up to this means that, for example, `up_0` corresponds the
+/// primitive mass density, and `uc_1` corresponds to the momentum along the xi direction.
+///
+/// Assuming we start with the primitive variables, the conservative variables are calculated with:
+///
+/// ```text
+/// uc_0 = up_0
+/// uc_1 = up_0 * up_1
+/// uc_2 = up_2 / (gamma - 1.0) + 0.5 * up_0 * up_1 * up_1
+/// ```
+///
+/// They are converted back with:
+///
+/// ```text
+/// up_0 = uc_0
+/// up_1 = uc_1 / uc_0
+/// up_2 = (gamma - 1.0) * (uc_2 - 0.5 / uc_0 * uc_1 * uc_1)
+/// ```
+///
+/// The physical flux is calculated with:
+///
+/// ```text
+/// Fp_0 = uc_1
+/// Fp_1 = up_1 * uc_1 + up_2
+/// Fp_2 = (uc_2 + up_2) * up_1
+/// ```
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Euler1DAdiabatic<const S: usize>;
 
