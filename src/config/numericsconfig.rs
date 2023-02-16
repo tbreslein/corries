@@ -6,7 +6,7 @@
 
 use std::any::TypeId;
 
-use crate::{errorhandling::Validation, Hll, Kt, NumFlux};
+use crate::{errorhandling::Validation, Hll, Kt, NumFlux, check_positive_double};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
@@ -122,13 +122,7 @@ impl Validation for NumericsConfig {
             self.t_end,
             self.t0
         );
-        ensure!(self.dt_min > 0.0, "This must hold: dt_min > 0.0 ! Got {}", self.dt_min);
-        ensure!(self.dt_max > 0.0, "This must hold: dt_max > 0.0 ! Got {}", self.dt_max);
-        ensure!(
-            self.dt_cfl_param > 0.0,
-            "This must hold: dt_cfl_param > 0.0 ! Got {}",
-            self.dt_cfl_param
-        );
+        check_positive_double!(self.dt_min, self.dt_max, self.dt_cfl_param);
         self.time_integration_config
             .validate()
             .context("Validating config.numericsconfig.time_integration_config")?;

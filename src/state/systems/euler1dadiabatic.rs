@@ -180,10 +180,6 @@ pub fn prim_to_cons(rho_prim: f64, xi_vel: f64, pressure: f64, gamma: f64) -> (f
 /// Checks vars for inconsistency, like negative pressure
 #[inline(always)]
 pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_pressure: usize) -> Result<()> {
-    ensure!(
-        vars.prim.row(j_pressure).fold(true, |acc, x| acc && x > &0.0),
-        "Pressure must be positive! Got: {}",
-        vars.prim.row(j_pressure)
-    );
+    check_positive_arrayd!(vars.prim.row(j_pressure));
     Ok(())
 }

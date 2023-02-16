@@ -5,7 +5,7 @@
 //! Exports the [Rhs] struct that carries objects and methods for solving the right-hand side of a
 //! set of equations.
 
-pub use self::numflux::{hll::Hll,kt::Kt, NumFlux};
+pub use self::numflux::{hll::Hll, kt::Kt, NumFlux};
 use crate::{
     boundaryconditions::{init_boundary_condition, BoundaryCondition},
     errorhandling::Validation,
@@ -120,11 +120,7 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
 
 impl<N: NumFlux<E, S>, const E: usize, const S: usize> Validation for Rhs<N, E, S> {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.full_rhs.fold(true, |acc, x| acc && x.is_finite()),
-            "Rhs::full_rhs must be finite! Got: {}",
-            self.full_rhs
-        );
+        check_finite_arrayd!(self.full_rhs);
         Ok(())
     }
 }

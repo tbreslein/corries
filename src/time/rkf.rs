@@ -248,11 +248,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> RungeKuttaFehlb
 
 impl<P: Physics<E, S>, const E: usize, const S: usize> Validation for RungeKuttaFehlberg<P, E, S> {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.u_cons_low.fold(true, |acc, x| acc && x.is_finite()),
-            "RungeKuttaFehlberg::u_cons_low must be finite! Got: {}",
-            self.u_cons_low
-        );
+        check_finite_arrayd!(self.u_cons_low);
         self.utilde
             .validate()
             .context("Validating RungeKuttaFehlberg::utilde in RungeKuttaFehlberg::validate()")?;

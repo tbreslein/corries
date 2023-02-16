@@ -147,10 +147,6 @@ pub fn prim_to_cons(rho_prim: f64, xi_vel: f64) -> (f64, f64) {
 /// Checks vars for inconsistency, like mass density
 #[inline(always)]
 pub fn validate<const E: usize, const S: usize>(vars: &Variables<E, S>, j_rho: usize) -> Result<()> {
-    ensure!(
-        vars.prim.row(j_rho).fold(true, |acc, x| acc && x > &0.0),
-        "Mass density must be positive! Got: {}",
-        vars.prim.row(j_rho)
-    );
+    check_positive_arrayd!(vars.prim.row(j_rho));
     Ok(())
 }

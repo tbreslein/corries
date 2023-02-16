@@ -2,13 +2,9 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Contains everything regarding error handling, and exports the [Validation] trait as well as the
-//! [checks] module.
+//! Contains everything regarding error handling, and exports the [Validation] trait.
 
 use color_eyre::Result;
-
-#[macro_use]
-pub mod checks;
 
 /// Trait for all structs that can validate themselves.
 ///

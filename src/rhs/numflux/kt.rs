@@ -277,28 +277,7 @@ impl<const E: usize, const S: usize> Kt<E, S> {
 
 impl<const E: usize, const S: usize> Validation for Kt<E, S> {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.a_plus.fold(true, |acc, x| acc && x.is_finite()),
-            "Kt::a_plus must be finite! Got: {}",
-            self.a_plus
-        );
-        ensure!(
-            self.a_minus.fold(true, |acc, x| acc && x.is_finite()),
-            "Kt::a_minus must be finite! Got: {}",
-            self.a_minus
-        );
-        ensure!(
-            self.b.fold(true, |acc, x| acc && x.is_finite()),
-            "Kt::b = dA / (deta * dPhi * (a_plus - a_minus)) must be finite! Got:\nb = {}\na_plus = {}\na_minus = {}",
-            self.b,
-            self.a_plus,
-            self.a_minus
-        );
-        ensure!(
-            self.flux_num.fold(true, |acc, x| acc && x.is_finite()),
-            "Hll::flux_num must be finite! Got: {}",
-            self.flux_num
-        );
+        check_finite_arrayd!(self.a_plus, self.a_minus, self.b, self.flux_num);
         Ok(())
     }
 }
