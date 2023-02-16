@@ -12,7 +12,53 @@ use color_eyre::{
 };
 use ndarray::{par_azip, s, Array1, Array2};
 
-/// Handles calculating numerical flux using the HLL scheme with 0-order reconstruction
+/// Handles calculating numerical flux using the HLL scheme with 0-order reconstruction.
+///
+/// # wave characteristics
+///
+/// This scheme calculates left- and right-side characteristics to determine where waves are
+/// traveling, we call these `sl` and `sr` respectively. `Left` and `right` mean that these are
+/// characteristics pointing towards small and big mesh indexes respectively, i.e. west- and
+/// eastward.
+///
+/// These are calculated as follows:
+///
+/// Let
+///
+/// `sl`: left-facing characteristic
+/// `sr`: left-facing characteristic
+/// `eigen_min`: minimal eigen values for the current [Physics] state
+/// `eigen_max`: minimal eigen values for the current [Physics] state
+///
+/// Then for each cell index `i`
+///
+/// ```text
+/// sl[i] = min(0.0, min(eigen_min[i], eigen_min[i+1]))
+/// sr[i] = max(0.0, max(eigen_max[i], eigen_max[i+1]))
+/// ```
+///
+/// # calculating the numerical flux
+///
+/// Let
+///
+/// `uc`: conservative variables
+/// `Fp`: physical flux
+/// `Fn`: numerical flux
+///
+/// Then the numerical flux is calculated for each equation index `j` and each mesh cell `i` by:
+///
+/// ```text
+/// Fn[[j,i]] = (1 / (sr[i] - sl[i]))
+///           * (sr[i] * Fp[[j,i]]
+///              - sl[i] * Fp[[j,i+1]]
+///              + sr[i] * sl[i] * (uc[[j,i+1]] - uc[[j,i]]))
+/// ```
+///
+/// The values used here are simply those at the cell centres, without any reconstruction to obtain
+/// the values on the cell faces.
+///
+/// After calculating the numerical flux, the derivative of that value is calculated as a simple
+/// finite difference.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Hll<const E: usize, const S: usize> {
     /// Left-side characteristics
