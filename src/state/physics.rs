@@ -9,7 +9,8 @@ use ndarray::{ArrayView1, Zip};
 
 use crate::{boundaryconditions::BoundaryCondition, variables::Variables, Mesh};
 
-/// Trait for Physics objects
+/// Trait for objects that define sets of differential equations that describe the evolution of a
+/// classical hydrodynamics system.
 pub trait Physics<const E: usize, const S: usize> {
     /// Whether the implementer of this trait is adiabatic
     const IS_ADIABATIC: bool;
@@ -33,10 +34,14 @@ pub trait Physics<const E: usize, const S: usize> {
     /// usize::MAX if the implementer does not carry the density in either of those arrays.
     const JPRESSURE: usize;
 
-    /// Construct a new Physics object
+    /// Construct a new [Physics] object
     fn new() -> Self;
 
-    /// todo
+    /// Accessor to the mass density in the primitive variable set, derived from the `vars`
+    /// argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn rho_prim(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JRHO < usize::MAX {
             vars.prim.row(Self::JRHO)
@@ -45,7 +50,11 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the mass density in the conservative variable set, derived from the `vars`
+    /// argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn rho_cons(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JRHO < usize::MAX {
             vars.cons.row(Self::JRHO)
@@ -54,7 +63,10 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the xi velocity vector, derived from the `vars` argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn xi_vel(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JXI < usize::MAX {
             vars.prim.row(Self::JXI)
@@ -63,7 +75,10 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the xi momentum vector, derived from the `vars` argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn xi_mom(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JXI < usize::MAX {
             vars.cons.row(Self::JXI)
@@ -72,7 +87,10 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the eta velocity vector, derived from the `vars` argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn eta_vel(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JETA < usize::MAX {
             vars.prim.row(Self::JETA)
@@ -81,7 +99,10 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the eta momentum vector, derived from the `vars` argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn eta_mom(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JETA < usize::MAX {
             vars.cons.row(Self::JETA)
@@ -90,7 +111,10 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the pressure vector, derived from the `vars` argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn pressure(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JPRESSURE < usize::MAX {
             vars.prim.row(Self::JPRESSURE)
@@ -99,7 +123,10 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// todo
+    /// Accessor to the inner energy vector, derived from the `vars` argument.
+    ///
+    /// Returns a view to a vector of zeros if this value is not even a derived value for the
+    /// implementer.
     fn energy(vars: &Variables<E, S>) -> ArrayView1<f64> {
         if Self::JPRESSURE < usize::MAX {
             vars.cons.row(Self::JPRESSURE)
@@ -108,14 +135,14 @@ pub trait Physics<const E: usize, const S: usize> {
         }
     }
 
-    /// Updates primitive variables in vars.prim
+    /// Updates primitive variables in the `vars` argument.
     fn update_prim(vars: &mut Variables<E, S>);
 
-    /// Updates conservative variables vars.cons
+    /// Updates conservative variables in the `vars` argument.
     fn update_cons(vars: &mut Variables<E, S>);
 
-    /// Update values not part of the primitive and conservative variables, i.e. speed of sound,
-    /// eigen values, and maybe others
+    /// Update values not part of the primitive and conservative variables the `vars` argument,
+    /// i.e. speed of sound, eigen values, and maybe others.
     fn update_derived_variables(vars: &mut Variables<E, S>) {
         if Self::IS_ADIABATIC {
             Self::update_c_sound(vars);
@@ -123,7 +150,7 @@ pub trait Physics<const E: usize, const S: usize> {
         Self::update_eigen_vals(vars);
     }
 
-    /// Updates the speed of sound in vars.c_sound
+    /// Updates the speed of sound in the `vars` argument.
     fn update_c_sound(vars: &mut Variables<E, S>) {
         if Self::IS_ADIABATIC {
             // PERF: This was benchmarked with the following alternatives:
@@ -137,7 +164,7 @@ pub trait Physics<const E: usize, const S: usize> {
         // isothermal case is a no-op
     }
 
-    /// Updates the eigen values in vars.eigen_vals
+    /// Updates the eigen values in the `vars` argument.
     fn update_eigen_vals(vars: &mut Variables<E, S>) {
         Self::update_eigen_vals_min(vars);
         for j in 1..E - 1 {
@@ -146,23 +173,23 @@ pub trait Physics<const E: usize, const S: usize> {
         Self::update_eigen_vals_max(vars);
     }
 
-    /// Updates the minimal eigen values, i.e. the row in vars.eigen_vals representing the smallest
-    /// eigen value per cell
+    /// Updates the minimal eigen values in the `vars` argument, i.e. the row in `vars.eigen_vals`
+    /// representing the smallest eigen value per cell.
     fn update_eigen_vals_min(vars: &mut Variables<E, S>) {
         vars.eigen_vals
             .row_mut(0)
             .assign(&(&vars.prim.row(Self::JXI) - &vars.c_sound));
     }
 
-    /// Updates the maximal eigen values, i.e. the row in vars.eigen_vals representing the largest
-    /// eigen value per cell
+    /// Updates the maximal eigen values in the `vars` argument, i.e. the row in `vars.eigen_vals`
+    /// representing the largest eigen value per cell.
     fn update_eigen_vals_max(vars: &mut Variables<E, S>) {
         vars.eigen_vals
             .row_mut(E - 1)
             .assign(&(&vars.prim.row(Self::JXI) + &vars.c_sound));
     }
 
-    /// Updates everything in vars, assuming vars.prim is already up-to-date
+    /// Updates everything in the `vars` argument, assuming `vars.prim` is already up-to-date.
     fn update_vars_from_prim(
         vars: &mut Variables<E, S>,
         boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
@@ -175,7 +202,7 @@ pub trait Physics<const E: usize, const S: usize> {
         Self::update_derived_variables(vars);
     }
 
-    /// Updates everything in vars, assuming vars.cons is already up-to-date
+    /// Updates everything in the `vars` argument, assuming `vars.cons` is already up-to-date.
     fn update_vars_from_cons(
         vars: &mut Variables<E, S>,
         boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
@@ -186,10 +213,15 @@ pub trait Physics<const E: usize, const S: usize> {
         Self::update_vars_from_prim(vars, boundary_west, boundary_east, mesh);
     }
 
-    /// Updates the physical flux in vars.flux
+    /// Updates the physical flux in the `vars` argument.
     fn update_flux(vars: &mut Variables<E, S>);
 
-    /// Calculate the CFL limited time step width
+    /// Calculate the CFL limited time step width.
+    ///
+    /// # Arguments
+    ///
+    /// * `eigen_max`: The maximal eigen values per cell
+    /// * `mesh`: The [Mesh] for this simulation
     fn calc_dt_cfl(eigen_max: &ArrayView1<f64>, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
         let dt = c_cfl
             / Zip::from(eigen_max)
