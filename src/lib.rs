@@ -14,10 +14,8 @@ use color_eyre::{eyre::Context, Result};
 
 mod boundaryconditions;
 pub mod config;
-#[macro_use]
 mod errorhandling;
-#[macro_use]
-pub mod macros;
+#[macro_use] pub mod macros;
 pub mod directions;
 pub mod mesh;
 pub mod rhs;
