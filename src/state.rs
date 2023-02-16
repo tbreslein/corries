@@ -16,10 +16,13 @@ pub mod physics;
 pub mod systems;
 pub mod variables;
 
-/// Central struct for corries, holding the simulation state.
+/// Central struct for [corries](crate), holding the simulation state.
 ///
-/// The first generic parameter determines how the state is handled internally, like are primitive
-/// and conservative variables updated, how is the physical flux calculated, etc.
+/// The first generic parameter determines which system of physics equations we are dealing with.
+/// This parameter needs to be a type that implements [Physics].
+///
+/// These types determine things like how primitive and conservative variables are updated, how
+/// accessors function, how physical flux is calculated for that system, etc.
 #[derive(Debug, Clone, PartialEq)]
 pub struct State<P: Physics<E, S>, const E: usize, const S: usize> {
     /// Variables at the centre of each cell in the mesh
@@ -53,13 +56,21 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         }
     }
 
-    /// Initialises self.west and self.east
+    /// Initialises self.west and self.east to make sure that values like the speed of sound are
+    /// sound (pun intended).
+    ///
+    /// This is needed for numerical flux schemes that use linear reconstruction to calculate
+    /// variable values on cell faces like the [Kurganov-Tadmor](crate::rhs::numflux::kt::Kt)
+    /// scheme.
+    ///
+    /// If your simulation uses that scheme, you should call this method on the [State] object
+    /// after applying your initial conditions to the mesh central variables.
     pub fn init_west_east(&mut self) {
         self.west.assign(&self.cent);
         self.east.assign(&self.cent);
     }
 
-    /// Returns whether this state is handled adiabatically or isothermally
+    /// Returns whether this [State] is handled adiabatically or isothermally
     pub const fn is_adiabatic(&self) -> bool {
         P::IS_ADIABATIC
     }
@@ -87,7 +98,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Update the primitive variables at a certain part of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -112,8 +123,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Update the primitive variables at the cell centres
     ///
-    /// This is a specialisation of State::update_prim_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
+    /// This is a specialisation of [State::update_prim_d()], where the direction is set to be
+    /// [Direction::Cent]. The reasoning was simply that interacting with cell centre values is the
     /// most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
@@ -134,7 +145,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Update the conservative variables at a certain part of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -159,8 +170,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Update the conservative variables at the cell centres
     ///
-    /// This is a specialisation of State::update_cons_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
+    /// This is a specialisation of [State::update_cons_d()], where the direction is set to be
+    /// [Direction::Cent]. The reasoning was simply that interacting with cell centre values is the
     /// most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
@@ -182,7 +193,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// of sound, at a certain part of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -208,9 +219,9 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Updates variables that are not part of the primitive or conservative variables, like speed
     /// of sound, at cell centres
     ///
-    /// This is a specialisation of State::update_derived_variables_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
-    /// most common case, so they should have the most straight forward interface.
+    /// This is a specialisation of [State::update_derived_variables_d()], where the direction is
+    /// set to [Direction::Cent]. The reasoning was simply that interacting with cell centre values
+    /// is the most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
     ///
@@ -230,7 +241,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Updates the speed of the sound at certain parts of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -255,8 +266,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates the speed of the sound at the cell centres
     ///
-    /// This is a specialisation of State::update_c_sound_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
+    /// This is a specialisation of [State::update_c_sound_d()], where the direction is set to be
+    /// [Direction::Cent]. The reasoning was simply that interacting with cell centre values is the
     /// most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
@@ -277,7 +288,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Updates the eigen values at certain parts of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -302,9 +313,9 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates the eigen values at cell centres
     ///
-    /// This is a specialisation of State::update_eigen_vals_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
-    /// most common case, so they should have the most straight forward interface.
+    /// This is a specialisation of [State::update_eigen_vals_d()], where the direction is set to
+    /// be [Direction::Cent]. The reasoning was simply that interacting with cell centre values is
+    /// the most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
     ///
@@ -324,7 +335,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Updates the minimal eigen values at certain parts of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -349,9 +360,9 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates the minimal eigen values at cell centres
     ///
-    /// This is a specialisation of State::update_eigen_vals_min_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
-    /// most common case, so they should have the most straight forward interface.
+    /// This is a specialisation of [State::update_eigen_vals_min_d()], where the direction is set
+    /// to be [Direction::Cent]. The reasoning was simply that interacting with cell centre values
+    /// is the most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
     ///
@@ -371,7 +382,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Updates the maximal eigen values at certain parts of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -396,9 +407,9 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates the maximal eigen values at cell centres
     ///
-    /// This is a specialisation of State::update_eigen_vals_max_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
-    /// most common case, so they should have the most straight forward interface.
+    /// This is a specialisation of [State::update_eigen_vals_max_d()], where the direction is set
+    /// to be [Direction::Cent]. The reasoning was simply that interacting with cell centre values
+    /// is the most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
     ///
@@ -418,7 +429,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// Updates the physical flux at certain parts of each mesh cell
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     ///
     /// # Examples
     ///
@@ -443,8 +454,8 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates the physical flux at cell centres
     ///
-    /// This is a specialisation of State::update_flux_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
+    /// This is a specialisation of [State::update_flux_d()], where the direction is set to be
+    /// [Direction::Cent]. The reasoning was simply that interacting with cell centre values is the
     /// most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
@@ -466,7 +477,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// are up to date
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     pub fn update_vars_from_prim_d<const D: u8>(
         &mut self,
         boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
@@ -478,9 +489,9 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates all variables at cell centres, assuming that primitive variables are up to date
     ///
-    /// This is a specialisation of State::update_vars_from_prim_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
-    /// most common case, so they should have the most straight forward interface.
+    /// This is a specialisation of [State::update_vars_from_prim_d()], where the direction is set
+    /// to be [Direction::Cent]. The reasoning was simply that interacting with cell centre values
+    /// is the most common case, so they should have the most straight forward interface.
     pub fn update_vars_from_prim(
         &mut self,
         boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
@@ -494,7 +505,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
     /// are up to date
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
-    /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
+    /// cell faces. Pass the parameter as the [Direction] enum cast to u8 to use this function.
     pub fn update_vars_from_cons_d<const D: u8>(
         &mut self,
         boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
@@ -506,9 +517,9 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
 
     /// Updates all variables at cell centres, assuming that conservative variables are up to date
     ///
-    /// This is a specialisation of State::update_vars_from_cons_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
-    /// most common case, so they should have the most straight forward interface.
+    /// This is a specialisation of [State::update_vars_from_cons_d], where the direction is set
+    /// to be [Direction::Cent]. The reasoning was simply that interacting with cell centre values
+    /// is the most common case, so they should have the most straight forward interface.
     pub fn update_vars_from_cons(
         &mut self,
         boundary_west: &mut Box<dyn BoundaryCondition<E, S>>,
@@ -518,7 +529,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         self.update_vars_from_cons_d::<{ Direction::Cent as u8 }>(boundary_west, boundary_east, mesh);
     }
 
-    /// Assigns the fields of rhs to self
+    /// Assigns the fields of the argument to `self`.
     ///
     /// # Examples
     ///
@@ -551,7 +562,7 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         self.assign_vars_d::<{ Direction::East as u8 }>(rhs);
     }
 
-    /// Assigns rhs to self at certain parts of each mesh cell
+    /// Assigns the argument `rhs` to `self` at certain parts of each mesh cell.
     ///
     /// The template parameter denotes whether to update the cell centres, west cell faces, or east
     /// cell faces. Pass the parameter as the Direction enum cast to u8 to use this function.
@@ -592,10 +603,10 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         self.get_vars_mut::<D>().assign(rhs.get_vars::<D>());
     }
 
-    /// Assigns the fields of rhs to self for cell centric values
+    /// Assigns the fields of the argument `rhs` to `self` for cell centric values.
     ///
-    /// This is a specialisation of State::assign_vars_d, where the direction is set to be
-    /// Direction::Cent. The reasoning was simply that interacting with cell centre values is the
+    /// This is a specialisation of [State::assign_vars_d()], where the direction is set to be
+    /// [Direction::Cent]. The reasoning was simply that interacting with cell centre values is the
     /// most common case, so they should have the most straight forward interface.
     ///
     /// # Examples
@@ -620,7 +631,14 @@ impl<P: Physics<E, S>, const E: usize, const S: usize> State<P, E, S> {
         self.assign_vars_d::<{ Direction::Cent as u8 }>(rhs);
     }
 
-    /// Calculates the time step width according to the CFL criterium
+    /// Calculates the time step width according to the CFL criterium.
+    ///
+    /// This function may error, for example when the time step width would hit infinity.
+    ///
+    /// # Arguments
+    ///
+    /// * `c_cfl`: CFL safety parameter
+    /// * `mesh`: The [Mesh] of the simulation
     pub fn calc_dt_cfl(&self, c_cfl: f64, mesh: &Mesh<S>) -> Result<f64> {
         P::calc_dt_cfl(&self.cent.eigen_max(), c_cfl, mesh)
     }
