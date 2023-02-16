@@ -6,14 +6,14 @@
 
 use std::any::TypeId;
 
-use crate::{errorhandling::Validation, Hll, NumFlux};
+use crate::{errorhandling::Validation, Hll, Kt, NumFlux};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
 };
 pub use numfluxconfig::*;
-pub use timeintegrationconfig::*;
 use serde::Serialize;
+pub use timeintegrationconfig::*;
 
 mod numfluxconfig;
 mod timeintegrationconfig;
@@ -82,14 +82,16 @@ impl NumericsConfig {
     /// assert_eq!(numerics_config.dt_max, f64::MAX);
     /// assert_eq!(numerics_config.dt_cfl_param, 0.4);
     /// ```
-    pub fn default_riemann_test<N: NumFlux<E,S> + 'static, const E: usize, const S: usize>(t_end: f64) -> Self {
+    pub fn default_riemann_test<N: NumFlux<E, S> + 'static, const E: usize, const S: usize>(t_end: f64) -> Self {
         Self {
             numflux_config: if TypeId::of::<N>() == TypeId::of::<Hll<E, S>>() {
                 NumFluxConfig::Hll
-            } else {
+            } else if TypeId::of::<N>() == TypeId::of::<Kt<E, S>>() {
                 NumFluxConfig::Kt {
                     limiter_mode: LimiterMode::VanLeer,
                 }
+            } else {
+                panic!("Tried constructing NumericsConfig::default_riemann_test, but the case for N was not covered!")
             },
             time_integration_config: TimeIntegrationConfig::default_rkf(),
             iter_max: usize::MAX - 2,
