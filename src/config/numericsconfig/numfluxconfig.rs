@@ -47,11 +47,42 @@ impl Validation for NumFluxConfig {
 /// Enumerates the different kinds of limiter functions used during reconstruction of cell boundary
 /// values.
 ///
+/// Let
+///
+/// * `i`: mesh cell index
+/// * `j`: equation index
+/// * `dxi`: line differential along the `xi` coordinate
+/// * `uc`: conservative variables at cell centres
+/// * `a`: `uc[[j, i]] - uc[[j, i-1]]`
+/// * `b`: `uc[[j, i+1]] - uc[[j, i]]`
+/// * `c`: `uc[[j, i+1]] - uc[[j, i-1]]`
+/// * `theta`: monocent parameter
+///
+/// Then the different limiter functions calculate the slop at each mesh cell index `i` and each
+/// equation index `j` by:
+///
+/// * `NoLimiter`: `1 / dxi * 0.5 * (a + b)`
+/// * `MinMod`: `if signum(a) * signum(b) > 0 { signum(a) * min(abs(a), abs(b)) } else { 0 }`
+/// * `Superbee`:
+/// ```text
+/// if signum(a) * signum(b) > 0 {
+///     signum(a) * min(abs(a), abs(b), 0.5 * max(abs(a), abs(b))
+/// } else { 0 }`
+/// ```
+/// * `Monocent`:
+/// ```text
+/// if signum(a) * signum(b) && signum(b) * signum(c) > 0 {
+///     signum(a) * min(abs(theta * a), abs(theta * b), abs(c))
+/// } else { 0 }`
+/// ```
+/// * `VanLeer`: `(a * abs(b) + b * abs(a)) / (abs(a) + abs(b))`
+///
 /// Defaults to [VanLeer](LimiterMode::VanLeer)
 #[derive(Debug, Serialize, Copy, Clone, Default, PartialEq)]
 pub enum LimiterMode {
     /// No limiter function, just average the differences between the cells
     NoLimiter,
+
     /// First order MinMod limiter
     MinMod,
 
