@@ -5,7 +5,7 @@
 //! Exports the [Rhs] struct that carries objects and methods for solving the right-hand side of a
 //! set of equations.
 
-pub use self::numflux::{hll::Hll, init_numflux, kt::Kt, NumFlux};
+pub use self::numflux::{hll::Hll,kt::Kt, NumFlux};
 use crate::{
     boundaryconditions::{init_boundary_condition, BoundaryCondition},
     errorhandling::Validation,
@@ -69,10 +69,9 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// let rhs: Rhs<N, E, S> = Rhs::<N,E,S>::new(&config, &mesh).unwrap();
     /// ```
     pub fn new(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
-        let numflux = init_numflux(&config.numerics_config.numflux_config, mesh)?;
         Ok(Rhs {
             full_rhs: Array2::zeros((E, S)),
-            numflux,
+            numflux: N::new(&config.numerics_config.numflux_config, mesh)?,
             boundary_west: Box::new(init_boundary_condition::<E, S>(Direction::West, config)),
             boundary_east: Box::new(init_boundary_condition::<E, S>(Direction::East, config)),
         })

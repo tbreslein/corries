@@ -2,8 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports the [NumFlux] trait that identifies structs that can calculate numerical flux, and the
-//! [init_numflux] function that handles constructing [NumFlux] objects.
+//! Exports the [NumFlux] trait that identifies structs that can calculate numerical flux.
 
 use crate::{mesh::Mesh, state::Physics, NumFluxConfig, State};
 use color_eyre::Result;
@@ -24,7 +23,19 @@ pub trait NumFlux<const E: usize, const S: usize> {
     ///
     /// # Examples
     ///
-    /// TODO:
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// let mesh: Mesh<S> = Mesh::<S>::new(&MeshConfig::default_riemann_test()).unwrap();
+    ///
+    /// // construct an Hll numerical flux solver
+    /// let hll = Hll::<E, S>::new(&NumFluxConfig::Hll, &mesh);
+    ///
+    /// // construct a Kt numerical flux solver
+    /// let kt = Kt::<E, S>::new(&NumFluxConfig::Kt { limiter_mode: LimiterMode::VanLeer }, &mesh);
+    /// ```
     fn new(numflux_config: &NumFluxConfig, mesh: &Mesh<S>) -> Result<Self>
     where
         Self: Sized;
@@ -39,30 +50,39 @@ pub trait NumFlux<const E: usize, const S: usize> {
     ///
     /// # Examples
     ///
-    /// TODO:
+    /// ```no_run
+    /// use corries::prelude::*;
+    /// use ndarray::Array2;
+    ///
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E,S>;
+    ///
+    /// // build a configuratoin for riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    ///
+    /// let mesh: Mesh<S> = Mesh::<S>::new(&config.mesh_config).unwrap();
+    /// let mut u: State<P, E, S> = State::new(&config.physics_config);
+    ///
+    /// // construct an Hll numerical flux solver
+    /// let mut hll = N::new(&NumFluxConfig::Hll, &mesh).unwrap();
+    ///
+    /// /* assume that we apply some initial conditions to u */
+    ///
+    /// // this will store the numerical flux derivative
+    /// let mut dflux_dxi = Array2::<f64>::zeros((E, S));
+    ///
+    /// hll.calc_dflux_dxi(&mut dflux_dxi, &mut u, &mesh).unwrap();
+    /// ```
     fn calc_dflux_dxi<P: Physics<E, S>>(
         &mut self,
         dflux_dxi: &mut Array2<f64>,
         u: &mut State<P, E, S>,
         mesh: &Mesh<S>,
     ) -> Result<()>;
-}
-
-/// Initialise a new [NumFlux] object, wrapped in a [`color_eyre::Result`].
-///
-/// # Arguments
-///
-/// * `numflux_config` - configures the [NumFlux] object
-/// * `mesh` - the [Mesh] this simulation runs on
-///
-/// # Examples
-///
-/// TODO:
-pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(
-    numflux_config: &NumFluxConfig,
-    mesh: &Mesh<S>,
-) -> Result<N> {
-    N::new(numflux_config, mesh)
 }
 
 /// Generic function to calculate the derivative of the numerical flux along the xi direction.
@@ -76,10 +96,6 @@ pub fn init_numflux<N: NumFlux<E, S>, const E: usize, const S: usize>(
 /// * `dflux_dxi` - numerical flux derivative
 /// * `flux_num` - numerical flux
 /// * `mesh` - [Mesh] object the simulation runs on
-///
-/// # Examples
-///
-/// TODO:
 fn calc_dflux_xi_generic<const E: usize, const S: usize>(
     dflux_dxi: &mut Array2<f64>,
     flux_num: &Array2<f64>,
