@@ -62,6 +62,25 @@ impl TimeStep {
     ///
     /// * `numericsconfig` - Configuration for everything regarding numerics
     /// * `output_counter_max` - The number of outputs this simulation produces
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    /// use corries::timestep::TimeStep;
+    ///
+    /// // set up constants
+    /// set_Physics_and_E!(Euler1DAdiabatic);
+    /// const S: usize = 100;
+    /// type N = Kt<E,S>;
+    ///
+    /// let t_end = 1.0;
+    ///
+    /// // define the config instance
+    /// let numerics_config = NumericsConfig::default_riemann_test::<N, E, S>(t_end);
+    ///
+    /// let time_step = TimeStep::new(&numerics_config, 2);
+    /// ```
     pub fn new(numericsconfig: &NumericsConfig, output_counter_max: usize) -> Self {
         Self {
             iter: 0,
@@ -78,12 +97,38 @@ impl TimeStep {
         }
     }
 
-    /// Calculates the explicit time step width
+    /// Calculates the explicit time step width and updates it in `self.dt` and `self.dt_kind`.
     ///
     /// # Arguments
     ///
-    /// * `u` - The current [Physics] state
+    /// * `u` - The current [State]
     /// * `mesh` - Information about spatial properties
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use corries::prelude::*;
+    /// use corries::timestep::TimeStep;
+    ///
+    /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
+    /// // Runge-Kutta-Fehlberg schemes for solving the equations.
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E, S>;
+    /// type T = RungeKuttaFehlberg<P, E, S>;
+    ///
+    /// // use the default config for Riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    ///
+    /// // define the config instance
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    /// let (mut u, _, _, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    /// let mut time_step = TimeStep::new(&config.numerics_config, 2);
+    ///
+    /// time_step.calc_dt_expl(&mut u, &mesh).unwrap();
+    /// ```
     pub fn calc_dt_expl<P: Physics<E, S>, const E: usize, const S: usize>(
         &mut self,
         u: &mut State<P, E, S>,

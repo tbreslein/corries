@@ -7,7 +7,11 @@
 use crate::config::numericsconfig::{RKFMode, RkfConfig};
 use ndarray::{Array1, Array2};
 
-/// Carries the butcher tableau needed for implement different Runge-Kutta-Fehlberg methods
+/// Carries the butcher tableau needed for implement different Runge-Kutta-Fehlberg methods.
+///
+/// The English Wikipedia article for "Runge-Kutta-Fehlberg method" and "Butcher tableau" are
+/// probably the best and most concise explanations for these methods; better than I ever could.
+/// Please refer to them for explanations on how they work.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ButcherTableau {
     /// Order of the method
@@ -38,7 +42,7 @@ impl ButcherTableau {
     ///
     /// # Argument
     ///
-    /// * `rkfconfig` - RKF specific configuration
+    /// * `rkfconfig` - [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg) specific configuration
     pub fn new(rkfconfig: &RkfConfig) -> Self {
         let order = get_order(rkfconfig.rkf_mode);
         let asc = rkfconfig.asc;

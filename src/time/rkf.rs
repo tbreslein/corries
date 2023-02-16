@@ -19,6 +19,10 @@ use ndarray::{s, Array2, Array3, Axis, Zip};
 mod butchertableau;
 
 /// Struct for solving the time integration step using Runge-Kutta-Fehlberg methods.
+///
+/// I'm going to be honest, I will never be able to explain this method as well as its Wikipedia
+/// article. Just use the English "Runge-Kutta-Fehlberg" wikipadia page to inform youself on this
+/// scheme, and the "Butcher tableau" page for the tableaus used to define concrete schemes.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct RungeKuttaFehlberg<P: Physics<E, S>, const E: usize, const S: usize> {
     /// Butcher Tableau for the Runge-Kutta method
@@ -63,9 +67,8 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
     ///
     /// # Arguments
     ///
-    /// * `rkfconfig` - Configuration specifically for [RungeKuttaFehlberg] objects
-    /// * `physicsconfig` - Configuration for [Physics] objects, needed because `utilde`
-    fn new(config: &CorriesConfig, u: &State<P, E, S>) -> Result<Self> {
+    /// * `config` - Configuration for [corries](crate) simulations
+    fn new(config: &CorriesConfig) -> Result<Self> {
         let (bt, asc_relative_tolerance, asc_absolute_tolerance, asc_timestep_friction) =
             match &config.numerics_config.time_integration_config {
                 TimeIntegrationConfig::Rkf(rkf_config) => (
@@ -76,8 +79,6 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
                 ),
             };
         let order = bt.order;
-        let mut utilde = State::new(&config.physics_config);
-        utilde.assign(u);
         Ok(Self {
             bt,
             k_bundle: Array3::zeros([order, E, S]),
@@ -89,7 +90,7 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
             asc_timestep_friction,
             solution_accepted: true,
             u_cons_low: Array2::zeros((E, S)),
-            utilde,
+            utilde: State::new(&config.physics_config),
         })
     }
 
