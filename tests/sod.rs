@@ -7,89 +7,21 @@ use corries::prelude::*;
 use ndarray::Array2;
 const S: usize = 100;
 
-fn get_config(numflux_config: NumFluxConfig) -> CorriesConfig {
-    let boundary_conditions_west = BoundaryMode::Custom(vec![
-        (0, CustomBoundaryMode::NoGradients),
-        (1, CustomBoundaryMode::NoGradients),
-        (2, CustomBoundaryMode::NoGradients),
-    ]);
-
-    let boundary_conditions_east = BoundaryMode::Custom(vec![
-        (0, CustomBoundaryMode::NoGradients),
-        (1, CustomBoundaryMode::NoGradients),
-        (2, CustomBoundaryMode::NoGradients),
-    ]);
-
-    let file_name = "sod_".to_owned()
-        + match numflux_config {
-            NumFluxConfig::Hll => "hll",
-            NumFluxConfig::Kt { limiter_mode: _ } => "kt",
-        };
-    let folder_name = "results/integrationtests/".to_owned() + &file_name;
-    let data_names_vector = vec![
-        DataName::XiCent,
-        DataName::T,
-        DataName::Prim(0),
-        DataName::Prim(1),
-        DataName::Prim(2),
-    ];
-
+fn get_config<N: NumFlux<E,S> + 'static, const E: usize>(folder_name: &str, file_name: &str) -> CorriesConfig {
     return CorriesConfig {
         print_banner: false,
-        mesh_config: MeshConfig {
-            mode: MeshMode::Cartesian,
-            xi_in: 1.0,
-            xi_out: 2.0,
-            ratio_disk: 1.0,
-        },
+        mesh_config: MeshConfig::default_riemann_test(),
         physics_config: PhysicsConfig {
             units_mode: UnitsMode::SI,
             adiabatic_index: 1.4,
         },
-        boundary_condition_west: boundary_conditions_west,
-        boundary_condition_east: boundary_conditions_east,
-        numerics_config: NumericsConfig {
-            numflux_config,
-            time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
-                rkf_mode: RKFMode::SSPRK5,
-                asc: false,
-                asc_relative_tolerance: 0.001,
-                asc_absolute_tolerance: 0.001,
-                asc_timestep_friction: 0.08,
-            }),
-            iter_max: usize::MAX - 2,
-            t0: 0.0,
-            t_end: 0.25,
-            dt_min: 1.0e-12,
-            dt_max: f64::MAX,
-            dt_cfl_param: 0.4,
-        },
+        boundary_condition_west: BoundaryMode::NoGradients,
+        boundary_condition_east: BoundaryMode::NoGradients,
+        numerics_config: NumericsConfig::default_riemann_test::<N,E,S>(0.25),
         output_counter_max: 1,
         writer_config: vec![
-            OutputConfig {
-                stream_mode: StreamMode::Stdout,
-                formatting_mode: FormattingMode::TSV,
-                string_conversion_mode: ToStringConversionMode::Scalar,
-                folder_name: "".to_string(),
-                should_clear_out_folder: false,
-                file_name: "".to_string(),
-                precision: 3,
-                should_print_ghostcells: false,
-                should_print_metadata: false,
-                data_names: vec![DataName::Iter, DataName::T, DataName::Dt, DataName::DtKind],
-            },
-            OutputConfig {
-                stream_mode: StreamMode::File,
-                formatting_mode: FormattingMode::CSV,
-                string_conversion_mode: ToStringConversionMode::Vector,
-                folder_name,
-                should_clear_out_folder: true,
-                file_name,
-                precision: 7,
-                should_print_ghostcells: true,
-                should_print_metadata: false,
-                data_names: data_names_vector,
-            },
+            OutputConfig::default_stdout(),
+            OutputConfig::default_file(folder_name, file_name, E),
         ],
     };
 }
@@ -115,12 +47,8 @@ fn sod_hll() -> Result<()> {
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config(NumFluxConfig::Hll);
-    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
-    let mut u = State::<P, E, S>::new(&config.physics_config);
-    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
-    let mut time: Time<P, T, E, S> = Time::new(&config)?;
-    let mut writer = Writer::new::<S>(&config, &mesh)?;
+    let config = get_config::<N,E>("results/integrationtests/sod_hll", "sod_hll");
+    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init::<P, E, S>(&mut u);
     u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
@@ -136,14 +64,8 @@ fn sod_kt() -> Result<()> {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config(NumFluxConfig::Kt {
-        limiter_mode: LimiterMode::Monocent(1.2),
-    });
-    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
-    let mut u = State::<P, E, S>::new(&config.physics_config);
-    let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
-    let mut time: Time<P, T, E, S> = Time::new(&config)?;
-    let mut writer = Writer::new::<S>(&config, &mesh)?;
+    let config = get_config::<N,E>("results/integrationtests/sod_kt", "sod_kt");
+    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init::<P, E, S>(&mut u);
     u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
