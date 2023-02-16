@@ -119,7 +119,7 @@ fn sod_hll() -> Result<()> {
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u = State::<P, E, S>::new(&config.physics_config);
     let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
-    let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
+    let mut time: Time<P, T, E, S> = Time::new(&config)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init::<P, E, S>(&mut u);
@@ -142,7 +142,7 @@ fn sod_kt() -> Result<()> {
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let mut u = State::<P, E, S>::new(&config.physics_config);
     let mut rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(&config, &mesh)?;
-    let mut time: Time<P, T, E, S> = Time::new(&config, &u)?;
+    let mut time: Time<P, T, E, S> = Time::new(&config)?;
     let mut writer = Writer::new::<S>(&config, &mesh)?;
 
     init::<P, E, S>(&mut u);

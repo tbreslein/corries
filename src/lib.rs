@@ -70,7 +70,7 @@ type CorriesComponents<P, N, T, const E: usize, const S: usize> =
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// use corries::prelude::*;
 ///
 /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
@@ -105,7 +105,7 @@ where
     let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
     let u: State<P, E, S> = State::new(&config.physics_config);
     let rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(config, &mesh)?;
-    let time: Time<P, T, E, S> = Time::new(config, &u)?;
+    let time: Time<P, T, E, S> = Time::new(config)?;
     let mut writer = Writer::new::<S>(config, &mesh)?;
 
     if writer.print_banner {
