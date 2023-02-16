@@ -25,10 +25,10 @@ use ndarray::{par_azip, s, Array1, Array2};
 ///
 /// Let
 ///
-/// `sl`: left-facing characteristic
-/// `sr`: left-facing characteristic
-/// `eigen_min`: minimal eigen values for the current [Physics] state
-/// `eigen_max`: minimal eigen values for the current [Physics] state
+/// * `sl`: left-facing characteristic
+/// * `sr`: left-facing characteristic
+/// * `eigen_min`: minimal eigen values for the current [State]
+/// * `eigen_max`: minimal eigen values for the current [State]
 ///
 /// Then for each cell index `i`
 ///
@@ -41,9 +41,9 @@ use ndarray::{par_azip, s, Array1, Array2};
 ///
 /// Let
 ///
-/// `uc`: conservative variables
-/// `Fp`: physical flux
-/// `Fn`: numerical flux
+/// * `uc`: conservative variables
+/// * `Fp`: physical flux
+/// * `Fn`: numerical flux
 ///
 /// Then the numerical flux is calculated for each equation index `j` and each mesh cell `i` by:
 ///
