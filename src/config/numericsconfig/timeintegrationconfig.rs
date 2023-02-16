@@ -4,7 +4,7 @@
 
 //! Exports [TimeIntegrationConfig] for configuring [TimeSolver](crate::time::TimeSolver) objects.
 
-use crate::errorhandling::Validation;
+use crate::{check_positive_double, errorhandling::Validation};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,
@@ -129,19 +129,9 @@ impl Default for RkfConfig {
 
 impl Validation for RkfConfig {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.asc_absolute_tolerance > 0.0,
-            "This must hold: asc_absolute_tolerance > 0.0 ! Got {}",
-            self.asc_absolute_tolerance
-        );
-        ensure!(
-            self.asc_relative_tolerance > 0.0,
-            "This must hold: asc_relative_tolerance > 0.0 ! Got {}",
-            self.asc_relative_tolerance
-        );
-        ensure!(
-            self.asc_timestep_friction > 0.0,
-            "This must hold: asc_timestep_friction > 0.0 ! Got {}",
+        check_positive_double!(
+            self.asc_absolute_tolerance,
+            self.asc_relative_tolerance,
             self.asc_timestep_friction
         );
         Ok(())

@@ -151,28 +151,7 @@ impl<const E: usize, const S: usize> NumFlux<E, S> for Hll<E, S> {
 
 impl<const E: usize, const S: usize> Validation for Hll<E, S> {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.sl.fold(true, |acc, x| acc && x.is_finite()),
-            "Hll::sl must be finite! Got: {}",
-            self.sl
-        );
-        ensure!(
-            self.sr.fold(true, |acc, x| acc && x.is_finite()),
-            "Hll::sr must be finite! Got: {}",
-            self.sr
-        );
-        ensure!(
-            self.inv_sr_minus_sl.fold(true, |acc, x| acc && x.is_finite()),
-            "Hll::inv_sr_minus_sl must be finite! Got:\ninv_sr_minus_sl = {}\nsr = {}\nsl = {}",
-            self.inv_sr_minus_sl,
-            self.sr,
-            self.sl
-        );
-        ensure!(
-            self.flux_num.fold(true, |acc, x| acc && x.is_finite()),
-            "Hll::flux_num must be finite! Got: {}",
-            self.flux_num
-        );
+        check_finite_arrayd!(self.sl, self.sr, self.inv_sr_minus_sl, self.flux_num);
         Ok(())
     }
 }

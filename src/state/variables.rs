@@ -112,16 +112,7 @@ impl<const E: usize, const S: usize> Collectable for Variables<E, S> {
 
 impl<const E: usize, const S: usize> Validation for Variables<E, S> {
     fn validate(&self) -> Result<()> {
-        ensure!(
-            self.prim.fold(true, |acc, x| acc && x.is_finite()),
-            "Physics::prim must be finite! Got: {}",
-            self.prim
-        );
-        ensure!(
-            self.cons.fold(true, |acc, x| acc && x.is_finite()),
-            "Physics::cons must be finite! Got: {}",
-            self.cons
-        );
+        check_finite_arrayd!(self.prim, self.cons);
         Ok(())
     }
 }

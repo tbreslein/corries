@@ -410,10 +410,10 @@ impl<const S: usize> Mesh<S> {
 impl<const S: usize> Validation for Mesh<S> {
     fn validate(&self) -> Result<()> {
         // checks on doubles
-        check_finite_multiple_doubles![self.dxi, self.deta, self.dphi];
+        check_finite_double![self.dxi, self.deta, self.dphi];
 
         // checks on arrays
-        check_nonempty_finite_multiple_arrayd![
+        check_finite_arrayd![
             self.xi_cent,
             self.xi_west,
             self.xi_east,
