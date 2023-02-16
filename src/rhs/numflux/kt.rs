@@ -34,6 +34,60 @@ macro_rules! max {
 }
 
 /// Handles calculating numerical flux using the Kurganov-Tadmor scheme
+///
+/// # wave characteristics
+///
+/// This scheme calculates left- and right-side characteristics to determine where waves are
+/// traveling, we call these `aplus` and `aminus` respectively. `Left` and `right` mean that these
+/// are characteristics pointing towards small and big mesh indexes respectively, i.e. west- and
+/// eastward.
+/// These may also be called maximally positive and minimally negative characteristics, hence the
+/// `+` and `-`.
+///
+/// These are calculated as follows:
+///
+/// Let
+///
+/// * `aplus`: maximally positive characteristic
+/// * `aminus`: minimally negative characteristic
+/// * `eigen_min_{west,east}`: minimal eigen values for the current [State] for either west
+///    or east facing variables
+/// * `eigen_max_{west,east}`: maximal eigen values for the current [State] for either west
+///    or east facing variables
+///
+/// Then for each cell index `i`
+///
+/// ```text
+/// aplus[i]  = max(0.0, max(eigen_max_west[i], eigen_max_east[i]))
+/// aminus[i] = min(0.0, min(eigen_min_west[i], eigen_min_east[i]))
+/// ```
+///
+/// # calculating the numerical flux
+///
+/// Let
+///
+/// * `dA`: area differential for the cell along the `xi` and `eta` coordinates
+/// * `deta`: length differential for the cell along the `eta` coordinate
+/// * `dPhi`: length differential for the cell along the `Phi` coordinate
+/// * `uc_{west,east}`: conservative variables for either west or east facing variables
+/// * `Fp_{west,east}`: physical flux for either west or east facing variables
+/// * `Fn_{west,east}`: numerical flux for either west or east facing variables
+///
+/// Then the numerical flux is calculated for each equation index `j` and each mesh cell `i` by:
+///
+/// ```text
+/// Fn[[j,i]] = (dA / (deta / dPhi * (aplus[i] - aminus[i])))
+///           * (aplus[i] * Fp_east[[j,i]]
+///              - aminus[i] * Fp_west[[j,i+1]]
+///              + aplus[i] * aminus[i] * (uc_west[[j,i+1]] - uc_east[[j,i]]))
+/// ```
+///
+/// The values on the cell faces are calculated using a linear reconstruction scheme set by the
+/// `limiter_mode` field in the [NumFluxConfig::Kt] variant that is passed to the constructor.
+/// You can review the limiter modes in the [LimiterMode] docs.
+///
+/// After calculating the numerical flux, the derivative of that value is calculated as a simple
+/// finite difference.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Kt<const E: usize, const S: usize> {
     /// Left-side characteristics
