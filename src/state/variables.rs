@@ -11,7 +11,7 @@ use color_eyre::{
 };
 use ndarray::{Array1, Array2, ArrayView1};
 
-/// Contains the variables of a physics system
+/// Contains the variables of a [State](crate::state::State) object
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Variables<const E: usize, const S: usize> {
     /// Primitive variables
@@ -41,6 +41,23 @@ unsafe impl<const E: usize, const S: usize> Sync for Variables<E, S> {}
 
 impl<const E: usize, const S: usize> Variables<E, S> {
     /// Constructs a new [Variables] object
+    ///
+    /// # Arguments
+    ///
+    /// * `physics_config`: carries configuration for [State](crate::state::State) and
+    /// [Physics](crate::state::physics) objects.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    /// use corries::variables::Variables;
+    ///
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    ///
+    /// let vars = Variables::<E,S>::new(&PhysicsConfig::default());
+    /// ```
     pub fn new(physics_config: &PhysicsConfig) -> Self {
         Variables {
             prim: Array2::zeros((E, S)),
@@ -53,15 +70,12 @@ impl<const E: usize, const S: usize> Variables<E, S> {
         }
     }
 
-    /// Accessor function for zero_vec
-    ///
-    /// zero_vec should not be mutable, so access is restricted to this function that only gives
-    /// you an immutable view.
+    /// Accessor function to a vector of zeroes.
     pub fn zero_vec(&self) -> ArrayView1<f64> {
         self.zero_vec.view()
     }
 
-    /// Assign the fields of rhs to self.
+    /// Assign the fields of the `rhs` argument to `self`.
     pub fn assign(&mut self, rhs: &Self) {
         self.prim.assign(&rhs.prim);
         self.cons.assign(&rhs.cons);
