@@ -14,7 +14,9 @@ use rayon::prelude::{IntoParallelRefMutIterator, ParallelIterator};
 pub mod data;
 mod output;
 
-/// Wrapper for `Vec<Output>` that facilitates writing output into streams.
+/// The struct responsible for handling writing simulation data to output streams.
+///
+/// Refer to [CorriesConfig] and [OutputConfig] for how to configure it and what your options are.
 #[derive(Debug, Clone, Default)]
 pub struct Writer {
     /// Contains the objects that handle writing into single streams.
@@ -56,7 +58,7 @@ unsafe impl Send for DataValue {}
 unsafe impl Sync for DataValue {}
 
 impl Writer {
-    /// Builds a new `Result<Writer>` object.
+    /// Builds a new [`color_eyre::Result<Writer>`] object.
     ///
     /// # Arguments
     ///
@@ -95,7 +97,7 @@ impl Writer {
             .try_for_each(|output| output.update_data(u, time, mesh))
     }
 
-    /// Loops through `self.outputs` and calls their `write_output` methods.
+    /// Writes to all defined output streams
     pub fn write_output(&mut self) -> Result<()> {
         self.outputs
             .par_iter_mut()
@@ -104,8 +106,7 @@ impl Writer {
         Ok(())
     }
 
-    /// Loops through `self.outputs` and calls their `write_metadata` methods if they are
-    /// configured to do so.
+    /// Writes metadata to all output streams
     pub fn write_metadata<const S: usize>(&mut self) -> Result<()> {
         self.outputs
             .par_iter_mut()
