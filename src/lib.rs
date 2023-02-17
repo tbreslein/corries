@@ -529,9 +529,19 @@
 //!
 //! # Plans
 //!
-//! Currently, corries only supports cartesian meshes, though non-cartesian meshes are next up on
-//! the TODO.
+//! Currently, corries only supports cartesian meshes, though non-cartesian meshes are coming very
+//! soon.
 //!
+//! * put [Rhs] and [Time] into a `Solver` struct
+//! * streamline initial conditions a bit
+//!   * make [init_corries] a method of [CorriesConfig]
+//!   * that method calls the original [init_corries] logic first, then it calls a user provided
+//!   function which applies initial conditions
+//!   * after calling the user provided function, the method automatically makes sure that all
+//!   variables as well as `u.west` und `u.east` are set up properly
+//!   * the method returns the tuple of `(u, solver, mesh, writer)` which are bundled into the
+//!   `CorriesComponents` typedef
+//!   * add a method `run` to that type that is basically just calling [run_corries]
 //! * Add cylindrical geometry + Source trait + GeometricSource + Sedov test
 //! * Add spherical geometry + new Sedov case
 //! * Add Euler2DAdiabatic
