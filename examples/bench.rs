@@ -4,29 +4,25 @@
 
 use color_eyre::Result;
 use corries::prelude::*;
-use ndarray::{Array1, Array2};
 
 const S: usize = 500;
 
-fn init<P: Physics<E, S>, N: NumFlux<E, S>, const E: usize, const S: usize>(
+fn init<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
     u: &mut State<P, E, S>,
-    rhs: &mut Rhs<N, E, S>,
-    mesh: &Mesh<S>,
-) {
+    _: &mut Solver<P, N, T, E, S>,
+    _: &Mesh<S>,
+) -> Result<()> {
     let breakpoint_index = (S as f64 * 0.5) as usize;
-    let mut prim = Array2::ones((E, S));
+    u.cent.prim.fill(1.0);
     for i in breakpoint_index..S {
-        prim[[1, i]] = -1.0;
+        u.cent.prim[[P::JXI, i]] = -1.0;
     }
     if u.is_adiabatic() {
-        prim.row_mut(E - 1).fill(1.0E-5);
+        u.cent.prim.row_mut(P::JPRESSURE).fill(1.0E-5);
     } else {
-        u.cent.c_sound.assign(&Array1::ones(S).view());
+        u.cent.c_sound.fill(1.0);
     }
-    u.cent.prim.assign(&prim.view());
-    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
-    u.init_west_east();
-    return;
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -34,9 +30,7 @@ fn main() -> Result<()> {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/examples/bench_noh", "bench_noh");
-    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-
-    init(&mut u, &mut solver.rhs, &mesh);
-    run_corries(&mut u, &mut solver, &mesh, &mut writer)
+    CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/examples/bench_noh", "bench_noh")
+        .init_corries::<P, N, T, E, S>(init)?
+        .run_corries()
 }
