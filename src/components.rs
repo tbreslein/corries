@@ -2,19 +2,32 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports the [CorriesComponents] type alias, as well as [Runner] trait.
 
 use color_eyre::{eyre::Context, Result};
-
 use crate::{DtKind, Mesh, NumFlux, Physics, Solver, State, TimeSolver, Writer};
 
-/// todo
+/// This trait is written solely for the purpose of implementing this method on CorriesComponents,
+/// which itself is just a type alias.
+///
+/// Refer to [CorriesComponents] for a detailed usage example.
 pub trait Runner {
-    /// todo
+    /// Runs a [corries](crate) simulation.
+    ///
+    /// Refer to [CorriesComponents] for a detailed usage example.
     fn run_corries(&mut self) -> Result<()>;
 }
 
-/// todo
+/// A type alias around a tuple of the four components of a [corries](crate) simulation:
+///
+/// * [State]
+/// * [Solver]
+/// * [Mesh]
+/// * [Writer]
+///
+/// The main purpose of this tuple is to be a return type for
+/// [CorriesConfig::init_corries()](crate::CorriesConfig::init_corries()). With that, we can chain
+/// that method into the [Runner::run_corries()] method to run the simulation.
 pub type CorriesComponents<P, N, T, const E: usize, const S: usize> =
     (State<P, E, S>, Solver<P, N, T, E, S>, Mesh<S>, Writer);
 
@@ -24,6 +37,35 @@ where
     N: NumFlux<E, S>,
     T: TimeSolver<P, E, S>,
 {
+    /// Runs a [corries](crate) simulation.
+    ///
+    /// This assumes that you already set your initial conditions in `u` and that it is fully
+    /// up-to-date.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use corries::prelude::*;
+    ///
+    /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
+    /// // Runge-Kutta-Fehlberg schemes for solving the equations.
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E, S>;
+    /// type T = RungeKuttaFehlberg<P, E, S>;
+    ///
+    /// // use the default config for Riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    ///
+    /// // define the config instance
+    /// CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name)
+    ///     .init_corries::<P, N, T, E,S>(|_, _, _| Ok(()))
+    ///     .unwrap()
+    ///     .run_corries()
+    ///     .unwrap()
+    /// ```
     fn run_corries(&mut self) -> Result<()> {
         // source: https://stackoverflow.com/questions/41207306/mutable-reference-to-a-tuple-as-input-parameter
         // This is where I learned what the ref keyword is...
