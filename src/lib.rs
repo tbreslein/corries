@@ -530,8 +530,6 @@
 //! Currently, corries only supports cartesian meshes, though non-cartesian meshes are coming very
 //! soon.
 //!
-//! * investigate the possibility of putting boundary conditions into [State]
-//!   * once I have that, Solver::rhs does not need to be pub anymore
 //! * streamline initial conditions a bit
 //!   * make [init_corries] a method of [CorriesConfig]
 //!   * that method calls the original [init_corries] logic first, then it calls a user provided
@@ -540,7 +538,7 @@
 //!   variables as well as `u.west` und `u.east` are set up properly
 //!   * the method returns the tuple of `(u, solver, mesh, writer)` which are bundled into the
 //!   `CorriesComponents` typedef
-//!   * add a method `run` to that type that is basically just calling [run_corries]
+//!    add a method `run` to that type that is basically just calling [run_corries]
 //! * Add cylindrical geometry + Source trait + GeometricSource + Sedov test
 //! * Add spherical geometry + new Sedov case
 //! * Add Euler2DAdiabatic
@@ -548,6 +546,9 @@
 //! * Add logcylindrical geometry + Vortex test
 //! * Add gravitational source + Bondi test
 //! * Add viscosity source + Pringle test
+//! * investigate the possibility of putting boundary conditions into [State]
+//!   * not really possible currently, because I cannot split the borrows between the boundary
+//!   conditions and the variables without using Cell for interior mutability.
 //!
 //! Most importantly exports the module [prelude].
 
