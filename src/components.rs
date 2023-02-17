@@ -4,8 +4,8 @@
 
 //! Exports the [CorriesComponents] type alias, as well as [Runner] trait.
 
-use color_eyre::{eyre::Context, Result};
 use crate::{DtKind, Mesh, NumFlux, Physics, Solver, State, TimeSolver, Writer};
+use color_eyre::{eyre::Context, Result};
 
 /// This trait is written solely for the purpose of implementing this method on CorriesComponents,
 /// which itself is just a type alias.

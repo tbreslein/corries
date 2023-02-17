@@ -91,7 +91,7 @@ impl<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize,
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use corries::prelude::*;
     ///
     /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
@@ -108,8 +108,9 @@ impl<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize,
     ///
     /// // define the config instance
     /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
-    /// let (mut u, mut solver, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    /// solver.next_solution(&mut u, &mesh);
+    /// let (mut u, mut solver, mesh, _) = config.init_corries::<P, N, T, E, S>(|_,_,_| Ok(())).unwrap();
+    ///
+    /// solver.next_solution(&mut u, &mesh).unwrap();
     /// ```
     pub fn next_solution(&mut self, u: &mut State<P, E, S>, mesh: &Mesh<S>) -> Result<()> {
         self.time_solver

@@ -202,7 +202,7 @@ impl CorriesConfig {
     /// ```
     pub fn init_corries<P, N, T, const E: usize, const S: usize>(
         &self,
-        init_fn: fn(&mut State<P,E,S>, &mut Solver<P,N,T,E,S>, &Mesh<S>) -> Result<()>,
+        init_fn: fn(&mut State<P, E, S>, &mut Solver<P, N, T, E, S>, &Mesh<S>) -> Result<()>,
     ) -> Result<CorriesComponents<P, N, T, E, S>>
     where
         P: Physics<E, S> + 'static,
