@@ -11,7 +11,9 @@ use color_eyre::{
 };
 use crate::{timestep::TimeStep, CorriesConfig, Mesh, NumFlux, Physics, Rhs, State, TimeSolver};
 
-/// TODO
+/// Struct that is responsible for generating new solutions for [State] objects.
+///
+/// Acts as a bundler struct for [TimeStep], [Rhs], and [TimeSolver].
 pub struct Solver<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> {
     /// Keeps track of the time coordinate and related data
     pub timestep: TimeStep,
@@ -42,6 +44,35 @@ where
 
 impl<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize> Solver<P, N, T, E, S> {
     /// Constructs a new [Solver] struct.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - configuration for this simulation
+    /// * `mesh` - Information about spatial properties
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use corries::prelude::*;
+    ///
+    /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
+    /// // Runge-Kutta-Fehlberg schemes for solving the equations.
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E, S>;
+    /// type T = RungeKuttaFehlberg<P,E,S>;
+    ///
+    /// // use the default config for Riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    ///
+    /// // define the config instance
+    /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    /// let mesh = Mesh::<S>::new(&config.mesh_config).unwrap();
+    ///
+    /// let solver = Solver::<P,N,T,E,S>::new(&config, &mesh).unwrap();
+    /// ```
     pub fn new(config: &CorriesConfig, mesh: &Mesh<S>) -> Result<Self> {
         Ok(Self {
             timestep: TimeStep::new(&config.numerics_config, config.output_counter_max),
@@ -60,8 +91,7 @@ impl<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize,
     ///
     /// # Examples
     ///
-    /// TODO
-    /// ```ignore
+    /// ```
     /// use corries::prelude::*;
     ///
     /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
@@ -69,7 +99,7 @@ impl<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize,
     /// const S: usize = 100;
     /// set_Physics_and_E!(Euler1DIsot);
     /// type N = Hll<E, S>;
-    /// type T = RungeKuttaFehlberg<P, E, S>;
+    /// type T = RungeKuttaFehlberg<P,E,S>;
     ///
     /// // use the default config for Riemann tests
     /// let t_end = 0.5;
@@ -78,9 +108,8 @@ impl<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize,
     ///
     /// // define the config instance
     /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
-    /// let (mut u, mut rhs, mut time, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    ///
-    /// time.next_solution(&mut u, &mut rhs, &mesh);
+    /// let (mut u, mut solver, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    /// solver.next_solution(&mut u, &mesh);
     /// ```
     pub fn next_solution(&mut self, u: &mut State<P, E, S>, mesh: &Mesh<S>) -> Result<()> {
         self.time_solver
