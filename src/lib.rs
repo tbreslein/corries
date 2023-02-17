@@ -53,12 +53,13 @@
 //! * Choosing a couple of type parameters, namely for the traits: [Physics], [NumFlux], and
 //! [TimeSolver], as well as the [Mesh] size (also through a compile time constant)
 //! * Building a [CorriesConfig], which allows for fine-grained control over the simulation
-//! * Constructing the objects needed for the simulation (usually done through [init_corries]
-//! * Applying initial conditions to the [State] object
-//! * Running the simulation with [run_corries]
+//! * Constructing and applying initial conditions to the necessary objects through the
+//! [CorriesConfig::init_corries]
+//! * Running the simulation with the [CorriesComponents]'s [run_corries] method
 //!
-//! You can see examples of this in the docs for [init_corries] and [run_corries], as well as when
-//! looking through the source code for the integratoin tests in the `tests/` folder.
+//! You can see examples of this in the docs for [CorriesConfig::init_corries] and
+//! [Runner::run_corries], as well as when looking through the source code for the integration
+//! tests in the `tests/` folder.
 //! In those examples I usually use a couple of default constructors for configuration structs, but
 //! in `examples/template.rs` you can also see how a full-blown [CorriesConfig] can be set up.
 //!
@@ -366,50 +367,19 @@
 //! ```
 //!
 //! Now with our configuration done, we can initialise the objects we need.
-//! The [init_corries] function does exactly what you need here, and all you need to pass it are
-//! the generic parameters we set up top as well as the config struct.
+//! The [CorriesConfig::init_corries()] method does exactly what you need here, and all you need to
+//! pass it are the generic parameters we set up top, as well as a function for your initial
+//! conditions.
 //!
-//! ```
-//! # use color_eyre::{eyre::Context, Result};
-//! # use corries::prelude::*;
-//! # const S: usize = 100;
-//! # set_Physics_and_E!(Euler1DAdiabatic);
-//! # type N = Kt<E, S>;
-//! # type T = RungeKuttaFehlberg<P, E, S>;
-//! # fn get_config<N: NumFlux<E, S> + 'static, const E: usize>(folder_name: &str, file_name: &str) -> CorriesConfig {
-//! #     return CorriesConfig {
-//! #         print_banner: false,
-//! #         mesh_config: MeshConfig::default_riemann_test(),
-//! #         physics_config: PhysicsConfig {
-//! #             units_mode: UnitsMode::SI,
-//! #             adiabatic_index: 1.4,
-//! #         },
-//! #         boundary_condition_west: BoundaryMode::NoGradients,
-//! #         boundary_condition_east: BoundaryMode::NoGradients,
-//! #         numerics_config: NumericsConfig::default_riemann_test::<N, E, S>(0.25),
-//! #         output_counter_max: 1,
-//! #         writer_config: vec![
-//! #             OutputConfig::default_stdout(),
-//! #             OutputConfig::default_file(folder_name, file_name, E),
-//! #         ],
-//! #     };
-//! # }
-//! # let config = get_config::<N,E>("results/sod", "sod");
-//! let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+//! That function has the signature (barring generic parameters):
+//!
+//! ```ignore
+//! fn(&mut State, &mut Solver, &Mesh) -> Result<()>
 //! ```
 //!
-//! Obviously, you should be using the ? operator instead of unwrap, but then this doc test does
-//! not run correctly... ¯\_(ツ)_/¯
+//! As was already stated, the purpose of it is to apply your initial conditions to the [State]
+//! object.
 //!
-//! The objects returned here are:
-//!
-//! * `u`: the [State] object that holds the state of the physical variables
-//! * `solver`: the [Solver] object that generates new solutions
-//! * `mesh`: the [Mesh] object that models the grid the simulation runs on
-//! * `writer`: the [Writer] object that handles writing output
-//!
-//! Almost done.
-//! Now we need to set up our initial conditions.
 //! The Sod test for this set of equations is set up like this:
 //!
 //! * net zero velocities
@@ -417,14 +387,12 @@
 //!   * To the left of that shock the mass density and pressure are set to 1.0
 //!   * To the right of that shock the mass density is set to 0.125 and the pressure is set to 1.0
 //!
-//! When setting up initial conditions we generally have to go through the following steps:
+//! When setting up initial conditions we generally only have to set up the primitive variables for
+//! the cell centric variable set.
+//! The [CorriesConfig::init_corries()] method handles applying the boundary conditions and making
+//! sure that [State::west] and [State::east] are set up too.
 //!
-//! * set up the primitive variables
-//! * update all derived variables and the conservative variables
-//! * initialise the containers holding values on the cell faces / edges (this is needed for
-//! non-zero reconstruction schemes, like in the [Kt] numerical flux scheme
-//!
-//! ```
+//! ```no_run
 //! # use color_eyre::{eyre::Context, Result};
 //! # use corries::prelude::*;
 //! # const S: usize = 100;
@@ -450,36 +418,44 @@
 //! #     };
 //! # }
 //! # let config = get_config::<N,E>("results/sod", "sod");
-//! # let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-//! // determine the index where the shock occurs, which is at the center cell
-//! let breakpoint_index = (S as f64 * 0.5) as usize;
-//! for i in 0..breakpoint_index {
-//!     // set density (index 0) and pressure (index 1) of the cell central values left of the
-//!     // shock to 1.0.
-//!     u.cent.prim[[0, i]] = 1.0;
-//!     u.cent.prim[[2, i]] = 1.0;
+//! config.init_corries::<P, N, T, E, S>(|u, _, _| {
+//!     // this function does need the [Solver] and [Mesh] objects, hence the two `_` in the
+//!     // arguments.
+//!     let breakpoint_index = (S as f64 * 0.5) as usize;
+//!     for i in 0..breakpoint_index {
+//!         // set mass density (rho) and pressure of the cell central values left of the shock to
+//!         // 1.0
+//!         u.cent.prim[[P::JRHO, i]] = 1.0;
+//!         u.cent.prim[[P::JPRESSURE, i]] = 1.0;
 //!
-//!     // set the xi velocity to 0.0
-//!     u.cent.prim[[1, i]] = 0.0;
-//! }
-//! for i in breakpoint_index..S {
-//!     // set the mass density to the right of the shock to 0.125
-//!     u.cent.prim[[0, i]] = 0.125;
+//!         // set the xi velocity to 0.0
+//!         u.cent.prim[[P::JXI, i]] = 0.0;
+//!     }
+//!     for i in breakpoint_index..S {
+//!         // set the mass density to the right of the shock to 0.125
+//!         u.cent.prim[[P::JRHO, i]] = 0.125;
 //!
-//!     // set the pressuer to the right of the shock to 0.1
-//!     u.cent.prim[[2, i]] = 0.1;
+//!         // set the pressure to the right of the shock to 0.1
+//!         u.cent.prim[[P::JPRESSURE, i]] = 0.1;
 //!
-//!     // set the xi velocity to 0.0
-//!     u.cent.prim[[1, i]] = 0.0;
-//! }
-//! // update everything else in u.cent, now that u.cent.prim is up-to-date
-//! u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
-//!
-//! // make sure u.west and u.east are initialised properly
-//! u.init_west_east();
+//!         // set the xi velocity to 0.0
+//!         u.cent.prim[[P::JXI, i]] = 0.0;
+//!     }
+//!     Ok(())
+//! }).unwrap();
 //! ```
 //!
-//! That's it.
+//! Obviously, you should be using the ? operator instead of unwrap, but then this doc test does
+//! not run correctly... ¯\_(ツ)_/¯
+//!
+//! The object returned here is a [CorriesComponents], which is simply a tuple around:
+//!
+//! * `u`: the [State] object that holds the state of the physical variables
+//! * `solver`: the [Solver] object that generates new solutions
+//! * `mesh`: the [Mesh] object that models the grid the simulation runs on
+//! * `writer`: the [Writer] object that handles writing output
+//!
+//! Almost done.
 //! Now we can call [run_corries] to run the simulation!
 //!
 //! ```no_run
@@ -508,21 +484,31 @@
 //! #     };
 //! # }
 //! # let config = get_config::<N,E>("results/sod", "sod");
-//! # let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-//! # let breakpoint_index = (S as f64 * 0.5) as usize;
-//! # for i in 0..breakpoint_index {
-//! #     u.cent.prim[[0, i]] = 1.0;
-//! #     u.cent.prim[[2, i]] = 1.0;
-//! #     u.cent.prim[[1, i]] = 0.0;
-//! # }
-//! # for i in breakpoint_index..S {
-//! #     u.cent.prim[[0, i]] = 0.125;
-//! #     u.cent.prim[[2, i]] = 0.1;
-//! #     u.cent.prim[[1, i]] = 0.0;
-//! # }
-//! # u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
-//! # u.init_west_east();
-//! run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
+//! config.init_corries::<P, N, T, E, S>(|u, _, _| {
+//!     // this function does need the [Solver] and [Mesh] objects, hence the two `_` in the
+//!     // arguments.
+//!     let breakpoint_index = (S as f64 * 0.5) as usize;
+//!     for i in 0..breakpoint_index {
+//!         // set mass density (rho) and pressure of the cell central values left of the shock to
+//!         // 1.0
+//!         u.cent.prim[[P::JRHO, i]] = 1.0;
+//!         u.cent.prim[[P::JPRESSURE, i]] = 1.0;
+//!
+//!         // set the xi velocity to 0.0
+//!         u.cent.prim[[P::JXI, i]] = 0.0;
+//!     }
+//!     for i in breakpoint_index..S {
+//!         // set the mass density to the right of the shock to 0.125
+//!         u.cent.prim[[P::JRHO, i]] = 0.125;
+//!
+//!         // set the pressure to the right of the shock to 0.1
+//!         u.cent.prim[[P::JPRESSURE, i]] = 0.1;
+//!
+//!         // set the xi velocity to 0.0
+//!         u.cent.prim[[P::JXI, i]] = 0.0;
+//!     }
+//!     Ok(())
+//! }).unwrap().run_corries().unwrap();
 //! ```
 //!
 //! # Plans
@@ -583,10 +569,8 @@ pub mod prelude {
     pub use crate::components::*;
     pub use crate::config::*;
     pub use crate::directions::*;
-    pub use crate::init_corries;
     pub use crate::mesh::*;
     pub use crate::rhs::*;
-    pub use crate::run_corries;
     pub use crate::set_Physics_and_E;
     pub use crate::solver::*;
     pub use crate::state::*;
@@ -594,139 +578,4 @@ pub mod prelude {
     pub use crate::units::*;
     pub use crate::writer::*;
 }
-
-use color_eyre::{eyre::Context, Result};
-use components::CorriesComponents;
-use errorhandling::Validation;
 pub use prelude::*;
-
-/// Initialises all objects needed to run a corries simulation.
-///
-/// Apart from the `config` argument, the important bits that also help configuring the simulation
-/// are the template Parameters. For example, the type you pass as the first template argument
-/// determines the type of [Physics] used throughout the whole simulation!
-///
-/// # Arguments
-///
-/// * `config` - The configuration struct for the simulation
-///
-/// # Examples
-///
-/// ```no_run
-/// use corries::prelude::*;
-///
-/// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
-/// // Runge-Kutta-Fehlberg schemes for solving the equations.
-/// const S: usize = 100;
-/// set_Physics_and_E!(Euler1DIsot);
-/// type N = Hll<E, S>;
-/// type T = RungeKuttaFehlberg<P, E, S>;
-///
-/// // use the default config for Riemann tests
-/// let t_end = 0.5;
-/// let folder_name = "results";
-/// let file_name = "noh";
-///
-/// // define the config instance
-/// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
-///
-/// let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-/// ```
-pub fn init_corries<P, N, T, const E: usize, const S: usize>(
-    config: &CorriesConfig,
-) -> Result<CorriesComponents<P, N, T, E, S>>
-where
-    P: Physics<E, S> + 'static,
-    N: NumFlux<E, S>,
-    T: TimeSolver<P, E, S>,
-{
-    if cfg!(feature = "validation") {
-        config.validate()?;
-    }
-
-    let mesh = Mesh::<S>::new(&config.mesh_config).context("Constructing Mesh")?;
-    let u = State::<P, E, S>::new(&config.physics_config);
-    let solver = Solver::<P, N, T, E, S>::new(config, &mesh)?;
-    let mut writer = Writer::new::<S>(config, &mesh)?;
-
-    // if writer.print_banner {
-    //     print_banner();
-    // }
-    writer
-        .write_metadata::<S>()
-        .context("Calling writer.write_metadata in run_corries")?;
-    Ok((u, solver, mesh, writer))
-}
-
-/// Runs a [corries](crate) simulation.
-///
-/// This assumes that you already set your initial conditions in `u` and that it is fully
-/// up-to-date.
-/// During the run, `writer` will be writing output according to your specifications when you wrote
-/// the [CorriesConfig] struct.
-///
-/// # Arguments
-///
-/// * `u` - Carries with the state of the physical simulation
-/// * `rhs - Solves the right-hand side of the equations
-/// * `time - Solves the time integration step and carries information about the time coordinate
-/// and the time step
-/// * `mesh` - The mesh the simulation runs on
-/// * `writer` - Deals with writing output
-///
-/// # Examples
-///
-/// ```no_run
-/// use corries::prelude::*;
-///
-/// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
-/// // Runge-Kutta-Fehlberg schemes for solving the equations.
-/// const S: usize = 100;
-/// set_Physics_and_E!(Euler1DIsot);
-/// type N = Hll<E, S>;
-/// type T = RungeKuttaFehlberg<P, E, S>;
-///
-/// // use the default config for Riemann tests
-/// let t_end = 0.5;
-/// let folder_name = "results";
-/// let file_name = "noh";
-///
-/// // define the config instance
-/// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
-///
-/// let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-/// run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
-/// ```
-pub fn run_corries<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
-    u: &mut State<P, E, S>,
-    solver: &mut Solver<P, N, T, E, S>,
-    mesh: &Mesh<S>,
-    writer: &mut Writer,
-) -> Result<()> {
-    loop {
-        if solver.timestep.t >= solver.timestep.t_next_output - solver.timestep.dt_min {
-            solver.timestep.t_next_output += solver.timestep.dt_output;
-            writer
-                .update_data(&u.cent, &solver.timestep, mesh)
-                .context("Calling writer.update_data_matrices in run_corries")?;
-            writer
-                .write_output()
-                .context("Calling wirter.write_output in run_corries")?;
-        }
-        if solver.timestep.t + solver.timestep.dt_min * 0.01 >= solver.timestep.t_end {
-            break;
-        }
-
-        if let err @ Err(_) = solver.next_solution(u, mesh) {
-            solver.timestep.dt_kind = DtKind::ErrorDump;
-            writer
-                .update_data(&u.cent, &solver.timestep, mesh)
-                .context("Calling writer.update_data_matrices during the error dump in run_corries")?;
-            writer
-                .write_output()
-                .context("Calling writer.write_output during the error dump in run_corries")?;
-            return err;
-        }
-    }
-    Ok(())
-}

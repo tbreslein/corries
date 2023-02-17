@@ -98,10 +98,9 @@ pub trait TimeSolver<P: Physics<E, S>, const E: usize, const S: usize> {
     /// let folder_name = "results";
     /// let file_name = "noh";
     ///
-    /// // define the config instance
     /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
+    /// let (mut u, mut solver, mesh, _) = config.init_corries::<P, N, T, E, S>(|_,_,_| Ok(())).unwrap();
     ///
-    /// let (mut u, mut solver, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
     /// // solver carries the an instance of [TimeSolver]
     /// solver.next_solution(&mut u, &mesh).unwrap();
     /// ```

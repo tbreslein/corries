@@ -55,9 +55,9 @@ fn sod_hll() -> Result<()> {
     type T = RungeKuttaFehlberg<P, E, S>;
 
     get_config::<N, E>("results/integrationtests/sod_hll", "sod_hll")
-    .init_corries::<P, N, T, E, S>(init)
-    .context("While calling CorriesConfig::init_corries")?
-    .run_corries()
+        .init_corries::<P, N, T, E, S>(init)
+        .context("While calling CorriesConfig::init_corries")?
+        .run_corries()
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn sod_kt() -> Result<()> {
     type T = RungeKuttaFehlberg<P, E, S>;
 
     get_config::<N, E>("results/integrationtests/sod_kt", "sod_kt")
-    .init_corries::<P, N, T, E, S>(init)
-    .context("While calling CorriesConfig::init_corries")?
-    .run_corries()
+        .init_corries::<P, N, T, E, S>(init)
+        .context("While calling CorriesConfig::init_corries")?
+        .run_corries()
 }
