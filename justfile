@@ -13,7 +13,7 @@ doc:
 build: format clippy doc
   cargo build -r
 
-test: clippy doc
+test: format clippy doc
   cargo test --doc
   cargo nextest run -E 'binary(corries)'
   cargo nextest run -r -E 'kind(test)'
