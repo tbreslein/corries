@@ -33,7 +33,7 @@ pub struct MeshConfig {
 
 impl MeshConfig {
     /// Sets up a MeshConfig that can be used for most Riemann tests, which uses a Cartesian mesh
-    /// with coordinate boundaries set to 1.0 and 2.0, and ratio_disk set to 1.0.
+    /// with coordinate boundaries set to 1.0 and 2.0.
     ///
     /// # Examples
     ///
