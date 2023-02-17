@@ -29,9 +29,6 @@ pub struct MeshConfig {
 
     /// xi coordinate at the outer/eastern boundary of the computational area
     pub xi_out: f64,
-
-    /// Ratio in terms of radial thickness between the massive disk and the computational area
-    pub ratio_disk: f64,
 }
 
 impl MeshConfig {
@@ -47,14 +44,12 @@ impl MeshConfig {
     /// assert_eq!(meshconfig.mode, MeshMode::Cartesian);
     /// assert_eq!(meshconfig.xi_in, 1.0);
     /// assert_eq!(meshconfig.xi_out, 2.0);
-    /// assert_eq!(meshconfig.ratio_disk, 1.0);
     /// ```
     pub fn default_riemann_test() -> Self {
         Self {
             mode: MeshMode::Cartesian,
             xi_in: 1.0,
             xi_out: 2.0,
-            ratio_disk: 1.0,
         }
     }
 }
@@ -69,11 +64,6 @@ impl Validation for MeshConfig {
             "This must hold: xi_in < xi_out! Got xi_in = {} ; xi_out = {}",
             self.xi_in,
             self.xi_out
-        );
-        ensure!(
-            self.ratio_disk > 0.0 && self.ratio_disk <= 1.0,
-            "This must hold: 0.0 < ratio_disk <= 1.0! Got {}",
-            self.ratio_disk
         );
         Ok(())
     }

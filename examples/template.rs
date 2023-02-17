@@ -21,7 +21,6 @@ fn main() -> Result<()> {
             mode: MeshMode::Cartesian,
             xi_in: 1.0,
             xi_out: 2.0,
-            ratio_disk: 1.0,
         },
         physics_config: PhysicsConfig {
             adiabatic_index: 1.4,

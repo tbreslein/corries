@@ -62,17 +62,6 @@ pub struct Mesh<const S: usize> {
     /// The radial coordinate at ixi_out
     pub xi_out: f64,
 
-    /// The ratio of radial distance to the origin between the massive disk and and computational
-    /// area
-    pub ratio_disk: f64,
-
-    /// The number of cells in the massive disk
-    pub n_disk: usize,
-
-    /// The cell index of the break point between the massive disk and the rest and the
-    /// computational area
-    pub idisk_end: usize,
-
     /// The differential along xi
     pub dxi: f64,
 
@@ -236,9 +225,9 @@ impl<const S: usize> Mesh<S> {
         let xi_in = meshconf.xi_in;
         let xi_out = meshconf.xi_out;
 
-        let ratio_disk = meshconf.ratio_disk;
-        let n_disk = (n_comp as f64 * ratio_disk) as usize;
-        let idisk_end = n_gc + n_disk;
+        // let ratio_disk = meshconf.ratio_disk;
+        // let n_disk = (n_comp as f64 * ratio_disk) as usize;
+        // let idisk_end = n_gc + n_disk;
 
         let dxi = match mode {
             MeshMode::Cartesian => (xi_out - xi_in) / n_comp as f64,
@@ -352,9 +341,9 @@ impl<const S: usize> Mesh<S> {
             ixi_out,
             xi_in,
             xi_out,
-            ratio_disk,
-            n_disk,
-            idisk_end,
+            // ratio_disk,
+            // n_disk,
+            // idisk_end,
             dxi,
             deta,
             dphi,
@@ -483,9 +472,8 @@ mod tests {
     prop_compose! {
         fn arb_mesh(mode: MeshMode)
                     (xi_in in 0.1f64..100_000.0,
-                    xi_out in 0.1f64..100_000.0,
-                    ratio_disk in 0.1f64..=1.0) -> Result<Mesh<S>> {
-            Mesh::new(&MeshConfig { mode, xi_in, xi_out, ratio_disk })
+                    xi_out in 0.1f64..100_000.0) -> Result<Mesh<S>> {
+            Mesh::new(&MeshConfig { mode, xi_in, xi_out })
         }
     }
 
