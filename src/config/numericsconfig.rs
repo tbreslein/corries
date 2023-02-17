@@ -6,7 +6,7 @@
 
 use std::any::TypeId;
 
-use crate::{errorhandling::Validation, Hll, Kt, NumFlux, check_positive_double};
+use crate::{check_positive_double, errorhandling::Validation, Hll, Kt, NumFlux};
 use color_eyre::{
     eyre::{ensure, Context},
     Result,

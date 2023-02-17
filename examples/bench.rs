@@ -8,7 +8,11 @@ use ndarray::{Array1, Array2};
 
 const S: usize = 500;
 
-fn init<P: Physics<E, S>, N: NumFlux<E,S>, const E: usize, const S: usize>(u: &mut State<P, E, S>, rhs: &mut Rhs<N,E,S>, mesh: &Mesh<S>) {
+fn init<P: Physics<E, S>, N: NumFlux<E, S>, const E: usize, const S: usize>(
+    u: &mut State<P, E, S>,
+    rhs: &mut Rhs<N, E, S>,
+    mesh: &Mesh<S>,
+) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::ones((E, S));
     for i in breakpoint_index..S {
@@ -30,10 +34,7 @@ fn main() -> Result<()> {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = CorriesConfig::default_riemann_test::<N, E, S>(
-        0.5,
-        "results/examples/bench_noh",
-        "bench_noh");
+    let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/examples/bench_noh", "bench_noh");
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init(&mut u, &mut rhs, &mesh);

@@ -7,7 +7,7 @@ use corries::prelude::*;
 use ndarray::Array2;
 const S: usize = 100;
 
-fn get_config<N: NumFlux<E,S> + 'static, const E: usize>(folder_name: &str, file_name: &str) -> CorriesConfig {
+fn get_config<N: NumFlux<E, S> + 'static, const E: usize>(folder_name: &str, file_name: &str) -> CorriesConfig {
     return CorriesConfig {
         print_banner: false,
         mesh_config: MeshConfig::default_riemann_test(),
@@ -17,7 +17,7 @@ fn get_config<N: NumFlux<E,S> + 'static, const E: usize>(folder_name: &str, file
         },
         boundary_condition_west: BoundaryMode::NoGradients,
         boundary_condition_east: BoundaryMode::NoGradients,
-        numerics_config: NumericsConfig::default_riemann_test::<N,E,S>(0.25),
+        numerics_config: NumericsConfig::default_riemann_test::<N, E, S>(0.25),
         output_counter_max: 1,
         writer_config: vec![
             OutputConfig::default_stdout(),
@@ -47,7 +47,7 @@ fn sod_hll() -> Result<()> {
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config::<N,E>("results/integrationtests/sod_hll", "sod_hll");
+    let config = get_config::<N, E>("results/integrationtests/sod_hll", "sod_hll");
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init::<P, E, S>(&mut u);
@@ -64,7 +64,7 @@ fn sod_kt() -> Result<()> {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config::<N,E>("results/integrationtests/sod_kt", "sod_kt");
+    let config = get_config::<N, E>("results/integrationtests/sod_kt", "sod_kt");
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init::<P, E, S>(&mut u);
