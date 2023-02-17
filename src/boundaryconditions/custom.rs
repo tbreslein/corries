@@ -233,7 +233,6 @@ mod tests {
         mode: MeshMode::Cartesian,
         xi_in: 2.0,
         xi_out: 3.0,
-        ratio_disk: 1.0,
     };
     const PHYSICSCONFIG: PhysicsConfig = PhysicsConfig {
         adiabatic_index: 1.4,
