@@ -162,7 +162,44 @@ impl CorriesConfig {
         }
     }
 
-    /// todo
+    /// Initialises all objects needed to run a corries simulation.
+    ///
+    /// Apart from the `self` argument, the important bits that also help configuring the simulation
+    /// are the template Parameters. For example, the type you pass as the first template argument
+    /// determines the type of [Physics] used throughout the whole simulation!
+    ///
+    /// In addition to that, you also need to pass a function that takes a [State], a [Solver], and
+    /// a [Mesh], and returns a [color_eyre::Result].
+    /// That function is used to apply the initial conditions to the [State] object.
+    ///
+    /// In that `init_fn` you only need to concern yourself with setting initial values for the
+    /// [State::cent.prim] field for the [State] object.
+    /// After calling `init_fn`, this `init_corries` method will make sure that [State::west] and
+    /// [State::east] are initialised, as well as that the boundary conditions are applied.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use corries::prelude::*;
+    ///
+    /// // Set up a simulation using isothermal Euler physics on a 100 cell mesh, using the Hll and
+    /// // Runge-Kutta-Fehlberg schemes for solving the equations.
+    /// const S: usize = 100;
+    /// set_Physics_and_E!(Euler1DIsot);
+    /// type N = Hll<E, S>;
+    /// type T = RungeKuttaFehlberg<P, E, S>;
+    ///
+    /// // use the default config for Riemann tests
+    /// let t_end = 0.5;
+    /// let folder_name = "results";
+    /// let file_name = "noh";
+    ///
+    /// CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name)
+    ///     .init_corries::<P, N, T, E, S>(|u, solver, mesh| {
+    ///         /* ... some complex initial conditions for u ... */
+    ///         Ok(())
+    ///     }).unwrap();
+    /// ```
     pub fn init_corries<P, N, T, const E: usize, const S: usize>(
         &self,
         init_fn: fn(&mut State<P,E,S>, &mut Solver<P,N,T,E,S>, &Mesh<S>) -> Result<()>,
