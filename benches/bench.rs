@@ -2,6 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
+use color_eyre::Result;
 use corries::prelude::*;
 use criterion::{criterion_group, criterion_main, Criterion};
 use ndarray::{Array1, Array2};
@@ -12,7 +13,7 @@ fn init<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usi
     u: &mut State<P, E, S>,
     solver: &mut Solver<P, N, T, E, S>,
     mesh: &Mesh<S>,
-) {
+) -> Result<()> {
     let breakpoint_index = (S as f64 * 0.5) as usize;
     let mut prim = Array2::ones((E, S));
     for i in breakpoint_index..S {
@@ -26,7 +27,7 @@ fn init<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usi
     u.cent.prim.assign(&prim.view());
     u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
     u.init_west_east();
-    return;
+    Ok(())
 }
 
 pub fn noh_hll_run(c: &mut Criterion) {
@@ -35,13 +36,13 @@ pub fn noh_hll_run(c: &mut Criterion) {
     set_Physics_and_E!(Euler1DAdiabatic);
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
-    let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh");
-    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    init(&mut u, &mut solver, &mesh);
+    let mut comps = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh")
+        .init_corries::<P, N, T, E, S>(init)
+        .unwrap();
 
     group.bench_function("noh_hll", |b| {
         b.iter(|| {
-            run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
+            comps.run_corries().unwrap();
         })
     });
     group.finish();
@@ -53,13 +54,13 @@ pub fn noh_kt_run(c: &mut Criterion) {
     set_Physics_and_E!(Euler1DAdiabatic);
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
-    let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh");
-    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    init(&mut u, &mut solver, &mesh);
+    let mut comps = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh")
+        .init_corries::<P, N, T, E, S>(init)
+        .unwrap();
 
     group.bench_function("noh_kt", |b| {
         b.iter(|| {
-            run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
+            comps.run_corries().unwrap();
         })
     });
     group.finish();

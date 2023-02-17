@@ -4,7 +4,7 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
-use crate::{errorhandling::Validation, NumFlux};
+use crate::{components::*, errorhandling::Validation, prelude::*};
 use color_eyre::{eyre::Context, Result};
 pub use meshconfig::*;
 pub use numericsconfig::*;
@@ -160,6 +160,43 @@ impl CorriesConfig {
                 OutputConfig::default_file(folder_name, file_name, E),
             ],
         }
+    }
+
+    /// todo
+    pub fn init_corries<P, N, T, const E: usize, const S: usize>(
+        &self,
+        init_fn: fn(&mut State<P,E,S>, &mut Solver<P,N,T,E,S>, &Mesh<S>) -> Result<()>,
+    ) -> Result<CorriesComponents<P, N, T, E, S>>
+    where
+        P: Physics<E, S> + 'static,
+        N: NumFlux<E, S>,
+        T: TimeSolver<P, E, S>,
+    {
+        self.validate().context("Validating CorriesConfig")?;
+
+        let mesh = Mesh::<S>::new(&self.mesh_config).context("Constructing Mesh")?;
+        let mut u = State::<P, E, S>::new(&self.physics_config);
+        let mut solver = Solver::<P, N, T, E, S>::new(&self, &mesh).context("Constructing Solver")?;
+        let mut writer = Writer::new::<S>(&self, &mesh).context("Constructing Writer")?;
+
+        if writer.print_banner {
+            println!("# ****************************************");
+            println!("# Corries - corrosive Riemann solver ");
+            println!("# ");
+            println!("# Version: {}", env!("CARGO_PKG_VERSION"));
+            println!("# Copyright (c) 2022-2023");
+            println!("# Author: tbreslein <github.com/tbreslein>");
+            println!("# License: MIT");
+            println!("# ****************************************");
+        }
+        writer
+            .write_metadata::<S>()
+            .context("Calling writer.write_metadata in run_corries")?;
+
+        init_fn(&mut u, &mut solver, &mesh).context("Calling init_fn in CorriesConfig::init_corries")?;
+        u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
+        u.init_west_east();
+        Ok((u, solver, mesh, writer))
     }
 }
 

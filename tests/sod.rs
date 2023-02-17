@@ -4,7 +4,6 @@
 
 use color_eyre::{eyre::Context, Result};
 use corries::prelude::*;
-use ndarray::Array2;
 const S: usize = 100;
 
 fn get_config<N: NumFlux<E, S> + 'static, const E: usize>(folder_name: &str, file_name: &str) -> CorriesConfig {
@@ -26,19 +25,27 @@ fn get_config<N: NumFlux<E, S> + 'static, const E: usize>(folder_name: &str, fil
     };
 }
 
-fn init<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E, S>) {
+fn init<P, N, T, const E: usize, const S: usize>(
+    u: &mut State<P, E, S>,
+    _: &mut Solver<P, N, T, E, S>,
+    _: &Mesh<S>,
+) -> Result<()>
+where
+    P: Physics<E, S>,
+    N: NumFlux<E, S>,
+    T: TimeSolver<P, E, S>,
+{
     let breakpoint_index = (S as f64 * 0.5) as usize;
-    let mut prim = Array2::zeros((E, S));
+    u.cent.prim.fill(0.0);
     for i in 0..breakpoint_index {
-        prim[[0, i]] = 1.0;
-        prim[[E - 1, i]] = 1.0;
+        u.cent.prim[[P::JRHO, i]] = 1.0;
+        u.cent.prim[[P::JPRESSURE, i]] = 1.0;
     }
     for i in breakpoint_index..S {
-        prim[[0, i]] = 0.125;
-        prim[[E - 1, i]] = 0.1;
+        u.cent.prim[[P::JRHO, i]] = 0.125;
+        u.cent.prim[[P::JPRESSURE, i]] = 0.1;
     }
-    u.cent.prim.assign(&prim.view());
-    return;
+    Ok(())
 }
 
 #[test]
@@ -47,14 +54,10 @@ fn sod_hll() -> Result<()> {
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config::<N, E>("results/integrationtests/sod_hll", "sod_hll");
-    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-
-    init::<P, E, S>(&mut u);
-    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
-
-    run_corries::<P, N, T, E, S>(&mut u, &mut solver, &mesh, &mut writer).context("Calling run_loop in noh test")?;
-    return Ok(());
+    get_config::<N, E>("results/integrationtests/sod_hll", "sod_hll")
+    .init_corries::<P, N, T, E, S>(init)
+    .context("While calling CorriesConfig::init_corries")?
+    .run_corries()
 }
 
 #[test]
@@ -63,13 +66,8 @@ fn sod_kt() -> Result<()> {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
 
-    let config = get_config::<N, E>("results/integrationtests/sod_kt", "sod_kt");
-    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-
-    init::<P, E, S>(&mut u);
-    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
-    u.init_west_east();
-
-    run_corries::<P, N, T, E, S>(&mut u, &mut solver, &mesh, &mut writer).context("Calling run_loop in noh test")?;
-    return Ok(());
+    get_config::<N, E>("results/integrationtests/sod_kt", "sod_kt")
+    .init_corries::<P, N, T, E, S>(init)
+    .context("While calling CorriesConfig::init_corries")?
+    .run_corries()
 }
