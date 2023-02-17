@@ -4,12 +4,12 @@
 
 //! Exports the [Solver] struct, responsible for generating new solutions for [State] objects
 
-use std::marker::PhantomData;
+use crate::{timestep::TimeStep, CorriesConfig, Mesh, NumFlux, Physics, Rhs, State, TimeSolver};
 use color_eyre::{
     eyre::{bail, Context},
     Result,
 };
-use crate::{timestep::TimeStep, CorriesConfig, Mesh, NumFlux, Physics, Rhs, State, TimeSolver};
+use std::marker::PhantomData;
 
 /// Struct that is responsible for generating new solutions for [State] objects.
 ///
