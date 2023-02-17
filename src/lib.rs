@@ -395,7 +395,7 @@
 //! #     };
 //! # }
 //! # let config = get_config::<N,E>("results/sod", "sod");
-//! let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+//! let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 //! ```
 //!
 //! Obviously, you should be using the ? operator instead of unwrap, but then this doc test does
@@ -404,10 +404,8 @@
 //! The objects returned here are:
 //!
 //! * `u`: the [State] object that holds the state of the physical variables
-//! * `rhs`: the [Rhs] object that handles solving the right hand side of the differential
-//! equations
-//! * `time`: the [Time] object that handles time discretisation / integration
-//! * `mesh`: the [Mesh] object that models the grid the simulatoin runs on
+//! * `solver`: the [Solver] object that generates new solutions
+//! * `mesh`: the [Mesh] object that models the grid the simulation runs on
 //! * `writer`: the [Writer] object that handles writing output
 //!
 //! Almost done.
@@ -452,7 +450,7 @@
 //! #     };
 //! # }
 //! # let config = get_config::<N,E>("results/sod", "sod");
-//! # let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+//! # let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 //! // determine the index where the shock occurs, which is at the center cell
 //! let breakpoint_index = (S as f64 * 0.5) as usize;
 //! for i in 0..breakpoint_index {
@@ -475,7 +473,7 @@
 //!     u.cent.prim[[1, i]] = 0.0;
 //! }
 //! // update everything else in u.cent, now that u.cent.prim is up-to-date
-//! u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+//! u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
 //!
 //! // make sure u.west and u.east are initialised properly
 //! u.init_west_east();
@@ -510,7 +508,7 @@
 //! #     };
 //! # }
 //! # let config = get_config::<N,E>("results/sod", "sod");
-//! # let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+//! # let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 //! # let breakpoint_index = (S as f64 * 0.5) as usize;
 //! # for i in 0..breakpoint_index {
 //! #     u.cent.prim[[0, i]] = 1.0;
@@ -522,9 +520,9 @@
 //! #     u.cent.prim[[2, i]] = 0.1;
 //! #     u.cent.prim[[1, i]] = 0.0;
 //! # }
-//! # u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+//! # u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
 //! # u.init_west_east();
-//! run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
+//! run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
 //! ```
 //!
 //! # Plans
@@ -532,7 +530,8 @@
 //! Currently, corries only supports cartesian meshes, though non-cartesian meshes are coming very
 //! soon.
 //!
-//! * put [Rhs] and [Time] into a `Solver` struct
+//! * investigate the possibility of putting boundary conditions into [State]
+//!   * once I have that, Solver::rhs does not need to be pub anymore
 //! * streamline initial conditions a bit
 //!   * make [init_corries] a method of [CorriesConfig]
 //!   * that method calls the original [init_corries] logic first, then it calls a user provided
@@ -552,8 +551,6 @@
 //!
 //! Most importantly exports the module [prelude].
 
-use color_eyre::{eyre::Context, Result};
-
 mod boundaryconditions;
 pub mod config;
 mod errorhandling;
@@ -562,6 +559,7 @@ pub mod macros;
 pub mod directions;
 pub mod mesh;
 pub mod rhs;
+pub mod solver;
 pub mod state;
 pub mod time;
 pub mod units;
@@ -587,17 +585,19 @@ pub mod prelude {
     pub use crate::rhs::*;
     pub use crate::run_corries;
     pub use crate::set_Physics_and_E;
+    pub use crate::solver::*;
     pub use crate::state::*;
     pub use crate::time::*;
     pub use crate::units::*;
     pub use crate::writer::*;
 }
 
+use color_eyre::{eyre::Context, Result};
 use errorhandling::Validation;
 pub use prelude::*;
 
 type CorriesComponents<P, N, T, const E: usize, const S: usize> =
-    (State<P, E, S>, Rhs<N, E, S>, Time<P, T, E, S>, Mesh<S>, Writer);
+    (State<P, E, S>, Solver<P, N, T, E, S>, Mesh<S>, Writer);
 
 /// Initialises all objects needed to run a corries simulation.
 ///
@@ -629,7 +629,7 @@ type CorriesComponents<P, N, T, const E: usize, const S: usize> =
 /// // define the config instance
 /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
 ///
-/// let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+/// let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 /// ```
 pub fn init_corries<P, N, T, const E: usize, const S: usize>(
     config: &CorriesConfig,
@@ -643,10 +643,9 @@ where
         config.validate()?;
     }
 
-    let mesh: Mesh<S> = Mesh::new(&config.mesh_config).context("Constructing Mesh")?;
-    let u: State<P, E, S> = State::new(&config.physics_config);
-    let rhs: Rhs<N, E, S> = Rhs::<N, E, S>::new(config, &mesh)?;
-    let time: Time<P, T, E, S> = Time::new(config)?;
+    let mesh = Mesh::<S>::new(&config.mesh_config).context("Constructing Mesh")?;
+    let u = State::<P, E, S>::new(&config.physics_config);
+    let solver = Solver::<P, N, T, E, S>::new(config, &mesh)?;
     let mut writer = Writer::new::<S>(config, &mesh)?;
 
     if writer.print_banner {
@@ -655,7 +654,7 @@ where
     writer
         .write_metadata::<S>()
         .context("Calling writer.write_metadata in run_corries")?;
-    Ok((u, rhs, time, mesh, writer))
+    Ok((u, solver, mesh, writer))
 }
 
 /// Runs a [corries](crate) simulation.
@@ -694,34 +693,33 @@ where
 /// // define the config instance
 /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
 ///
-/// let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-/// run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
+/// let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+/// run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
 /// ```
 pub fn run_corries<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
     u: &mut State<P, E, S>,
-    rhs: &mut Rhs<N, E, S>,
-    time: &mut Time<P, T, E, S>,
+    solver: &mut Solver<P, N, T, E, S>,
     mesh: &Mesh<S>,
     writer: &mut Writer,
 ) -> Result<()> {
     loop {
-        if time.timestep.t >= time.timestep.t_next_output - time.timestep.dt_min {
-            time.timestep.t_next_output += time.timestep.dt_output;
+        if solver.timestep.t >= solver.timestep.t_next_output - solver.timestep.dt_min {
+            solver.timestep.t_next_output += solver.timestep.dt_output;
             writer
-                .update_data(&u.cent, &time.timestep, mesh)
+                .update_data(&u.cent, &solver.timestep, mesh)
                 .context("Calling writer.update_data_matrices in run_corries")?;
             writer
                 .write_output()
                 .context("Calling wirter.write_output in run_corries")?;
         }
-        if time.timestep.t + time.timestep.dt_min * 0.01 >= time.timestep.t_end {
+        if solver.timestep.t + solver.timestep.dt_min * 0.01 >= solver.timestep.t_end {
             break;
         }
 
-        if let err @ Err(_) = time.next_solution(u, rhs, mesh) {
-            time.timestep.dt_kind = DtKind::ErrorDump;
+        if let err @ Err(_) = solver.next_solution(u, mesh) {
+            solver.timestep.dt_kind = DtKind::ErrorDump;
             writer
-                .update_data(&u.cent, &time.timestep, mesh)
+                .update_data(&u.cent, &solver.timestep, mesh)
                 .context("Calling writer.update_data_matrices during the error dump in run_corries")?;
             writer
                 .write_output()

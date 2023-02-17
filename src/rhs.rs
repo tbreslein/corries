@@ -93,7 +93,7 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// // Runge-Kutta-Fehlberg schemes for solving the equations.
     /// const S: usize = 100;
     /// set_Physics_and_E!(Euler1DIsot);
-    /// type N = Hll<E, S>;
+    /// type N = Kt<E, S>;
     /// type T = RungeKuttaFehlberg<P, E, S>;
     ///
     /// // use the default config for Riemann tests
@@ -104,7 +104,9 @@ impl<N: NumFlux<E, S>, const E: usize, const S: usize> Rhs<N, E, S> {
     /// // define the config instance
     /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
     ///
-    /// let (mut u, mut rhs, _, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    /// let mesh = Mesh::<S>::new(&config.mesh_config).unwrap();
+    /// let mut u = State::<P,E,S>::new(&config.physics_config);
+    /// let mut rhs = Rhs::<N,E,S>::new(&config, &mesh).unwrap();
     ///
     /// rhs.update(&mut u, &mesh).unwrap();
     /// ```

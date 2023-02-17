@@ -35,8 +35,8 @@ fn main() -> Result<()> {
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/examples/bench_noh", "bench_noh");
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
-    init(&mut u, &mut rhs, &mesh);
-    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
+    init(&mut u, &mut solver.rhs, &mesh);
+    run_corries(&mut u, &mut solver, &mesh, &mut writer)
 }

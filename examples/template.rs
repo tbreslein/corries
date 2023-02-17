@@ -81,8 +81,8 @@ fn main() -> Result<()> {
         ],
     };
 
-    let (mut u, mut rhs, mut time, mesh, mut writer) =
+    let (mut u, mut solver, mesh, mut writer) =
         init_corries::<P, N, T, E, S>(&config).context("During initialisation")?;
-    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)?;
+    run_corries::<P, N, T, E, S>(&mut u, &mut solver, &mesh, &mut writer)?;
     return Ok(());
 }

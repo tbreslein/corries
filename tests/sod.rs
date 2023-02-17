@@ -48,13 +48,12 @@ fn sod_hll() -> Result<()> {
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config::<N, E>("results/integrationtests/sod_hll", "sod_hll");
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init::<P, E, S>(&mut u);
-    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
 
-    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
-        .context("Calling run_loop in noh test")?;
+    run_corries::<P, N, T, E, S>(&mut u, &mut solver, &mesh, &mut writer).context("Calling run_loop in noh test")?;
     return Ok(());
 }
 
@@ -65,13 +64,12 @@ fn sod_kt() -> Result<()> {
     type T = RungeKuttaFehlberg<P, E, S>;
 
     let config = get_config::<N, E>("results/integrationtests/sod_kt", "sod_kt");
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init::<P, E, S>(&mut u);
-    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
     u.init_west_east();
 
-    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
-        .context("Calling run_loop in noh test")?;
+    run_corries::<P, N, T, E, S>(&mut u, &mut solver, &mesh, &mut writer).context("Calling run_loop in noh test")?;
     return Ok(());
 }

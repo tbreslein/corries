@@ -8,9 +8,9 @@ use ndarray::{Array1, Array2};
 
 const S: usize = 500;
 
-fn init<P: Physics<E, S>, N: NumFlux<E, S>, const E: usize, const S: usize>(
+fn init<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
     u: &mut State<P, E, S>,
-    rhs: &mut Rhs<N, E, S>,
+    solver: &mut Solver<P, N, T, E, S>,
     mesh: &Mesh<S>,
 ) {
     let breakpoint_index = (S as f64 * 0.5) as usize;
@@ -24,7 +24,7 @@ fn init<P: Physics<E, S>, N: NumFlux<E, S>, const E: usize, const S: usize>(
         u.cent.c_sound.assign(&Array1::ones(S).view());
     }
     u.cent.prim.assign(&prim.view());
-    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
     u.init_west_east();
     return;
 }
@@ -36,12 +36,12 @@ pub fn noh_hll_run(c: &mut Criterion) {
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
     let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh");
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    init(&mut u, &mut rhs, &mesh);
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    init(&mut u, &mut solver, &mesh);
 
     group.bench_function("noh_hll", |b| {
         b.iter(|| {
-            run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
+            run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
         })
     });
     group.finish();
@@ -54,12 +54,12 @@ pub fn noh_kt_run(c: &mut Criterion) {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
     let config = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh");
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    init(&mut u, &mut rhs, &mesh);
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    init(&mut u, &mut solver, &mesh);
 
     group.bench_function("noh_kt", |b| {
         b.iter(|| {
-            run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer).unwrap();
+            run_corries(&mut u, &mut solver, &mesh, &mut writer).unwrap();
         })
     });
     group.finish();
