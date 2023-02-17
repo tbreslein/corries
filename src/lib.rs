@@ -55,7 +55,7 @@
 //! * Building a [CorriesConfig], which allows for fine-grained control over the simulation
 //! * Constructing and applying initial conditions to the necessary objects through the
 //! [CorriesConfig::init_corries]
-//! * Running the simulation with the [CorriesComponents]'s [run_corries] method
+//! * Running the simulation with the [CorriesComponents]'s [Runner::run_corries] method
 //!
 //! You can see examples of this in the docs for [CorriesConfig::init_corries] and
 //! [Runner::run_corries], as well as when looking through the source code for the integration
@@ -456,7 +456,7 @@
 //! * `writer`: the [Writer] object that handles writing output
 //!
 //! Almost done.
-//! Now we can call [run_corries] to run the simulation!
+//! Now we can call [Runner::run_corries] to run the simulation!
 //!
 //! ```no_run
 //! # use color_eyre::{eyre::Context, Result};
@@ -516,15 +516,6 @@
 //! Currently, corries only supports cartesian meshes, though non-cartesian meshes are coming very
 //! soon.
 //!
-//! * streamline initial conditions a bit
-//!   * make [init_corries] a method of [CorriesConfig]
-//!   * that method calls the original [init_corries] logic first, then it calls a user provided
-//!   function which applies initial conditions
-//!   * after calling the user provided function, the method automatically makes sure that all
-//!   variables as well as `u.west` und `u.east` are set up properly
-//!   * the method returns the tuple of `(u, solver, mesh, writer)` which are bundled into the
-//!   `CorriesComponents` typedef
-//!    add a method `run` to that type that is basically just calling [run_corries]
 //! * Add cylindrical geometry + Source trait + GeometricSource + Sedov test
 //! * Add spherical geometry + new Sedov case
 //! * Add Euler2DAdiabatic
@@ -555,16 +546,18 @@ pub mod writer;
 
 /// Exports everything you need to run a corries simulation. This includes the following modules
 ///
-/// - [corries::config](crate::config)
-/// - [corries::directions](crate::directions)
-/// - [corries::mesh](crate::mesh)
-/// - [corries::physics](crate::physics)
-/// - [corries::rhs](crate::rhs)
-/// - [corries::time](crate::time)
-/// - [corries::units](crate::units)
-/// - [corries::writer](crate::writer)
+/// * [corries::components](crate::components)
+/// * [corries::config](crate::config)
+/// * [corries::directions](crate::directions)
+/// * [corries::mesh](crate::mesh)
+/// * [corries::rhs](crate::rhs)
+/// * [corries::solver](crate::solver)
+/// * [corries::state](crate::state)
+/// * [corries::time](crate::time)
+/// * [corries::units](crate::units)
+/// * [corries::writer](crate::writer)
 ///
-/// as well as the [set_Physics_and_E] macro, and the [run_corries], and [init_corries] function.
+/// as well as the [set_Physics_and_E] macro
 pub mod prelude {
     pub use crate::components::*;
     pub use crate::config::*;

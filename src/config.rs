@@ -200,6 +200,7 @@ impl CorriesConfig {
     ///         Ok(())
     ///     }).unwrap();
     /// ```
+    #[allow(clippy::type_complexity)]
     pub fn init_corries<P, N, T, const E: usize, const S: usize>(
         &self,
         init_fn: fn(&mut State<P, E, S>, &mut Solver<P, N, T, E, S>, &Mesh<S>) -> Result<()>,
@@ -213,8 +214,8 @@ impl CorriesConfig {
 
         let mesh = Mesh::<S>::new(&self.mesh_config).context("Constructing Mesh")?;
         let mut u = State::<P, E, S>::new(&self.physics_config);
-        let mut solver = Solver::<P, N, T, E, S>::new(&self, &mesh).context("Constructing Solver")?;
-        let mut writer = Writer::new::<S>(&self, &mesh).context("Constructing Writer")?;
+        let mut solver = Solver::<P, N, T, E, S>::new(self, &mesh).context("Constructing Solver")?;
+        let mut writer = Writer::new::<S>(self, &mesh).context("Constructing Writer")?;
 
         if writer.print_banner {
             println!("# ****************************************");

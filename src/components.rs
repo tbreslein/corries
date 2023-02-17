@@ -85,7 +85,7 @@ where
                 break;
             }
 
-            if let err @ Err(_) = solver.next_solution(u, &mesh) {
+            if let err @ Err(_) = solver.next_solution(u, mesh) {
                 solver.timestep.dt_kind = DtKind::ErrorDump;
                 writer
                     .update_data(&u.cent, &solver.timestep, mesh)
