@@ -12,6 +12,9 @@ use crate::{boundaryconditions::BoundaryCondition, variables::Variables, Mesh};
 /// Trait for objects that define sets of differential equations that describe the evolution of a
 /// classical hydrodynamics system.
 pub trait Physics<const E: usize, const S: usize> {
+    /// The number of equations in the systme of differential equations.
+    const NUM_EQ: usize;
+
     /// Whether the implementer of this trait is adiabatic
     const IS_ADIABATIC: bool;
 

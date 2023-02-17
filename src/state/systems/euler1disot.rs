@@ -73,6 +73,7 @@ unsafe impl<const S: usize> Send for Euler1DIsot<S> {}
 unsafe impl<const S: usize> Sync for Euler1DIsot<S> {}
 
 impl<const S: usize> Physics<E, S> for Euler1DIsot<S> {
+    const NUM_EQ: usize = E;
     const IS_ADIABATIC: bool = false;
     const IS_ISOTHERMAL: bool = !Self::IS_ADIABATIC;
     const JRHO: usize = 0;
