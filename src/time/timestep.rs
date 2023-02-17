@@ -124,10 +124,8 @@ impl TimeStep {
     ///
     /// // define the config instance
     /// let config = CorriesConfig::default_riemann_test::<N, E, S>(t_end, folder_name, file_name);
-    /// let (mut u, _, _, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
-    /// let mut time_step = TimeStep::new(&config.numerics_config, 2);
-    ///
-    /// time_step.calc_dt_expl(&mut u, &mesh).unwrap();
+    /// let (mut u, mut solver, mesh, _) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    /// solver.timestep.calc_dt_expl(&mut u, &mesh).unwrap();
     /// ```
     pub fn calc_dt_expl<P: Physics<E, S>, const E: usize, const S: usize>(
         &mut self,

@@ -34,13 +34,12 @@ fn noh_euler1d_adiabatic() -> Result<()> {
         "results/integrationtests/noh_euler1d_adiabatic",
         "noh_euler1d_adiabatic",
     );
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
-    init_noh::<P, E, S>(&mut u);
-    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    init_noh(&mut u);
+    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
 
-    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
-        .context("Calling run_loop in noh test")?;
+    run_corries(&mut u, &mut solver, &mesh, &mut writer).context("Calling run_loop in noh test")?;
     return Ok(());
 }
 
@@ -56,12 +55,11 @@ fn noh_euler1d_isot() -> Result<()> {
         "results/integrationtests/noh_euler1d_isothermal",
         "noh_euler1d_isothermal",
     );
-    let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
+    let (mut u, mut solver, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
-    init_noh::<P, E, S>(&mut u);
-    u.update_vars_from_prim(&mut rhs.boundary_west, &mut rhs.boundary_east, &mesh);
+    init_noh(&mut u);
+    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
 
-    run_corries::<P, N, T, E, S>(&mut u, &mut rhs, &mut time, &mesh, &mut writer)
-        .context("Calling run_loop in noh test")?;
+    run_corries(&mut u, &mut solver, &mesh, &mut writer).context("Calling run_loop in noh test")?;
     return Ok(());
 }

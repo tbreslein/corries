@@ -2,7 +2,7 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! Exports [NumericsConfig] for configuring [NumFlux] and [Time](crate::time::Time) objects
+//! Exports [NumericsConfig] for configuring [NumFlux] and [TimeSolver](crate::time::TimeSolver) objects
 
 use std::any::TypeId;
 
