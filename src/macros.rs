@@ -46,11 +46,11 @@
 macro_rules! set_Physics_and_E {
     (Euler1DAdiabatic) => {
         type P = Euler1DAdiabatic<S>;
-        const E: usize = 3;
+        const E: usize = P::NUM_EQ;
     };
     (Euler1DIsot) => {
         type P = Euler1DIsot<S>;
-        const E: usize = 2;
+        const E: usize = P::NUM_EQ;
     };
 }
 
