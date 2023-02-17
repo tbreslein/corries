@@ -3,6 +3,7 @@
 // License: MIT
 
 use color_eyre::{eyre::Context, Result};
+use corries::components::Runner;
 use corries::prelude::*;
 
 // =============
@@ -15,7 +16,7 @@ type N = Hll<E, S>;
 type T = RungeKuttaFehlberg<P, E, S>;
 
 fn main() -> Result<()> {
-    let config: CorriesConfig = CorriesConfig {
+    CorriesConfig {
         print_banner: true,
         mesh_config: MeshConfig {
             mode: MeshMode::Cartesian,
@@ -79,10 +80,19 @@ fn main() -> Result<()> {
                 data_names: vec![DataName::XiCent],
             },
         ],
-    };
-
-    let (mut u, mut solver, mesh, mut writer) =
-        init_corries::<P, N, T, E, S>(&config).context("During initialisation")?;
-    run_corries::<P, N, T, E, S>(&mut u, &mut solver, &mesh, &mut writer)?;
-    return Ok(());
+    }
+    .init_corries::<P, N, T, E, S>(|u, _, _| {
+        let breakpoint_index = (S as f64 * 0.5) as usize;
+        for i in 0..breakpoint_index {
+            u.cent.prim[[0, i]] = 1.0;
+            u.cent.prim[[E - 1, i]] = 1.0;
+        }
+        for i in breakpoint_index..S {
+            u.cent.prim[[0, i]] = 0.125;
+            u.cent.prim[[E - 1, i]] = 0.1;
+        }
+        Ok(())
+    })
+    .context("While calling CorriesConfig::init_corries")?
+    .run_corries()
 }

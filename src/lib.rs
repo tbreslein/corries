@@ -553,6 +553,7 @@
 //! Most importantly exports the module [prelude].
 
 mod boundaryconditions;
+pub mod components;
 pub mod config;
 mod errorhandling;
 #[macro_use]
@@ -579,6 +580,7 @@ pub mod writer;
 ///
 /// as well as the [set_Physics_and_E] macro, and the [run_corries], and [init_corries] function.
 pub mod prelude {
+    pub use crate::components::*;
     pub use crate::config::*;
     pub use crate::directions::*;
     pub use crate::init_corries;
@@ -594,11 +596,9 @@ pub mod prelude {
 }
 
 use color_eyre::{eyre::Context, Result};
+use components::CorriesComponents;
 use errorhandling::Validation;
 pub use prelude::*;
-
-type CorriesComponents<P, N, T, const E: usize, const S: usize> =
-    (State<P, E, S>, Solver<P, N, T, E, S>, Mesh<S>, Writer);
 
 /// Initialises all objects needed to run a corries simulation.
 ///
@@ -649,9 +649,9 @@ where
     let solver = Solver::<P, N, T, E, S>::new(config, &mesh)?;
     let mut writer = Writer::new::<S>(config, &mesh)?;
 
-    if writer.print_banner {
-        print_banner();
-    }
+    // if writer.print_banner {
+    //     print_banner();
+    // }
     writer
         .write_metadata::<S>()
         .context("Calling writer.write_metadata in run_corries")?;
@@ -729,16 +729,4 @@ pub fn run_corries<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, c
         }
     }
     Ok(())
-}
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-fn print_banner() {
-    println!("# ****************************************");
-    println!("# Corries - corrosive Riemann solver ");
-    println!("# ");
-    println!("# Version: {VERSION}");
-    println!("# Copyright (c) 2022-2023");
-    println!("# Author: tbreslein <github.com/tbreslein>");
-    println!("# License: MIT");
-    println!("# ****************************************");
 }
