@@ -22,7 +22,6 @@ fn init_noh<P: Physics<E, S>, const E: usize, const S: usize>(u: &mut State<P, E
     return;
 }
 
-
 #[test]
 fn noh_euler1d_adiabatic() -> Result<()> {
     set_Physics_and_E!(Euler1DAdiabatic);
@@ -33,7 +32,8 @@ fn noh_euler1d_adiabatic() -> Result<()> {
     let config = CorriesConfig::default_riemann_test::<N, E, S>(
         t_end,
         "results/integrationtests/noh_euler1d_adiabatic",
-        "noh_euler1d_adiabatic");
+        "noh_euler1d_adiabatic",
+    );
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init_noh::<P, E, S>(&mut u);
@@ -54,7 +54,8 @@ fn noh_euler1d_isot() -> Result<()> {
     let config = CorriesConfig::default_riemann_test::<N, E, S>(
         t_end,
         "results/integrationtests/noh_euler1d_isothermal",
-        "noh_euler1d_isothermal");
+        "noh_euler1d_isothermal",
+    );
     let (mut u, mut rhs, mut time, mesh, mut writer) = init_corries::<P, N, T, E, S>(&config).unwrap();
 
     init_noh::<P, E, S>(&mut u);

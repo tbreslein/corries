@@ -6,7 +6,8 @@
 
 //! Corries - CORrosive RIEman Solver
 //!
-//! Library to run 1D-hydrodynamics simulations solved with Riemann solvers.
+//! Library/framework (honestly who knows the difference nowadays anyways) to run 1D-hydrodynamics
+//! simulations solved with Riemann solvers.
 //!
 //! Most importantly exports the module [prelude].
 
@@ -15,7 +16,8 @@ use color_eyre::{eyre::Context, Result};
 mod boundaryconditions;
 pub mod config;
 mod errorhandling;
-#[macro_use] pub mod macros;
+#[macro_use]
+pub mod macros;
 pub mod directions;
 pub mod mesh;
 pub mod rhs;
