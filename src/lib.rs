@@ -518,8 +518,8 @@
 //!
 //! * Add cylindrical geometry + Source trait + GeometricSource + Sedov test
 //! * Add spherical geometry + new Sedov case
-//! * Add Euler2DAdiabatic
-//! * Add NavStoIsot + NavStoAdiabatic
+//! * Add 2D adiabatic Euler and 2D isothermal Euler
+//! * Add adiabatic and isothermal Navier Stokes physics
 //! * Add logcylindrical geometry + Vortex test
 //! * Add gravitational source + Bondi test
 //! * Add viscosity source + Pringle test

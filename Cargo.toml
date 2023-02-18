@@ -4,11 +4,12 @@
 
 [package]
 name = "corries"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 authors = [ "tbreslein <github.com/tbreslein>" ]
 description = "Library/framework for 1D-hydrodynamics simulations using Riemann solvers"
 repository = "https://github.com/tbreslein/corries/"
+documentation = "https://docs.rs/latest/corries/"
 # homepage = "https://github.com/tbreslein/corries/"
 readme = "README.md"
 license = "MIT"
