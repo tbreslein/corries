@@ -2,7 +2,7 @@
 
 CORrosive RIEmann Solver (corrosive because it's written in Rust...) for 1d hydrodynamics problems specialising, planned to be specialised for non-relativistic astrophysics.
 
-Documentation: https://docs.rs/latest/corries/
+Documentation: https://docs.rs/corries/
 
 ## What does this thing do?
 
