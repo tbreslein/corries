@@ -2,7 +2,9 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-//! TODO
+//! Exports commonly used initial condition function that are most importantly used in the
+//! integration tests. These functions all can be passed to
+//! [ConfigCorries::init_corries()](crate::config::ConfigCorries::init_corries()).
 
 use std::any::TypeId;
 
@@ -10,6 +12,17 @@ use color_eyre::{Result, eyre::bail};
 
 use crate::{State, Solver, Mesh, Physics, NumFlux, TimeSolver, Euler1DIsot, Euler1DAdiabatic};
 
+/// Sets up the initial conditions for the Noh test.
+///
+/// This sets up:
+///
+/// * mass density of 1.0 everywhere
+/// * xi velocity of 1.0 on the left hand side of the shocktube
+/// * xi velocity of -1.0 on the right hand side of the shocktube
+/// * pressure of 1.0E-5 in case of adiabatic physics, or speed of sound of 1.0 otherwise
+///
+/// TODO:
+/// add a doctest
 fn init_noh<P, N, T, const E: usize, const S: usize>(
     u: &mut State<P, E, S>,
     _: &mut Solver<P, N, T, E, S>,
