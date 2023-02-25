@@ -532,10 +532,11 @@
 mod boundaryconditions;
 pub mod components;
 pub mod config;
+pub mod directions;
 mod errorhandling;
 #[macro_use]
 pub mod macros;
-pub mod directions;
+pub mod initfuncs;
 pub mod mesh;
 pub mod rhs;
 pub mod solver;
@@ -549,6 +550,7 @@ pub mod writer;
 /// * [corries::components](crate::components)
 /// * [corries::config](crate::config)
 /// * [corries::directions](crate::directions)
+/// * [corries::initfuncs](crate::initfuncs)
 /// * [corries::mesh](crate::mesh)
 /// * [corries::rhs](crate::rhs)
 /// * [corries::solver](crate::solver)
@@ -562,6 +564,7 @@ pub mod prelude {
     pub use crate::components::*;
     pub use crate::config::*;
     pub use crate::directions::*;
+    pub use crate::initfuncs::*;
     pub use crate::mesh::*;
     pub use crate::rhs::*;
     pub use crate::set_Physics_and_E;
