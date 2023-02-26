@@ -89,3 +89,74 @@ where
     Ok(())
 }
 
+/// Sets up the initial conditions for the Sod test.
+///
+/// This sets up:
+///
+/// * mass density and pressure of 1.0 on the left hand side of the shocktube
+/// * mass density of 0.125 and pressure of 0.1 on the right hand side of the shocktube
+/// * all velocities set to 0.0
+///
+/// ```
+/// use corries::prelude::*;
+///
+/// const S: usize = 100;
+/// set_Physics_and_E!(Euler1DAdiabatic);
+/// type N = Kt<E, S>;
+/// type T = RungeKuttaFehlberg<P, E, S>;
+///
+/// let (u, _, _, _) = CorriesConfig::default_riemann_test::<N, E, S>(
+///     0.5,
+///     "results/integrationtests/noh_euler1d_adiabatic",
+///     "noh_euler1d_adiabatic",
+/// )
+/// .init_corries::<P, N, T, E, S>(corries::initfuncs::init_sod).unwrap();
+///
+///
+/// use approx::assert_relative_eq;
+/// use ndarray::Array2;
+///
+/// let breakpoint_index = (S as f64 * 0.5) as usize;
+///
+/// let mut u0_prim = Array2::zeros((E, S)) ;
+/// for i in 0..breakpoint_index {
+///     u0_prim[[P::JRHO, i]] = 1.0;
+///     u0_prim[[P::JPRESSURE, i]] = 1.0;
+/// }
+/// for i in breakpoint_index..S {
+///     u0_prim[[P::JRHO, i]] = 0.125;
+///     u0_prim[[P::JPRESSURE, i]] = 0.1;
+/// }
+///
+/// assert_relative_eq!(u.cent.prim, u0_prim);
+/// ```
+pub fn init_sod<P, N, T, const E: usize, const S: usize>(
+    u: &mut State<P, E, S>,
+    _: &mut Solver<P, N, T, E, S>,
+    _: &Mesh<S>,
+) -> Result<()>
+where
+    P: Physics<E, S> + 'static,
+    N: NumFlux<E, S>,
+    T: TimeSolver<P, E, S>,
+{
+    // TODO:
+    // I can probably turn this into a static assert by attaching a constant identifier to
+    // my P type that I can then static assert here
+    if TypeId::of::<P>() != TypeId::of::<Euler1DAdiabatic<S>>() {
+        bail!("init_sod cannot run when the Physics type is set to: {}!", P::name())
+    };
+
+    let breakpoint_index = (S as f64 * 0.5) as usize;
+    u.cent.prim.fill(0.0);
+    for i in 0..breakpoint_index {
+        u.cent.prim[[P::JRHO, i]] = 1.0;
+        u.cent.prim[[P::JPRESSURE, i]] = 1.0;
+    }
+    for i in breakpoint_index..S {
+        u.cent.prim[[P::JRHO, i]] = 0.125;
+        u.cent.prim[[P::JPRESSURE, i]] = 0.1;
+    }
+    Ok(())
+}
+
