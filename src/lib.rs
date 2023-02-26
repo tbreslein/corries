@@ -446,7 +446,7 @@
 //! ```
 //!
 //! Obviously, you should be using the ? operator instead of unwrap, but then this doc test does
-//! not run correctly... ¯\_(ツ)_/¯
+//! not run correctly... ¯\\_(ツ)_/¯
 //!
 //! The object returned here is a [CorriesComponents], which is simply a tuple around:
 //!
