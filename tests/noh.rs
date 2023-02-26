@@ -3,7 +3,7 @@
 // License: MIT
 
 use color_eyre::{eyre::Context, Result};
-use corries::{prelude::*, initfuncs::init_noh};
+use corries::{initfuncs::init_noh, prelude::*};
 const S: usize = 100;
 
 #[test]
