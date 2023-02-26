@@ -54,7 +54,7 @@
 //! [TimeSolver], as well as the [Mesh] size (also through a compile time constant)
 //! * Building a [CorriesConfig], which allows for fine-grained control over the simulation
 //! * Constructing and applying initial conditions to the necessary objects through the
-//! [CorriesConfig::init_corries]
+//! [CorriesConfig::init_corries] method
 //! * Running the simulation with the [CorriesComponents]'s [Runner::run_corries] method
 //!
 //! You can see examples of this in the docs for [CorriesConfig::init_corries] and
@@ -66,6 +66,16 @@
 //! # Building a Sod test
 //!
 //! Let's walk through building a Sod test.
+//!
+//! In order to ease the configuration for such a task, this library provides a couple of
+//! constructors for the different configuration structs, as well as pre-built initial condition
+//! functions.
+//! Check out the methods and docs for [CorriesConfig] as well as the structs inside of it to
+//! explore your options when it comes to constructing your configuration.
+//!
+//! The [initfuncs] module contains a couple of pre-built initial condition functions that should
+//! at least serve as a stepping stone to construct your own initial conditions.
+//! Simply check the source code, these functions are pretty simple.
 //!
 //! The first thing we should do is setting some compile constants and type definitions.
 //! The type defs are not necessary, but I highly recommend adding them to make your code more
@@ -108,9 +118,9 @@
 //!
 //! Next up, we need to set up our [CorriesConfig].
 //! This is probably the most complicated part, because there are so many options.
-//! In case this piece of the docs ever gets outdated, I would implore you to the [CorriesConfig]
-//! docs to check out the options you have, as well as the default constructors for that struct as
-//! well as some fields in it.
+//! In case this piece of the docs ever gets outdated, I would implore you to go to the
+//! [CorriesConfig] docs to check out the options you have, as well as the default constructors for
+//! that struct and some its fields.
 //!
 //! Either way, a hand-rolled [CorriesConfig] for this type of simulation would look like this:
 //!
@@ -385,7 +395,7 @@
 //! * net zero velocities
 //! * a density and pressure jump in the horizontal centre of the shocktube:
 //!   * To the left of that shock the mass density and pressure are set to 1.0
-//!   * To the right of that shock the mass density is set to 0.125 and the pressure is set to 1.0
+//!   * To the right of that shock the mass density is set to 0.125 and the pressure is set to 0.1
 //!
 //! When setting up initial conditions we generally only have to set up the primitive variables for
 //! the cell centric variable set.
