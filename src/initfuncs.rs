@@ -4,13 +4,18 @@
 
 //! Exports commonly used initial condition function that are most importantly used in the
 //! integration tests. These functions all can be passed to
-//! [ConfigCorries::init_corries()](crate::config::ConfigCorries::init_corries()).
+//! [CorriesConfig::init_corries()](crate::config::CorriesConfig::init_corries()).
 
+use crate::{Euler1DAdiabatic, Euler1DIsot, Mesh, NumFlux, Physics, Solver, State, TimeSolver};
+use color_eyre::{eyre::bail, Result};
 use std::any::TypeId;
 
-use color_eyre::{Result, eyre::bail};
-
-use crate::{State, Solver, Mesh, Physics, NumFlux, TimeSolver, Euler1DIsot, Euler1DAdiabatic};
+/// The form an initial condition function needs to have.
+///
+/// This includes passing a [State], a [Solver] as well as a [Mesh] to the function, and the
+/// function should return a [color_eyre::Result<()>].
+pub type InitFn<P, N, T, const E: usize, const S: usize> =
+    fn(&mut State<P, E, S>, &mut Solver<P, N, T, E, S>, &Mesh<S>) -> Result<()>;
 
 /// Sets up the initial conditions for the Noh test.
 ///
@@ -159,4 +164,3 @@ where
     }
     Ok(())
 }
-
