@@ -564,7 +564,6 @@ pub mod prelude {
     pub use crate::components::*;
     pub use crate::config::*;
     pub use crate::directions::*;
-    pub use crate::initfuncs::*;
     pub use crate::mesh::*;
     pub use crate::rhs::*;
     pub use crate::set_Physics_and_E;

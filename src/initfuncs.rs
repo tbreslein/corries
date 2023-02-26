@@ -23,7 +23,7 @@ use crate::{State, Solver, Mesh, Physics, NumFlux, TimeSolver, Euler1DIsot, Eule
 ///
 /// TODO:
 /// add a doctest
-fn init_noh<P, N, T, const E: usize, const S: usize>(
+pub fn init_noh<P, N, T, const E: usize, const S: usize>(
     u: &mut State<P, E, S>,
     _: &mut Solver<P, N, T, E, S>,
     _: &Mesh<S>,
