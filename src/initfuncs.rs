@@ -21,8 +21,39 @@ use crate::{State, Solver, Mesh, Physics, NumFlux, TimeSolver, Euler1DIsot, Eule
 /// * xi velocity of -1.0 on the right hand side of the shocktube
 /// * pressure of 1.0E-5 in case of adiabatic physics, or speed of sound of 1.0 otherwise
 ///
-/// TODO:
-/// add a doctest
+/// ```
+/// use corries::prelude::*;
+///
+/// const S: usize = 100;
+/// set_Physics_and_E!(Euler1DAdiabatic);
+/// type N = Kt<E, S>;
+/// type T = RungeKuttaFehlberg<P, E, S>;
+///
+/// let (u, _, _, _) = CorriesConfig::default_riemann_test::<N, E, S>(
+///     0.5,
+///     "results/integrationtests/noh_euler1d_adiabatic",
+///     "noh_euler1d_adiabatic",
+/// )
+/// .init_corries::<P, N, T, E, S>(corries::initfuncs::init_noh).unwrap();
+///
+///
+/// use approx::assert_relative_eq;
+/// use ndarray::Array2;
+///
+/// let breakpoint_index = (S as f64 * 0.5) as usize;
+///
+/// let mut u0_prim = Array2::zeros((E, S)) ;
+/// u0_prim.row_mut(P::JRHO).fill(1.0);
+/// u0_prim.row_mut(P::JPRESSURE).fill(1.0E-5);
+/// for i in 0..breakpoint_index {
+///     u0_prim[[P::JXI, i]] = 1.0;
+/// }
+/// for i in breakpoint_index..S {
+///     u0_prim[[P::JXI, i]] = -1.0;
+/// }
+///
+/// assert_relative_eq!(u.cent.prim, u0_prim);
+/// ```
 pub fn init_noh<P, N, T, const E: usize, const S: usize>(
     u: &mut State<P, E, S>,
     _: &mut Solver<P, N, T, E, S>,
