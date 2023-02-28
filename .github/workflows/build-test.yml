@@ -26,8 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: run rustfmt --check ./**/*.rs
-        run: rustfmt --check ./**/*.rs
+      - uses: LoliGothick/rustfmt-check@v0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          flags: --all
+          options: --manifest-path=Cargo.toml
+          args: --config-path=rustfmt.toml
 
   build:
     runs-on: ubuntu-latest
