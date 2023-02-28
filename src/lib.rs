@@ -191,28 +191,24 @@
 //!
 //!         // Sets up the time integration scheme.
 //!         // Currently, corries only supports Runge-Kutta-Fehlberg schemes, which are set here.
-//!         time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
+//!         time_integration_config: TimeIntegrationConfig::RkfASC {
 //!             // The only important bit about this config is the exact scheme you want to use.
 //!             // SSPRK5 and RKF4 are the go-to choices, though I would recommend the first
 //!             // usually.
 //!             rkf_mode: RKFMode::SSPRK5,
 //!
-//!             // Whether or not to use automatic step control. Not really needed for this test,
-//!             // so we set this to false.
-//!             asc: false,
-//!
 //!             // The relative tolerance when calculating the error between high and low order
 //!             // solutions, used by the automatic step control.
-//!             asc_relative_tolerance: 0.001,
+//!             relative_tolerance: 0.001,
 //!
 //!             // The absolute tolerance when calculating the error between high and low order
 //!             // solutions, used by the automatic step control.
-//!             asc_absolute_tolerance: 0.1,
+//!             absolute_tolerance: 0.1,
 //!
 //!             // The timestep friction factor. This dampens new time steps widths calculated by
 //!             // the automatic step control.
-//!             asc_timestep_friction: 0.08,
-//!         }),
+//!             timestep_friction: 0.08,
+//!         },
 //!
 //!         // How many full loop iterations corries is allowed to run before aborting the
 //!         // simulation, if it has not ended due to other break conditions yet.

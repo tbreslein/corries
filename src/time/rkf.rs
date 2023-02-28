@@ -71,11 +71,22 @@ impl<P: Physics<E, S> + 'static, const E: usize, const S: usize> TimeSolver<P, E
     fn new(config: &CorriesConfig) -> Result<Self> {
         let (bt, asc_relative_tolerance, asc_absolute_tolerance, asc_timestep_friction) =
             match &config.numerics_config.time_integration_config {
-                TimeIntegrationConfig::Rkf(rkf_config) => (
-                    ButcherTableau::new(rkf_config),
-                    rkf_config.asc_relative_tolerance,
-                    rkf_config.asc_absolute_tolerance,
-                    rkf_config.asc_timestep_friction,
+                TimeIntegrationConfig::Rkf { rkf_mode: _ } => (
+                    ButcherTableau::new(&config.numerics_config.time_integration_config),
+                    0.0,
+                    0.0,
+                    0.0,
+                ),
+                TimeIntegrationConfig::RkfASC {
+                    rkf_mode: _,
+                    relative_tolerance,
+                    absolute_tolerance,
+                    timestep_friction,
+                } => (
+                    ButcherTableau::new(&config.numerics_config.time_integration_config),
+                    *relative_tolerance,
+                    *absolute_tolerance,
+                    *timestep_friction,
                 ),
             };
         let order = bt.order;

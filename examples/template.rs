@@ -39,13 +39,12 @@ fn main() -> Result<()> {
             numflux_config: NumFluxConfig::Kt {
                 limiter_mode: LimiterMode::Monocent(1.2),
             },
-            time_integration_config: TimeIntegrationConfig::Rkf(RkfConfig {
+            time_integration_config: TimeIntegrationConfig::RkfASC {
                 rkf_mode: RKFMode::RK4,
-                asc: false,
-                asc_relative_tolerance: 0.001,
-                asc_absolute_tolerance: 0.1,
-                asc_timestep_friction: 0.08,
-            }),
+                relative_tolerance: 0.001,
+                absolute_tolerance: 0.1,
+                timestep_friction: 0.08,
+            },
             iter_max: usize::MAX - 2,
             t0: 0.0,
             t_end: 10.0,
