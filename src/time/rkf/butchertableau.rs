@@ -4,7 +4,7 @@
 
 //! Exports the [ButcherTableau] struct
 
-use crate::config::numericsconfig::{RKFMode, RkfConfig};
+use crate::{config::numericsconfig::RKFMode, TimeIntegrationConfig};
 use ndarray::{Array1, Array2};
 
 /// Carries the butcher tableau needed for implement different Runge-Kutta-Fehlberg methods.
@@ -42,11 +42,13 @@ impl ButcherTableau {
     ///
     /// # Argument
     ///
-    /// * `rkfconfig` - [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg) specific configuration
-    pub fn new(rkfconfig: &RkfConfig) -> Self {
-        let order = get_order(rkfconfig.rkf_mode);
-        let asc = rkfconfig.asc;
-        match rkfconfig.rkf_mode {
+    /// * `config` - [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg) specific configuration
+    pub fn new(config: &TimeIntegrationConfig) -> Self {
+        let (mode, order, asc) = match config {
+            TimeIntegrationConfig::Rkf { rkf_mode } => (*rkf_mode, get_order(*rkf_mode), false),
+            TimeIntegrationConfig::RkfASC { rkf_mode, relative_tolerance: _, absolute_tolerance: _, timestep_friction: _ } => (*rkf_mode, get_order(*rkf_mode), true)
+        };
+        match mode {
             RKFMode::RK1 => Self {
                 order,
                 a: Array2::from_shape_vec(
@@ -66,7 +68,7 @@ impl ButcherTableau {
                     vec![0.0]
                 ).unwrap(),
                 asc: if asc {
-                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", rkfconfig.rkf_mode);
+                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", mode);
                     false
                 } else {
                     asc
@@ -92,7 +94,7 @@ impl ButcherTableau {
                     vec![0.0, 0.5]
                 ).unwrap(),
                 asc: if asc {
-                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", rkfconfig.rkf_mode);
+                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", mode);
                     false
                 } else {
                     asc
@@ -142,7 +144,7 @@ impl ButcherTableau {
                     vec![0.0, 0.5, 0.5, 1.0]
                 ).unwrap(),
                 asc: if asc {
-                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", rkfconfig.rkf_mode);
+                    println!("WARNING: You turned on automated step control (asc) for {:?}, but this RKF method does not support asc! This option is ignored and asc will be set to false.", mode);
                     false
                 } else {
                     asc

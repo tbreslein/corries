@@ -5,10 +5,7 @@
 //! Exports [TimeIntegrationConfig] for configuring [TimeSolver](crate::time::TimeSolver) objects.
 
 use crate::{check_positive_double, errorhandling::Validation};
-use color_eyre::{
-    eyre::{ensure, Context},
-    Result,
-};
+use color_eyre::{eyre::ensure, Result};
 use serde::Serialize;
 
 /// Enumerates the different types of configuration [TimeSolver](crate::time::TimeSolver) objects.
@@ -17,8 +14,29 @@ pub enum TimeIntegrationConfig {
     /// Configuration for the Runge-Kutta-Fehlberg solver, i.e.
     /// [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg).
     ///
-    /// The payload for this variant is a [RkfConfig] object.
-    Rkf(RkfConfig),
+    /// This variant disables automated step control
+    Rkf {
+        /// Type of RungeKuttaFehlberg scheme to use
+        rkf_mode: RKFMode,
+    },
+
+    /// Configuration for the Runge-Kutta-Fehlberg solver, i.e.
+    /// [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg).
+    ///
+    /// This variant includes automated step control
+    RkfASC {
+        /// Type of RungeKuttaFehlberg scheme to use
+        rkf_mode: RKFMode,
+
+        /// Relative tolerance for automated time step control
+        relative_tolerance: f64,
+
+        /// Absolute tolerance for automated time step control
+        absolute_tolerance: f64,
+
+        /// Timestep "friction" for automated time step control
+        timestep_friction: f64,
+    },
 }
 
 unsafe impl Send for TimeIntegrationConfig {}
@@ -35,23 +53,30 @@ impl TimeIntegrationConfig {
     /// // define the config instance
     /// let timeintegration_config = TimeIntegrationConfig::default_rkf();
     ///
-    /// if let TimeIntegrationConfig::Rkf(c) = timeintegration_config {
-    ///     assert_eq!(c.rkf_mode, RKFMode::SSPRK5);
-    ///     assert_eq!(c.asc, false);
-    ///     assert_eq!(c.asc_relative_tolerance, 0.001);
-    ///     assert_eq!(c.asc_absolute_tolerance, 0.001);
-    ///     assert_eq!(c.asc_timestep_friction, 0.08);
+    /// if let TimeIntegrationConfig::Rkf { rkf_mode } = timeintegration_config {
+    ///     assert_eq!(rkf_mode, RKFMode::SSPRK5);
     /// }
     /// ```
     pub fn default_rkf() -> Self {
-        Self::Rkf(RkfConfig::default())
+        Self::Rkf {
+            rkf_mode: RKFMode::default(),
+        }
     }
 }
 
 impl Validation for TimeIntegrationConfig {
     fn validate(&self) -> Result<()> {
         match self {
-            TimeIntegrationConfig::Rkf(c) => c.validate().context("Validating RkfConfig"),
+            TimeIntegrationConfig::Rkf { rkf_mode: _ } => Ok(()),
+            TimeIntegrationConfig::RkfASC {
+                rkf_mode: _,
+                relative_tolerance,
+                absolute_tolerance,
+                timestep_friction,
+            } => {
+                check_positive_double!(*absolute_tolerance, *relative_tolerance, *timestep_friction);
+                Ok(())
+            },
         }
     }
 }
@@ -92,48 +117,3 @@ pub enum RKFMode {
 
 unsafe impl Send for RKFMode {}
 unsafe impl Sync for RKFMode {}
-
-/// Configures the [RungeKuttaFehlberg](crate::time::rkf::RungeKuttaFehlberg) objects.
-#[derive(Debug, Serialize, Copy, Clone)]
-pub struct RkfConfig {
-    /// Type of Runge-Kutta-Fehlberg scheme to use
-    pub rkf_mode: RKFMode,
-
-    /// Whether to use automated time step control
-    pub asc: bool,
-
-    /// Relative tolerance for automated time step control
-    pub asc_relative_tolerance: f64,
-
-    /// Absolte tolerance for automated time step control
-    pub asc_absolute_tolerance: f64,
-
-    /// Timestep "friction" for automated time step control
-    pub asc_timestep_friction: f64,
-}
-
-unsafe impl Send for RkfConfig {}
-unsafe impl Sync for RkfConfig {}
-
-impl Default for RkfConfig {
-    fn default() -> Self {
-        Self {
-            rkf_mode: RKFMode::default(),
-            asc: false,
-            asc_relative_tolerance: 0.001,
-            asc_absolute_tolerance: 0.001,
-            asc_timestep_friction: 0.08,
-        }
-    }
-}
-
-impl Validation for RkfConfig {
-    fn validate(&self) -> Result<()> {
-        check_positive_double!(
-            self.asc_absolute_tolerance,
-            self.asc_relative_tolerance,
-            self.asc_timestep_friction
-        );
-        Ok(())
-    }
-}
