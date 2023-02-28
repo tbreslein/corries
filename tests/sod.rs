@@ -7,7 +7,7 @@ use corries::prelude::*;
 const S: usize = 100;
 
 fn get_config<N: NumFlux<E, S> + 'static, const E: usize>(folder_name: &str, file_name: &str) -> CorriesConfig {
-    return CorriesConfig {
+    CorriesConfig {
         print_banner: false,
         mesh_config: MeshConfig::default_riemann_test(),
         physics_config: PhysicsConfig {
@@ -22,7 +22,7 @@ fn get_config<N: NumFlux<E, S> + 'static, const E: usize>(folder_name: &str, fil
             OutputConfig::default_stdout(),
             OutputConfig::default_file(folder_name, file_name, E),
         ],
-    };
+    }
 }
 
 fn init<P, N, T, const E: usize, const S: usize>(

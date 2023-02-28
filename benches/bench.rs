@@ -25,7 +25,7 @@ fn init<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usi
         u.cent.c_sound.assign(&Array1::ones(S).view());
     }
     u.cent.prim.assign(&prim.view());
-    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, &mesh);
+    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, mesh);
     u.init_west_east();
     Ok(())
 }
