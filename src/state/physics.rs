@@ -40,6 +40,9 @@ pub trait Physics<const E: usize, const S: usize> {
     /// Construct a new [Physics] object
     fn new() -> Self;
 
+    /// Return the name of the implementor
+    fn name() -> String;
+
     /// Accessor to the mass density in the primitive variable set, derived from the `vars`
     /// argument.
     ///

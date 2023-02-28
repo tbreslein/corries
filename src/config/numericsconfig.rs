@@ -84,6 +84,9 @@ impl NumericsConfig {
     /// ```
     pub fn default_riemann_test<N: NumFlux<E, S> + 'static, const E: usize, const S: usize>(t_end: f64) -> Self {
         Self {
+            // TODO:
+            // I can probably turn this into a static assert by attaching a constant identifier to
+            // my N type that I can then static assert here
             numflux_config: if TypeId::of::<N>() == TypeId::of::<Hll<E, S>>() {
                 NumFluxConfig::Hll
             } else if TypeId::of::<N>() == TypeId::of::<Kt<E, S>>() {

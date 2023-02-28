@@ -85,6 +85,10 @@ impl<const S: usize> Physics<E, S> for Euler1DAdiabatic<S> {
         Self
     }
 
+    fn name() -> String {
+        "Euler1DAdiabatic".to_string()
+    }
+
     #[inline(always)]
     fn update_prim(vars: &mut Variables<E, S>) {
         // PERF: This was benchmarked between the following options:

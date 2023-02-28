@@ -4,7 +4,7 @@
 
 //! Exports the [CorriesConfig] structs and its nested structs for configuring Corries simulations.
 
-use crate::{components::*, errorhandling::Validation, prelude::*};
+use crate::{components::*, errorhandling::Validation, initfuncs::InitFn, prelude::*};
 use color_eyre::{eyre::Context, Result};
 pub use meshconfig::*;
 pub use numericsconfig::*;
@@ -200,10 +200,9 @@ impl CorriesConfig {
     ///         Ok(())
     ///     }).unwrap();
     /// ```
-    #[allow(clippy::type_complexity)]
     pub fn init_corries<P, N, T, const E: usize, const S: usize>(
         &self,
-        init_fn: fn(&mut State<P, E, S>, &mut Solver<P, N, T, E, S>, &Mesh<S>) -> Result<()>,
+        init_fn: InitFn<P, N, T, E, S>,
     ) -> Result<CorriesComponents<P, N, T, E, S>>
     where
         P: Physics<E, S> + 'static,

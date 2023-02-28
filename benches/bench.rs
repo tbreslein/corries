@@ -2,33 +2,10 @@
 // Author: Tommy Breslein (github.com/tbreslein)
 // License: MIT
 
-use color_eyre::Result;
-use corries::prelude::*;
+use corries::{initfuncs::init_noh, prelude::*};
 use criterion::{criterion_group, criterion_main, Criterion};
-use ndarray::{Array1, Array2};
 
 const S: usize = 500;
-
-fn init<P: Physics<E, S>, N: NumFlux<E, S>, T: TimeSolver<P, E, S>, const E: usize, const S: usize>(
-    u: &mut State<P, E, S>,
-    solver: &mut Solver<P, N, T, E, S>,
-    mesh: &Mesh<S>,
-) -> Result<()> {
-    let breakpoint_index = (S as f64 * 0.5) as usize;
-    let mut prim = Array2::ones((E, S));
-    for i in breakpoint_index..S {
-        prim[[1, i]] = -1.0;
-    }
-    if u.is_adiabatic() {
-        prim.row_mut(E - 1).fill(1.0E-5);
-    } else {
-        u.cent.c_sound.assign(&Array1::ones(S).view());
-    }
-    u.cent.prim.assign(&prim.view());
-    u.update_vars_from_prim(&mut solver.rhs.boundary_west, &mut solver.rhs.boundary_east, mesh);
-    u.init_west_east();
-    Ok(())
-}
 
 pub fn noh_hll_run(c: &mut Criterion) {
     let mut group = c.benchmark_group("noh_hll_run");
@@ -37,7 +14,7 @@ pub fn noh_hll_run(c: &mut Criterion) {
     type N = Hll<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
     let mut comps = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh")
-        .init_corries::<P, N, T, E, S>(init)
+        .init_corries::<P, N, T, E, S>(init_noh)
         .unwrap();
 
     group.bench_function("noh_hll", |b| {
@@ -55,7 +32,7 @@ pub fn noh_kt_run(c: &mut Criterion) {
     type N = Kt<E, S>;
     type T = RungeKuttaFehlberg<P, E, S>;
     let mut comps = CorriesConfig::default_riemann_test::<N, E, S>(0.5, "results/bench/bench_noh", "bench_noh")
-        .init_corries::<P, N, T, E, S>(init)
+        .init_corries::<P, N, T, E, S>(init_noh)
         .unwrap();
 
     group.bench_function("noh_kt", |b| {
