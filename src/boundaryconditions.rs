@@ -17,7 +17,7 @@ pub trait BoundaryCondition<const E: usize, const S: usize> {
     ///
     /// * `vars` - The set of [Variables] to apply the condition to
     /// * `mesh` - The [Mesh] for the simulation
-    fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>);
+            fn apply(&mut self, vars: &mut Variables<E, S>, mesh: &Mesh<S>);
 }
 
 /// Initialises a [BoundaryCondition] object
