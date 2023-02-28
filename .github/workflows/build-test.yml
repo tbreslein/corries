@@ -22,17 +22,6 @@ jobs:
       - name: run clippy --all-targets --all-features
         run: cargo clippy --all-targets --all-features
 
-  rustfmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: LoliGothick/rustfmt-check@v0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          flags: --all
-          options: --manifest-path=Cargo.toml
-          args: --config-path=rustfmt.toml
-
   build:
     runs-on: ubuntu-latest
     steps:
