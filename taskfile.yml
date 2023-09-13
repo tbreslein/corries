@@ -1,0 +1,22 @@
+---
+version: '3'
+
+tasks:
+  clean: cargo clean
+  format: cargo fmt
+  check: cargo check
+  clippy: cargo clippy
+  doc: cargo doc --document-private-items
+  bench: cargo bench
+  update: cargo update
+  build:
+    cmds:
+      - for: [check, clippy, format]
+        task: '{{.ITEM}}'
+      - cargo build
+  test:
+    cmds:
+      - for: [check, clippy, format]
+        task: '{{.ITEM}}'
+      - cargo nextest run -E 'binary(corries)'
+      - cargo nextest run -r -E 'kind(test)'
