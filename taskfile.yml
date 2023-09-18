@@ -1,0 +1,47 @@
+---
+version: '3'
+
+tasks:
+  clean:
+    sources:
+      - src/**/*.rs
+    cmd: cargo clean
+  check:
+    sources:
+      - src/**/*.rs
+    cmd: cargo check
+  clippy:
+    sources:
+      - src/**/*.rs
+    cmd: cargo clippy
+  format:
+    sources:
+      - src/**/*.rs
+    cmd: rustfmt ./**/*.rs
+  all-checks:
+    cmds:
+      - for: [check, clippy, format]
+        task: '{{.ITEM}}'
+  doc:
+    sources:
+      - src/**/*.rs
+    cmd: cargo doc --document-private-items
+
+  build:
+    sources:
+      - src/**/*.rs
+    cmds:
+      - for: [all-checks, doc]
+        task: '{{.ITEM}}'
+      - cargo build -r
+
+  test:
+    cmds:
+      - for: [all-checks]
+        task: '{{.ITEM}}'
+      - cargo test --doc
+      - cargo nextest run -E 'binary(corries)'
+      - cargo nextest run -r -E 'kind(test)'
+
+  update: cargo update
+  bench: cargo bench
