@@ -11,8 +11,7 @@ Cargo.lock
 
 # nix/direnv specific
 .direnv/
-result
-results/
+result*
 
 proptest-regressions/
 profile.json
