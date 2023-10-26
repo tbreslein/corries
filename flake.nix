@@ -1,22 +1,35 @@
 {
-  description = "1d hydrodynamics riemann solver";
+  description = "A corrosive 1D hydrodynamics solver";
+
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    crane.url = "github:ipetkov/crane";
-    crane.inputs.nixpkgs.follows = "nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, crane, flake-utils, ... }:
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        craneLib = crane.lib.${system};
-        pkgs = import nixpkgs { inherit system; };
-      in {
-        packages.default = craneLib.buildPackage {
-          src = craneLib.cleanCargoSource (craneLib.path ./.);
-          doCheck = true;
-          buildInputs = with pkgs; [ pkg-config openssl cargo-nextest ];
+        overlays = [ (import rust-overlay) ];
+        pkgs = import nixpkgs { inherit system overlays; };
+      in with pkgs; {
+        devShells.default = mkShell {
+          buildInputs = [
+            openssl
+            pkg-config
+            # (rust-bin.selectLatestNightlyWith (toolchain: toolchain.default.override {
+            (rust-bin.stable.latest.default.override {
+              extensions = [ "rust-src" "rust-analyzer" "rustfmt" ];
+            })
+
+            # external deps
+            openblas
+
+            # dev tools
+            bacon
+            cargo-nextest
+            cargo-criterion
+          ];
         };
       });
 }
