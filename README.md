@@ -1,3 +1,5 @@
+# THIS WAS MIGRATED TO: https://codeberg.org/tbreslein/corries
+
 # corries
 
 CORrosive RIEmann Solver (corrosive because it's written in Rust...) for 1d hydrodynamics problems specialising, planned to be specialised for non-relativistic astrophysics.
